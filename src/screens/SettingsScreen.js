@@ -5,103 +5,146 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  TextInput,
   Alert,
-  ActivityIndicator,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import {
-  getServerUrl,
-  setServerUrl,
-  testServerConnection,
-  isDemoMode,
-  setDemoMode,
-} from '../services/cricketApi';
+import { TeamFlag } from '../utils/flagHelper';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
 
-  // API Server state
-  const [apiUrl, setApiUrl] = useState(getServerUrl());
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState(null);
+  // Notification Permissions & Alerts
+  const [matchNotifications, setMatchNotifications] = useState(true);
+  const [wicketAlerts, setWicketAlerts] = useState(true);
+  const [newsDigest, setNewsDigest] = useState(false);
+  const [wifiOnlyVideos, setWifiOnlyVideos] = useState(true);
+  const [soundHaptics, setSoundHaptics] = useState(true);
 
-  // Preferences
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState('30s');
-  const [notifications, setNotifications] = useState(true);
-  const [soundEffects, setSoundEffects] = useState(true);
-
-  // Favorite Team
+  // User preferences
   const [selectedTeam, setSelectedTeam] = useState('CSK');
-  const teams = ['CSK', 'MI', 'RCB', 'KKR', 'GT', 'RR', 'SRH', 'DC', 'LSG', 'PBKS'];
+  const [selectedLang, setSelectedLang] = useState('English');
+  const [cacheSize, setCacheSize] = useState('14.2 MB');
 
-  const handleTestConnection = async () => {
-    setTestingConnection(true);
-    setConnectionStatus(null);
-    const res = await testServerConnection(apiUrl);
-    setTestingConnection(false);
-    if (res.success) {
-      setConnectionStatus({ ok: true, msg: 'Connected successfully (200 OK)' });
-    } else {
-      setConnectionStatus({ ok: false, msg: res.error || 'Connection failed' });
-    }
-  };
+  const teams = [
+    { code: 'CSK', name: 'Chennai Super Kings' },
+    { code: 'MI', name: 'Mumbai Indians' },
+    { code: 'RCB', name: 'Royal Challengers Bengaluru' },
+    { code: 'KKR', name: 'Kolkata Knight Riders' },
+    { code: 'GT', name: 'Gujarat Titans' },
+    { code: 'RR', name: 'Rajasthan Royals' },
+    { code: 'SRH', name: 'Sunrisers Hyderabad' },
+    { code: 'DC', name: 'Delhi Capitals' },
+  ];
 
-  const handleSaveApiUrl = () => {
-    if (!apiUrl.trim()) {
-      Alert.alert('Error', 'API URL cannot be empty');
-      return;
-    }
-    setServerUrl(apiUrl.trim());
-    Alert.alert('Success', 'API Server Endpoint updated!');
-  };
-
-  const handleResetApi = () => {
-    const defaultUrl = 'https://dsquaretech.com/v1/cricket';
-    setApiUrl(defaultUrl);
-    setServerUrl(defaultUrl);
-    Alert.alert('Reset', 'API Server Endpoint reset to official default.');
-  };
+  const languages = ['English', 'हिंदी', 'ગુજરાતી'];
 
   const handleClearCache = () => {
-    Alert.alert('Cache Cleared', 'Local match cache and images refreshed successfully.');
+    Alert.alert(
+      'Clear Cache',
+      'Are you sure you want to clear temporary match data and images?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            setCacheSize('0.0 KB');
+            Alert.alert('Cache Cleared', 'All temporary cached files have been removed.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleShareApp = async () => {
+    try {
+      await Share.share({
+        message: 'Download the Cricbuzz Live Cricket app for fastest live scores, ball-by-ball updates, and IPL standings!',
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handleRateApp = () => {
+    Alert.alert('Thank You!', 'We appreciate your feedback and love for Cricbuzz!');
+  };
+
+  const showPolicyAlert = (title) => {
+    Alert.alert(
+      title,
+      'Cricbuzz values user privacy and transparency. No personal tracking data is shared with third parties.'
+    );
   };
 
   return (
     <View style={{ backgroundColor: theme.bg }} className="flex-1">
       <ScrollView className="flex-1 px-4 pt-3 pb-8" showsVerticalScrollIndicator={false}>
-        {/* Title */}
-        <Text style={{ color: theme.text }} className="text-xl font-black tracking-tight mb-4">
-          Settings & Preferences
-        </Text>
-
-        {/* 1. THEME & APPEARANCE (LIGHT & DARK MODE) */}
+        {/* User Card Header */}
         <View
-          style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-          className="p-4 rounded-2xl border shadow-xs mb-4"
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+          }}
+          className="p-4 rounded-3xl border shadow-xs mb-4 flex-row items-center justify-between"
         >
-          <View className="flex-row items-center mb-3">
-            <View className="w-8 h-8 rounded-xl bg-amber-500/20 items-center justify-center mr-2.5">
-              <Ionicons
-                name={isDarkMode ? 'moon' : 'sunny'}
-                size={18}
-                color={isDarkMode ? '#F59E0B' : '#D97706'}
-              />
+          <View className="flex-row items-center flex-1 mr-2">
+            <View className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-500 items-center justify-center mr-3">
+              <Ionicons name="person" size={24} color="#009270" />
             </View>
             <View className="flex-1">
-              <Text style={{ color: theme.text }} className="font-extrabold text-sm">
-                Appearance
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-xs">
-                Switch between Light & Dark themes
+              <View className="flex-row items-center">
+                <Text style={{ color: theme.text }} className="font-black text-base mr-2">
+                  Cricket Fan
+                </Text>
+                <View className="px-2 py-0.5 bg-emerald-500/15 rounded-full">
+                  <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px]">
+                    ACTIVE
+                  </Text>
+                </View>
+              </View>
+              <Text style={{ color: theme.textMuted }} className="text-xs mt-0.5">
+                Fav Team: {selectedTeam} • {selectedLang}
               </Text>
             </View>
           </View>
+        </View>
 
-          {/* Theme Selector Pills */}
-          <View className="flex-row bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+        {/* 1. APPEARANCE (LIGHT & DARK MODE) */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          Appearance
+        </Text>
+        <View
+          style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+          className="p-4 rounded-3xl border shadow-xs mb-5"
+        >
+          <View className="flex-row items-center justify-between mb-3.5">
+            <View className="flex-row items-center">
+              <View
+                style={{ backgroundColor: isDarkMode ? '#1E293B' : '#FEF3C7' }}
+                className="w-8 h-8 rounded-xl items-center justify-center mr-3"
+              >
+                <Ionicons
+                  name={isDarkMode ? 'moon' : 'sunny'}
+                  size={18}
+                  color={isDarkMode ? '#10B981' : '#D97706'}
+                />
+              </View>
+              <View>
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Theme Mode
+                </Text>
+                <Text style={{ color: theme.textSecondary }} className="text-xs">
+                  {isDarkMode ? 'Dark theme enabled' : 'Light theme enabled'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Segmented Light/Dark Selector */}
+          <View className="flex-row bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl">
             <TouchableOpacity
               onPress={() => {
                 if (isDarkMode) toggleTheme();
@@ -110,10 +153,10 @@ export default function SettingsScreen() {
                 backgroundColor: !isDarkMode ? '#FFFFFF' : 'transparent',
                 shadowColor: !isDarkMode ? '#000000' : 'transparent',
                 shadowOpacity: !isDarkMode ? 0.08 : 0,
-                shadowRadius: 2,
+                shadowRadius: 3,
                 elevation: !isDarkMode ? 2 : 0,
               }}
-              className="flex-1 py-2.5 rounded-lg flex-row items-center justify-center"
+              className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center"
               activeOpacity={0.7}
             >
               <Ionicons
@@ -141,10 +184,10 @@ export default function SettingsScreen() {
                 backgroundColor: isDarkMode ? theme.card : 'transparent',
                 shadowColor: isDarkMode ? '#000000' : 'transparent',
                 shadowOpacity: isDarkMode ? 0.2 : 0,
-                shadowRadius: 2,
+                shadowRadius: 3,
                 elevation: isDarkMode ? 2 : 0,
               }}
-              className="flex-1 py-2.5 rounded-lg flex-row items-center justify-center"
+              className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center"
               activeOpacity={0.7}
             >
               <Ionicons
@@ -166,271 +209,316 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* 2. API SERVER CONFIGURATION */}
+        {/* 2. NOTIFICATIONS & PERMISSIONS */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          Notifications & Alerts
+        </Text>
         <View
           style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-          className="p-4 rounded-2xl border shadow-xs mb-4"
+          className="rounded-3xl border shadow-xs mb-5 overflow-hidden"
         >
-          <View className="flex-row items-center mb-3">
-            <View className="w-8 h-8 rounded-xl bg-emerald-500/20 items-center justify-center mr-2.5">
-              <Ionicons name="server" size={18} color="#009270" />
-            </View>
-            <View className="flex-1">
-              <Text style={{ color: theme.text }} className="font-extrabold text-sm">
-                Cricket API Server
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-xs">
-                dsquaretech base endpoint
-              </Text>
-            </View>
-          </View>
-
-          {/* URL Input */}
-          <View
-            style={{
-              backgroundColor: theme.inputBg,
-              borderColor: theme.inputBorder,
-            }}
-            className="px-3.5 py-2 rounded-xl border mb-3 flex-row items-center"
-          >
-            <Ionicons name="link" size={15} color={theme.textMuted} style={{ marginRight: 6 }} />
-            <TextInput
-              value={apiUrl}
-              onChangeText={setApiUrl}
-              placeholder="https://dsquaretech.com/v1/cricket"
-              placeholderTextColor={theme.textMuted}
-              style={{ color: theme.text }}
-              className="flex-1 text-xs font-semibold"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          {/* Action Buttons */}
-          <View className="flex-row space-x-2 mb-2">
-            <TouchableOpacity
-              onPress={handleTestConnection}
-              disabled={testingConnection}
-              style={{ backgroundColor: theme.accentLight }}
-              className="flex-1 py-2 rounded-xl items-center flex-row justify-center mr-2"
-              activeOpacity={0.7}
-            >
-              {testingConnection ? (
-                <ActivityIndicator size="small" color={theme.accent} />
-              ) : (
-                <>
-                  <Ionicons name="flash" size={14} color={theme.accent} style={{ marginRight: 4 }} />
-                  <Text style={{ color: theme.accent }} className="text-xs font-extrabold">
-                    Test Ping
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleSaveApiUrl}
-              style={{ backgroundColor: theme.accent }}
-              className="flex-1 py-2 rounded-xl items-center justify-center mr-2"
-              activeOpacity={0.7}
-            >
-              <Text className="text-white text-xs font-extrabold">
-                Save URL
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleResetApi}
-              style={{ backgroundColor: theme.inputBg }}
-              className="px-3 py-2 rounded-xl items-center justify-center"
-              activeOpacity={0.7}
-            >
-              <Ionicons name="refresh" size={14} color={theme.textMuted} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Test Status Msg */}
-          {connectionStatus && (
-            <View
-              style={{
-                backgroundColor: connectionStatus.ok ? '#065F4620' : '#991B1B20',
-                borderColor: connectionStatus.ok ? '#10B98150' : '#EF444450',
-              }}
-              className="p-2.5 rounded-xl border mt-1"
-            >
-              <Text
-                style={{ color: connectionStatus.ok ? '#10B981' : '#EF4444' }}
-                className="text-[11px] font-bold text-center"
-              >
-                {connectionStatus.msg}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* 3. LIVE AUTO-SYNC & NOTIFICATIONS */}
-        <View
-          style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-          className="p-4 rounded-2xl border shadow-xs mb-4"
-        >
-          <View className="flex-row items-center mb-3">
-            <View className="w-8 h-8 rounded-xl bg-blue-500/20 items-center justify-center mr-2.5">
-              <Ionicons name="sync" size={18} color="#3B82F6" />
-            </View>
-            <View className="flex-1">
-              <Text style={{ color: theme.text }} className="font-extrabold text-sm">
-                Live Data & Sync
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-xs">
-                Real-time polling and notifications
-              </Text>
-            </View>
-          </View>
-
-          {/* Toggle Auto Refresh */}
-          <View className="flex-row justify-between items-center py-2 border-b" style={{ borderColor: theme.divider }}>
-            <View>
-              <Text style={{ color: theme.text }} className="text-xs font-bold">
-                Auto-Refresh Live Scores
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                Sync scores in background every {refreshInterval}
-              </Text>
-            </View>
-            <Switch
-              value={autoRefresh}
-              onValueChange={setAutoRefresh}
-              trackColor={{ false: '#94A3B8', true: '#10B981' }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-
-          {/* Polling Interval Options */}
-          {autoRefresh && (
-            <View className="py-2.5 border-b" style={{ borderColor: theme.divider }}>
-              <Text style={{ color: theme.textMuted }} className="text-[11px] font-bold uppercase mb-2">
-                Sync Frequency
-              </Text>
-              <View className="flex-row space-x-2">
-                {['15s', '30s', '60s'].map((interval) => (
-                  <TouchableOpacity
-                    key={interval}
-                    onPress={() => setRefreshInterval(interval)}
-                    style={{
-                      backgroundColor: refreshInterval === interval ? theme.accent : theme.inputBg,
-                    }}
-                    className="flex-1 py-1.5 rounded-lg items-center mr-2"
-                  >
-                    <Text
-                      style={{
-                        color: refreshInterval === interval ? '#FFFFFF' : theme.text,
-                        fontWeight: 'bold',
-                      }}
-                      className="text-xs"
-                    >
-                      {interval}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+          {/* Match Alerts */}
+          <View className="flex-row items-center justify-between p-4 border-b" style={{ borderColor: theme.divider }}>
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-8 h-8 rounded-xl bg-blue-500/15 items-center justify-center mr-3">
+                <Ionicons name="notifications" size={17} color="#3B82F6" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Match Notifications
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Match start, toss, and final results
+                </Text>
               </View>
             </View>
-          )}
+            <Switch
+              value={matchNotifications}
+              onValueChange={setMatchNotifications}
+              trackColor={{ false: '#94A3B8', true: '#10B981' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
 
-          {/* Toggle Notifications */}
-          <View className="flex-row justify-between items-center py-2">
-            <View>
-              <Text style={{ color: theme.text }} className="text-xs font-bold">
-                Match Notifications
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                Wickets, boundaries, and results
-              </Text>
+          {/* Wickets & Boundaries */}
+          <View className="flex-row items-center justify-between p-4 border-b" style={{ borderColor: theme.divider }}>
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-8 h-8 rounded-xl bg-red-500/15 items-center justify-center mr-3">
+                <Ionicons name="flash" size={17} color="#EF4444" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Wicket & Boundary Alerts
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Instant buzz on 4s, 6s, and fall of wickets
+                </Text>
+              </View>
             </View>
             <Switch
-              value={notifications}
-              onValueChange={setNotifications}
+              value={wicketAlerts}
+              onValueChange={setWicketAlerts}
+              trackColor={{ false: '#94A3B8', true: '#10B981' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {/* News & Editorial Digest */}
+          <View className="flex-row items-center justify-between p-4">
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-8 h-8 rounded-xl bg-purple-500/15 items-center justify-center mr-3">
+                <Ionicons name="newspaper" size={17} color="#8B5CF6" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Cricket News Digest
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Top cricket stories and analysis
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={newsDigest}
+              onValueChange={setNewsDigest}
               trackColor={{ false: '#94A3B8', true: '#10B981' }}
               thumbColor="#FFFFFF"
             />
           </View>
         </View>
 
-        {/* 4. FAVORITE IPL TEAM */}
+        {/* 3. CRICKET PREFERENCES (FAVORITE TEAM & LANGUAGE) */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          Cricket Preferences
+        </Text>
         <View
           style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-          className="p-4 rounded-2xl border shadow-xs mb-4"
+          className="p-4 rounded-3xl border shadow-xs mb-5"
         >
-          <View className="flex-row items-center mb-3">
-            <View className="w-8 h-8 rounded-xl bg-purple-500/20 items-center justify-center mr-2.5">
-              <Ionicons name="trophy" size={18} color="#8B5CF6" />
-            </View>
-            <View className="flex-1">
-              <Text style={{ color: theme.text }} className="font-extrabold text-sm">
-                Favorite Team
-              </Text>
-              <Text style={{ color: theme.textMuted }} className="text-xs">
-                Highlight matches & stats
-              </Text>
-            </View>
-          </View>
+          {/* Favorite Team */}
+          <Text style={{ color: theme.text }} className="font-extrabold text-sm mb-1">
+            Favorite IPL Team
+          </Text>
+          <Text style={{ color: theme.textMuted }} className="text-xs mb-3">
+            Prioritize match updates and points table
+          </Text>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="space-x-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="space-x-2 -mx-1 px-1 mb-4">
             {teams.map((t) => {
-              const isFav = selectedTeam === t;
+              const isSelected = selectedTeam === t.code;
               return (
                 <TouchableOpacity
-                  key={t}
-                  onPress={() => setSelectedTeam(t)}
+                  key={t.code}
+                  onPress={() => setSelectedTeam(t.code)}
                   style={{
-                    backgroundColor: isFav ? theme.accent : theme.inputBg,
-                    borderColor: isFav ? theme.accent : theme.cardBorder,
+                    backgroundColor: isSelected ? theme.accent : theme.inputBg,
+                    borderColor: isSelected ? theme.accent : theme.cardBorder,
                   }}
-                  className="px-3.5 py-1.5 rounded-xl border mr-2 items-center"
+                  className="flex-row items-center px-3.5 py-2 rounded-2xl border mr-2"
+                  activeOpacity={0.75}
                 >
+                  <TeamFlag
+                    countryCode={t.code}
+                    teamName={t.name}
+                    size={20}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text
                     style={{
-                      color: isFav ? '#FFFFFF' : theme.text,
-                      fontWeight: isFav ? '900' : '600',
+                      color: isSelected ? '#FFFFFF' : theme.text,
+                      fontWeight: isSelected ? '900' : '600',
                     }}
                     className="text-xs"
                   >
-                    {t}
+                    {t.code}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
+
+          {/* App Language */}
+          <Text style={{ color: theme.text }} className="font-extrabold text-sm mb-1">
+            Language
+          </Text>
+          <View className="flex-row space-x-2">
+            {languages.map((lang) => {
+              const isSelected = selectedLang === lang;
+              return (
+                <TouchableOpacity
+                  key={lang}
+                  onPress={() => setSelectedLang(lang)}
+                  style={{
+                    backgroundColor: isSelected ? theme.accent : theme.inputBg,
+                    borderColor: isSelected ? theme.accent : theme.cardBorder,
+                  }}
+                  className="flex-1 py-2 rounded-xl border items-center mr-2"
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={{
+                      color: isSelected ? '#FFFFFF' : theme.text,
+                      fontWeight: isSelected ? '800' : '600',
+                    }}
+                    className="text-xs"
+                  >
+                    {lang}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
-        {/* 5. APP DATA & ACTIONS */}
+        {/* 4. DATA & PRIVACY PERMISSIONS */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          Data & Media Settings
+        </Text>
         <View
           style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-          className="p-4 rounded-2xl border shadow-xs mb-8"
+          className="rounded-3xl border shadow-xs mb-5 overflow-hidden"
         >
+          {/* Wi-Fi Only */}
+          <View className="flex-row items-center justify-between p-4 border-b" style={{ borderColor: theme.divider }}>
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-8 h-8 rounded-xl bg-teal-500/15 items-center justify-center mr-3">
+                <Ionicons name="wifi" size={17} color="#0D9488" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Stream on Wi-Fi Only
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Save mobile data for match videos
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={wifiOnlyVideos}
+              onValueChange={setWifiOnlyVideos}
+              trackColor={{ false: '#94A3B8', true: '#10B981' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {/* Sound & Haptics */}
+          <View className="flex-row items-center justify-between p-4 border-b" style={{ borderColor: theme.divider }}>
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-8 h-8 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
+                <Ionicons name="volume-medium" size={17} color="#D97706" />
+              </View>
+              <View className="flex-1">
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Sound & Haptic Feedback
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Vibrate on key match moments
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={soundHaptics}
+              onValueChange={setSoundHaptics}
+              trackColor={{ false: '#94A3B8', true: '#10B981' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {/* Clear Cache */}
           <TouchableOpacity
             onPress={handleClearCache}
-            className="flex-row items-center justify-between py-2.5 border-b"
-            style={{ borderColor: theme.divider }}
+            className="flex-row items-center justify-between p-4"
+            activeOpacity={0.7}
           >
             <View className="flex-row items-center">
-              <Ionicons name="trash-outline" size={18} color="#EF4444" style={{ marginRight: 10 }} />
-              <Text style={{ color: theme.text }} className="text-xs font-bold">
-                Clear Match Cache
+              <View className="w-8 h-8 rounded-xl bg-red-500/15 items-center justify-center mr-3">
+                <Ionicons name="trash-outline" size={17} color="#EF4444" />
+              </View>
+              <View>
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  Clear Cached Data
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-xs">
+                  Freed space: {cacheSize}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* 5. ABOUT & SUPPORT */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          About & Support
+        </Text>
+        <View
+          style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+          className="rounded-3xl border shadow-xs mb-8 overflow-hidden"
+        >
+          <TouchableOpacity
+            onPress={handleShareApp}
+            className="flex-row items-center justify-between p-4 border-b"
+            style={{ borderColor: theme.divider }}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-xl bg-indigo-500/15 items-center justify-center mr-3">
+                <Ionicons name="share-social-outline" size={17} color="#6366F1" />
+              </View>
+              <Text style={{ color: theme.text }} className="font-bold text-sm">
+                Share Cricbuzz App
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={14} color={theme.textMuted} />
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
           </TouchableOpacity>
 
-          <View className="pt-3 flex-row justify-between items-center">
+          <TouchableOpacity
+            onPress={handleRateApp}
+            className="flex-row items-center justify-between p-4 border-b"
+            style={{ borderColor: theme.divider }}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-xl bg-amber-500/15 items-center justify-center mr-3">
+                <Ionicons name="star-outline" size={17} color="#F59E0B" />
+              </View>
+              <Text style={{ color: theme.text }} className="font-bold text-sm">
+                Rate us on Play Store
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => showPolicyAlert('Privacy Policy')}
+            className="flex-row items-center justify-between p-4 border-b"
+            style={{ borderColor: theme.divider }}
+            activeOpacity={0.7}
+          >
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-xl bg-slate-500/15 items-center justify-center mr-3">
+                <Ionicons name="shield-checkmark-outline" size={17} color="#64748B" />
+              </View>
+              <Text style={{ color: theme.text }} className="font-bold text-sm">
+                Privacy Policy & Permissions
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+          </TouchableOpacity>
+
+          <View className="p-4 flex-row items-center justify-between bg-slate-50 dark:bg-slate-900/40">
             <View>
-              <Text style={{ color: theme.text }} className="text-xs font-bold">
-                Cricbuzz Mobile v2.4.0
+              <Text style={{ color: theme.text }} className="font-extrabold text-xs">
+                cricbuzz Mobile
               </Text>
               <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                Clean UI • 100% Real API Integration
+                Version 2.4.0 (Build 2026.1)
               </Text>
             </View>
             <View className="px-2.5 py-1 bg-emerald-500/20 rounded-full">
-              <Text className="text-emerald-500 font-black text-[10px]">STABLE</Text>
+              <Text className="text-emerald-500 font-black text-[10px] tracking-wider uppercase">
+                Up to date
+              </Text>
             </View>
           </View>
         </View>
