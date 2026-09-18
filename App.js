@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { SettingsProvider } from './src/context/SettingsContext';
 import Header from './src/components/Header';
 import CricbuzzHomeScreen from './src/screens/CricbuzzHomeScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
@@ -108,7 +109,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <MainApp />
+        <SettingsProvider>
+          <MainApp />
+        </SettingsProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

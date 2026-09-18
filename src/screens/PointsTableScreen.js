@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 import { getIplPointTable } from '../services/cricketApi';
 import { TeamFlag } from '../utils/flagHelper';
 import { SkeletonBox } from '../components/ShimmerSkeleton';
@@ -16,6 +17,7 @@ import EmptyStateView from '../components/EmptyStateView';
 
 export default function PointsTableScreen() {
   const { theme } = useTheme();
+  const { settings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pointsTable, setPointsTable] = useState([]);
@@ -178,13 +180,18 @@ export default function PointsTableScreen() {
               {/* Table Rows with generous vertical padding */}
               {pointsTable.map((item, idx) => {
                 const isTopFour = idx < 4;
+                const isFavorite = settings?.favoriteTeam && item.shortName === settings.favoriteTeam;
                 return (
                   <View key={item.rank || idx}>
                     <View
                       className="flex-row items-center py-3.5 border-b"
                       style={{
                         borderColor: theme.cardBorderSubtle,
-                        backgroundColor: isTopFour ? theme.accent + '06' : 'transparent',
+                        backgroundColor: isFavorite
+                          ? theme.accent + '18'
+                          : isTopFour
+                          ? theme.accent + '06'
+                          : 'transparent',
                       }}
                     >
                       {/* Rank badge */}
@@ -214,9 +221,14 @@ export default function PointsTableScreen() {
                           style={{ marginRight: 8 }}
                         />
                         <View className="flex-1">
-                          <Text style={{ color: theme.text }} className="text-xs font-extrabold" numberOfLines={1}>
-                            {item.team}
-                          </Text>
+                          <View className="flex-row items-center">
+                            <Text style={{ color: theme.text }} className="text-xs font-extrabold" numberOfLines={1}>
+                              {item.team}
+                            </Text>
+                            {isFavorite && (
+                              <Ionicons name="star" size={11} color="#F59E0B" style={{ marginLeft: 4 }} />
+                            )}
+                          </View>
                           <Text style={{ color: theme.textMuted }} className="text-[10px] font-medium" numberOfLines={1}>
                             {item.shortName}
                           </Text>

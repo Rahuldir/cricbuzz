@@ -17,9 +17,12 @@ import {
   getCompletedFixtures,
 } from '../services/cricketApi';
 import MatchCenterModal from '../components/MatchCenterModal';
+import VideoPlayerModal from '../components/VideoPlayerModal';
 import { TeamFlag } from '../utils/flagHelper';
 
 const { width } = Dimensions.get('window');
+
+const SAMPLE_BASE = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/';
 
 const FEATURED_VIDEOS_DATA = [
   {
@@ -28,6 +31,7 @@ const FEATURED_VIDEOS_DATA = [
     duration: '7:06',
     tag: 'RO-KO STILL TOO GOOD?',
     imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
+    videoUrl: `${SAMPLE_BASE}ForBiggerJoyrides.mp4`,
   },
   {
     id: 'ipl-analysis-2',
@@ -35,6 +39,7 @@ const FEATURED_VIDEOS_DATA = [
     duration: '5:48',
     tag: 'IPL MASTERCLASS',
     imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b107e775a?w=800&q=80',
+    videoUrl: `${SAMPLE_BASE}ForBiggerFun.mp4`,
   },
   {
     id: 'dhoni-classic-3',
@@ -42,6 +47,7 @@ const FEATURED_VIDEOS_DATA = [
     duration: '10:14',
     tag: 'CRICBUZZ RETRO',
     imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
+    videoUrl: `${SAMPLE_BASE}ForBiggerBlazes.mp4`,
   },
 ];
 
@@ -78,6 +84,8 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const [activeChip, setActiveChip] = useState('All');
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [matchCenterVisible, setMatchCenterVisible] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState(null);
+  const [playerVisible, setPlayerVisible] = useState(false);
 
   const fetchMatches = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -118,6 +126,11 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const openFixtureDetail = (fixture) => {
     setSelectedFixture(fixture);
     setMatchCenterVisible(true);
+  };
+
+  const openVideo = (video) => {
+    setPlayingVideo(video);
+    setPlayerVisible(true);
   };
 
   const chips = [
@@ -334,7 +347,7 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
 
           {/* Large Video Card */}
           <TouchableOpacity
-            onPress={() => onNavigateToTab && onNavigateToTab('videos')}
+            onPress={() => openVideo(FEATURED_VIDEOS_DATA[0])}
             style={{
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
@@ -436,6 +449,13 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
         visible={matchCenterVisible}
         fixture={selectedFixture}
         onClose={() => setMatchCenterVisible(false)}
+      />
+
+      {/* Video Player Modal */}
+      <VideoPlayerModal
+        visible={playerVisible}
+        video={playingVideo}
+        onClose={() => setPlayerVisible(false)}
       />
     </View>
   );

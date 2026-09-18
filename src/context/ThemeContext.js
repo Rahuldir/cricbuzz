@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext();
+const THEME_STORAGE_KEY = '@cricbuzz_theme_v1';
 
 export const THEME_COLORS = {
   light: {
@@ -84,14 +86,39 @@ export const THEME_COLORS = {
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light') setIsDarkMode(false);
+        else if (stored === 'dark') setIsDarkMode(true);
+      } catch {
+        // Keep default
+      }
+    })();
+  }, []);
+
+  const persist = useCallback((value) => {
+    AsyncStorage.setItem(THEME_STORAGE_KEY, value ? 'dark' : 'light').catch(() => {});
+  }, []);
+
   const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      persist(next);
+      return next;
+    });
+  };
+
+  const setDarkMode = (value) => {
+    setIsDarkMode(value);
+    persist(value);
   };
 
   const theme = isDarkMode ? THEME_COLORS.dark : THEME_COLORS.light;
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, theme }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, setDarkMode, theme }}>
       {children}
     </ThemeContext.Provider>
   );

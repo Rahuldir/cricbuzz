@@ -10,33 +10,35 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings, IPL_TEAMS } from '../context/SettingsContext';
 import { TeamFlag } from '../utils/flagHelper';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const { settings, updateSettings } = useSettings();
 
-  // Notification Permissions & Alerts
-  const [matchNotifications, setMatchNotifications] = useState(true);
-  const [wicketAlerts, setWicketAlerts] = useState(true);
-  const [newsDigest, setNewsDigest] = useState(false);
-  const [wifiOnlyVideos, setWifiOnlyVideos] = useState(true);
-  const [soundHaptics, setSoundHaptics] = useState(true);
+  // Notification Permissions & Alerts (persisted)
+  const {
+    matchNotifications,
+    wicketAlerts,
+    newsDigest,
+    wifiOnlyVideos,
+    soundHaptics,
+    favoriteTeam: selectedTeam,
+    language: selectedLang,
+  } = settings;
+  const setMatchNotifications = (v) => updateSettings({ matchNotifications: v });
+  const setWicketAlerts = (v) => updateSettings({ wicketAlerts: v });
+  const setNewsDigest = (v) => updateSettings({ newsDigest: v });
+  const setWifiOnlyVideos = (v) => updateSettings({ wifiOnlyVideos: v });
+  const setSoundHaptics = (v) => updateSettings({ soundHaptics: v });
+  const setSelectedTeam = (v) => updateSettings({ favoriteTeam: v });
+  const setSelectedLang = (v) => updateSettings({ language: v });
 
-  // User preferences
-  const [selectedTeam, setSelectedTeam] = useState('CSK');
-  const [selectedLang, setSelectedLang] = useState('English');
+  // Cache size is ephemeral, not a persisted preference
   const [cacheSize, setCacheSize] = useState('14.2 MB');
 
-  const teams = [
-    { code: 'CSK', name: 'Chennai Super Kings' },
-    { code: 'MI', name: 'Mumbai Indians' },
-    { code: 'RCB', name: 'Royal Challengers Bengaluru' },
-    { code: 'KKR', name: 'Kolkata Knight Riders' },
-    { code: 'GT', name: 'Gujarat Titans' },
-    { code: 'RR', name: 'Rajasthan Royals' },
-    { code: 'SRH', name: 'Sunrisers Hyderabad' },
-    { code: 'DC', name: 'Delhi Capitals' },
-  ];
+  const teams = IPL_TEAMS;
 
   const languages = ['English', 'हिंदी', 'ગુજરાતી'];
 

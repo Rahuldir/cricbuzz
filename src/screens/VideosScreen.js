@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import VideoPlayerModal from '../components/VideoPlayerModal';
 
 const { width } = Dimensions.get('window');
+
+const SAMPLE_BASE = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/';
 
 const CRICKET_VIDEOS = [
   {
@@ -23,6 +26,7 @@ const CRICKET_VIDEOS = [
     timeAgo: '2 hours ago',
     imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
     tag: 'RO-KO STILL TOO GOOD?',
+    videoUrl: `${SAMPLE_BASE}ForBiggerJoyrides.mp4`,
   },
   {
     id: 'vid-2',
@@ -33,6 +37,7 @@ const CRICKET_VIDEOS = [
     timeAgo: '5 hours ago',
     imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b107e775a?w=800&q=80',
     tag: 'ICONIC FINISH',
+    videoUrl: `${SAMPLE_BASE}ForBiggerFun.mp4`,
   },
   {
     id: 'vid-3',
@@ -43,6 +48,7 @@ const CRICKET_VIDEOS = [
     timeAgo: '1 day ago',
     imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
     tag: 'PLAYOFF MATHS',
+    videoUrl: `${SAMPLE_BASE}ForBiggerBlazes.mp4`,
   },
   {
     id: 'vid-4',
@@ -53,6 +59,7 @@ const CRICKET_VIDEOS = [
     timeAgo: '2 days ago',
     imageUrl: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800&q=80',
     tag: 'BOWLING GENIUS',
+    videoUrl: `${SAMPLE_BASE}ForBiggerEscapes.mp4`,
   },
   {
     id: 'vid-5',
@@ -63,6 +70,7 @@ const CRICKET_VIDEOS = [
     timeAgo: '2 days ago',
     imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&q=80',
     tag: 'RAW EMOTION',
+    videoUrl: `${SAMPLE_BASE}ForBiggerMeltdowns.mp4`,
   },
 ];
 
@@ -70,6 +78,8 @@ export default function VideosScreen() {
   const { theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [playingVideo, setPlayingVideo] = useState(null);
+  const [playerVisible, setPlayerVisible] = useState(false);
 
   const categories = ['All', 'Match Analysis', 'IPL 2024', 'Interviews', 'Classics'];
 
@@ -80,6 +90,15 @@ export default function VideosScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 800);
+  };
+
+  const openVideo = (video) => {
+    setPlayingVideo(video);
+    setPlayerVisible(true);
+  };
+
+  const closeVideo = () => {
+    setPlayerVisible(false);
   };
 
   return (
@@ -129,6 +148,7 @@ export default function VideosScreen() {
         {filteredVideos.map((video) => (
           <TouchableOpacity
             key={video.id}
+            onPress={() => openVideo(video)}
             style={{
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
@@ -187,6 +207,12 @@ export default function VideosScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      <VideoPlayerModal
+        visible={playerVisible}
+        video={playingVideo}
+        onClose={closeVideo}
+      />
     </View>
   );
 }
