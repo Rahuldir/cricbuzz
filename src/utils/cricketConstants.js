@@ -1,0 +1,100 @@
+export const DISMISSAL_TYPES = {
+  BOWLED: 'Bowled',
+  CAUGHT: 'Caught',
+  LBW: 'LBW',
+  RUN_OUT: 'Run Out',
+  STUMPED: 'Stumped',
+  HIT_WICKET: 'Hit Wicket',
+  RETIRED: 'Retired Hurt',
+};
+
+export const DEFAULT_TEAMS = {
+  team1: {
+    name: 'India',
+    shortName: 'IND',
+    color: '#0284C7',
+    players: [
+      'Rohit Sharma (C)',
+      'Shubman Gill',
+      'Virat Kohli',
+      'Suryakumar Yadav',
+      'Rishabh Pant (WK)',
+      'Hardik Pandya',
+      'Ravindra Jadeja',
+      'Axar Patel',
+      'Kuldeep Yadav',
+      'Jasprit Bumrah',
+      'Mohammed Siraj',
+    ],
+  },
+  team2: {
+    name: 'Australia',
+    shortName: 'AUS',
+    color: '#EAB308',
+    players: [
+      'Travis Head',
+      'David Warner',
+      'Mitchell Marsh (C)',
+      'Glenn Maxwell',
+      'Marcus Stoinis',
+      'Tim David',
+      'Matthew Wade (WK)',
+      'Pat Cummins',
+      'Mitchell Starc',
+      'Adam Zampa',
+      'Josh Hazlewood',
+    ],
+  },
+};
+
+export const INITIAL_INNINGS_STATE = (battingTeam, bowlingTeam) => ({
+  teamName: battingTeam.name,
+  teamShort: battingTeam.shortName,
+  bowlingTeamName: bowlingTeam.name,
+  bowlingTeamShort: bowlingTeam.shortName,
+  runs: 0,
+  wickets: 0,
+  overs: 0,
+  balls: 0,
+  totalLegalBalls: 0,
+  extras: {
+    wides: 0,
+    noBalls: 0,
+    byes: 0,
+    legByes: 0,
+    penalty: 0,
+    total: 0,
+  },
+  batsmen: battingTeam.players.map((name, index) => ({
+    id: `bat_${index}`,
+    name,
+    runs: 0,
+    balls: 0,
+    fours: 0,
+    sixes: 0,
+    strikeRate: 0,
+    isOut: false,
+    dismissalText: '',
+    bowlerName: '',
+    fielderName: '',
+    status: index < 2 ? 'batting' : 'yet_to_bat', // 'batting', 'out', 'yet_to_bat'
+  })),
+  bowlers: bowlingTeam.players.slice(5).concat(bowlingTeam.players.slice(0, 5)).map((name, index) => ({
+    id: `bowl_${index}`,
+    name,
+    overs: 0,
+    balls: 0,
+    maidens: 0,
+    runs: 0,
+    wickets: 0,
+    economy: 0,
+    wides: 0,
+    noBalls: 0,
+  })),
+  strikerIndex: 0,
+  nonStrikerIndex: 1,
+  activeBowlerIndex: 0,
+  currentOverBalls: [], // balls in the current active over
+  allOvers: [],         // array of completed overs [{ overNumber: 1, balls: [...], runs: 8, bowler: '...' }]
+  fallOfWickets: [],    // [{ wicket: 1, runs: 45, over: "4.2", batsmanName: "..." }]
+});
