@@ -28,16 +28,25 @@ export default function IplHubScreen() {
   const [pointsTable, setPointsTable] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [playoffs, setPlayoffs] = useState([]);
+  const [selectedYear, setSelectedYear] = useState('2024');
+  const [allYears, setAllYears] = useState(['2024', '2023', '2022', '2021', '2020']);
 
-  const loadIplData = useCallback(async () => {
+  const loadIplData = useCallback(async (yearToFetch = selectedYear, isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const [tableRes, schedRes, playRes] = await Promise.all([
-        getIplPointTable(),
+        getIplPointTable(yearToFetch),
         getIplSchedule(),
         getIplPlayoff(),
       ]);
 
       setPointsTable(tableRes.pointsTable || []);
+      if (tableRes.allYears && tableRes.allYears.length > 0) {
+        setAllYears(tableRes.allYears);
+      }
+      if (tableRes.year) {
+        setSelectedYear(tableRes.year);
+      }
       setSchedule(schedRes.schedule || []);
       setPlayoffs(playRes.playoffs || []);
     } catch (err) {
@@ -46,15 +55,27 @@ export default function IplHubScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedYear]);
 
   useEffect(() => {
-    loadIplData();
-  }, [loadIplData]);
+    loadIplData(selectedYear);
+
+    // Auto-polling interval: re-calls every 45s
+    const pollInterval = setInterval(() => {
+      loadIplData(selectedYear, true);
+    }, 45000);
+
+    return () => clearInterval(pollInterval);
+  }, [loadIplData, selectedYear]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadIplData();
+    loadIplData(selectedYear);
+  };
+
+  const onSelectYear = (yr) => {
+    setSelectedYear(yr);
+    loadIplData(yr);
   };
 
   return (
@@ -131,6 +152,35 @@ export default function IplHubScreen() {
           {/* 1. POINTS TABLE TAB */}
           {activeTab === 'table' && (
             <View className="pb-8">
+              {/* Season Year Selector Pills */}
+              {allYears && allYears.length > 0 && (
+                <View className="mb-3">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
+                    {allYears.slice(0, 8).map((yr) => (
+                      <TouchableOpacity
+                        key={yr}
+                        onPress={() => onSelectYear(yr)}
+                        style={{
+                          backgroundColor: selectedYear === yr ? theme.accent : theme.card,
+                          borderColor: selectedYear === yr ? theme.accent : theme.cardBorder,
+                        }}
+                        className="px-3 py-1.5 rounded-full border mr-2 shadow-xs"
+                      >
+                        <Text
+                          style={{
+                            color: selectedYear === yr ? '#FFFFFF' : theme.textSecondary,
+                            fontWeight: selectedYear === yr ? '900' : 'bold',
+                          }}
+                          className="text-xs"
+                        >
+                          Season {yr}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               {pointsTable.length === 0 ? (
                 <EmptyStateView
                   type="general"
@@ -144,7 +194,7 @@ export default function IplHubScreen() {
                 >
                   <View className="flex-row justify-between items-center pb-2.5 border-b" style={{ borderColor: theme.divider }}>
                     <Text style={{ color: theme.text }} className="font-black text-sm">
-                      TATA IPL 2025 STANDINGS
+                      TATA IPL {selectedYear} STANDINGS
                     </Text>
                     <View className="flex-row items-center space-x-2">
                       <View className="w-2 h-2 rounded-full bg-emerald-500 mr-1" />

@@ -3,23 +3,17 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { CricketProvider } from './src/context/CricketContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import Header from './src/components/Header';
 import CricbuzzHomeScreen from './src/screens/CricbuzzHomeScreen';
 import IplHubScreen from './src/screens/IplHubScreen';
-import LiveMatchScreen from './src/screens/LiveMatchScreen';
-import ScorecardScreen from './src/screens/ScorecardScreen';
-import MatchesHistoryScreen from './src/screens/MatchesHistoryScreen';
-import NewMatchModal from './src/components/NewMatchModal';
-import MatchResultModal from './src/components/MatchResultModal';
 import ServerConfigModal from './src/components/ServerConfigModal';
 
 function MainApp() {
   const { theme, isDarkMode } = useTheme();
-  const [activeTab, setActiveTab] = useState('matches'); // 'matches' | 'ipl' | 'scorer' | 'scorecard' | 'history'
-  const [newMatchModalVisible, setNewMatchModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState('matches'); // 'matches' | 'ipl'
   const [serverModalVisible, setServerModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   return (
     <SafeAreaView style={{ backgroundColor: theme.headerBg }} className="flex-1" edges={['top', 'left', 'right']}>
@@ -28,38 +22,30 @@ function MainApp() {
         backgroundColor={theme.headerBg}
       />
 
-      {/* App Header with Cricbuzz Brand & Theme Switcher */}
+      {/* App Header with Cricbuzz Brand, Auto-Sync Status & Theme Switcher */}
       <Header
         activeTab={activeTab}
-        onOpenNewMatch={() => setNewMatchModalVisible(true)}
+        isRefreshing={isRefreshing}
         onOpenServerConfig={() => setServerModalVisible(true)}
       />
 
-      {/* Screen Views */}
+      {/* Screen Views - 100% Real API Data */}
       <View style={{ backgroundColor: theme.bg }} className="flex-1">
         {activeTab === 'matches' && <CricbuzzHomeScreen />}
         {activeTab === 'ipl' && <IplHubScreen />}
-        {activeTab === 'scorer' && <LiveMatchScreen />}
-        {activeTab === 'scorecard' && <ScorecardScreen />}
-        {activeTab === 'history' && (
-          <MatchesHistoryScreen onOpenNewMatch={() => setNewMatchModalVisible(true)} />
-        )}
       </View>
 
-      {/* Cricbuzz Premium Bottom Navigation Tab Bar */}
+      {/* Cricbuzz Clean Bottom Navigation Bar */}
       <View
         style={{
           backgroundColor: theme.navBg,
           borderColor: theme.navBorder,
         }}
-        className="border-t px-2 py-2 flex-row justify-around items-center shadow-lg"
+        className="border-t px-6 py-2.5 flex-row justify-around items-center shadow-lg"
       >
         {[
           { id: 'matches', label: 'Matches', icon: 'baseball', iconOutline: 'baseball-outline' },
-          { id: 'ipl', label: 'IPL 2025', icon: 'trophy', iconOutline: 'trophy-outline' },
-          { id: 'scorer', label: 'Live Scorer', icon: 'radio', iconOutline: 'radio-outline' },
-          { id: 'scorecard', label: 'Scorecard', icon: 'document-text', iconOutline: 'document-text-outline' },
-          { id: 'history', label: 'History', icon: 'time', iconOutline: 'time-outline' },
+          { id: 'ipl', label: 'IPL Hub', icon: 'trophy', iconOutline: 'trophy-outline' },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -71,15 +57,15 @@ function MainApp() {
             >
               <Ionicons
                 name={isActive ? tab.icon : tab.iconOutline}
-                size={22}
+                size={24}
                 color={isActive ? theme.navActive : theme.navInactive}
               />
               <Text
                 style={{
                   color: isActive ? theme.navActive : theme.navInactive,
-                  fontWeight: isActive ? '900' : '500',
+                  fontWeight: isActive ? '900' : '600',
                 }}
-                className="text-[10px] mt-0.5 tracking-tight"
+                className="text-xs mt-0.5 tracking-tight"
               >
                 {tab.label}
               </Text>
@@ -88,22 +74,10 @@ function MainApp() {
         })}
       </View>
 
-      {/* New Match Modal */}
-      <NewMatchModal
-        visible={newMatchModalVisible}
-        onClose={() => setNewMatchModalVisible(false)}
-      />
-
       {/* Server Config Modal */}
       <ServerConfigModal
         visible={serverModalVisible}
         onClose={() => setServerModalVisible(false)}
-      />
-
-      {/* Match Result / Innings Break Modal */}
-      <MatchResultModal
-        onOpenScorecard={() => setActiveTab('scorecard')}
-        onOpenNewMatch={() => setNewMatchModalVisible(true)}
       />
     </SafeAreaView>
   );
@@ -113,9 +87,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <CricketProvider>
-          <MainApp />
-        </CricketProvider>
+        <MainApp />
       </ThemeProvider>
     </SafeAreaProvider>
   );

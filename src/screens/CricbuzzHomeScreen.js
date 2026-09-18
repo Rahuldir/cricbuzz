@@ -39,7 +39,11 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
   const [matchCenterVisible, setMatchCenterVisible] = useState(false);
   const [serverModalVisible, setServerModalVisible] = useState(false);
 
-  const fetchAllData = useCallback(async () => {
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  const fetchAllData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const [liveRes, upRes, compRes] = await Promise.all([
         getInProgressFixtures(10),
@@ -53,6 +57,8 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
 
       const anyLiveApi = liveRes.isLiveApi || upRes.isLiveApi || compRes.isLiveApi;
       setIsLiveApiActive(anyLiveApi);
+      setLastUpdated(new Date());
+      setElapsedSec(0);
     } catch (err) {
       console.warn('Fetch error:', err);
     } finally {
@@ -61,8 +67,24 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
     }
   }, []);
 
+  // Initial fetch + 30s auto-polling interval
   useEffect(() => {
     fetchAllData();
+
+    // Auto-polling interval: re-calls API every 30 seconds
+    const pollTimer = setInterval(() => {
+      fetchAllData(true);
+    }, 30000);
+
+    // Elapsed timer: updates seconds since last sync every 5 seconds
+    const elapsedTimer = setInterval(() => {
+      setElapsedSec((prev) => prev + 5);
+    }, 5000);
+
+    return () => {
+      clearInterval(pollTimer);
+      clearInterval(elapsedTimer);
+    };
   }, [fetchAllData]);
 
   const onRefresh = () => {
@@ -82,6 +104,8 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
   else if (activeSubTab === 'completed') displayedFixtures = completedFixtures;
   else displayedFixtures = [...liveFixtures, ...upcomingFixtures, ...completedFixtures];
 
+  const elapsedText = elapsedSec < 8 ? 'Just now' : elapsedSec < 60 ? `${elapsedSec}s ago` : `${Math.floor(elapsedSec / 60)}m ago`;
+
   return (
     <View style={{ backgroundColor: theme.bg }} className="flex-1">
       {/* Top API status bar */}
@@ -95,23 +119,36 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
         <View className="flex-row items-center space-x-1.5">
           <View
             style={{ backgroundColor: isLiveApiActive ? '#10B981' : '#F59E0B' }}
-            className="w-2 h-2 rounded-full mr-1.5"
+            className="w-2 h-2 rounded-full mr-1.5 animate-pulse"
           />
           <Text style={{ color: theme.textSecondary }} className="text-[11px] font-semibold">
-            {isLiveApiActive ? 'Connected to API Server' : 'Cricbuzz Live Data (Ready)'}
+            {isLiveApiActive ? `Live API Synced • ${elapsedText}` : `Cricbuzz Live • ${elapsedText}`}
           </Text>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setServerModalVisible(true)}
-          className="flex-row items-center py-0.5 px-2 rounded-md"
-          style={{ backgroundColor: theme.accent + '20' }}
-        >
-          <Ionicons name="settings-outline" size={12} color={theme.accent} style={{ marginRight: 3 }} />
-          <Text style={{ color: theme.accent }} className="text-[11px] font-bold">
-            API Config
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center space-x-2">
+          <TouchableOpacity
+            onPress={onRefresh}
+            className="flex-row items-center py-0.5 px-2 rounded-md mr-1.5"
+            style={{ backgroundColor: theme.accent + '20' }}
+          >
+            <Ionicons name="refresh" size={11} color={theme.accent} style={{ marginRight: 3 }} />
+            <Text style={{ color: theme.accent }} className="text-[11px] font-bold">
+              Sync
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setServerModalVisible(true)}
+            className="flex-row items-center py-0.5 px-2 rounded-md"
+            style={{ backgroundColor: theme.inputBg }}
+          >
+            <Ionicons name="settings-outline" size={11} color={theme.textMuted} style={{ marginRight: 3 }} />
+            <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
+              Config
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Segment Tabs (Live, Upcoming, Recent, All) */}

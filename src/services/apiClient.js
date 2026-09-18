@@ -48,7 +48,7 @@ class ApiClient {
     this.addRequestInterceptor(async (config) => {
       const cleanEndpoint = config.endpoint.replace(/^\/+/, '');
       const fullUrl = `${this.baseUrl}/${cleanEndpoint}`;
-      
+
       const enrichedConfig = {
         ...config,
         url: fullUrl,

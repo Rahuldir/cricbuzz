@@ -523,15 +523,15 @@ export async function getIplSchedule() {
   return { schedule: [], isLiveApi: false };
 }
 
-export async function getIplPointTable() {
+export async function getIplPointTable(requestedYear = null) {
   try {
     const res = await postApi('iplPointTable', {});
     const rawData = res.data?.data;
     if (rawData) {
-      // Find latest year from object keys (e.g. 2024)
       const years = Object.keys(rawData).sort();
       const latestYear = years[years.length - 1] || '2024';
-      const tableData = rawData[latestYear] || [];
+      const yearToUse = requestedYear && rawData[requestedYear] ? requestedYear : latestYear;
+      const tableData = rawData[yearToUse] || [];
 
       if (Array.isArray(tableData) && tableData.length > 0) {
         const mapped = tableData.map((item, idx) => ({
@@ -546,7 +546,7 @@ export async function getIplPointTable() {
           points: item.points ?? (item.wins ? item.wins * 2 : 0),
           form: item.recentForm || ['W', 'L', 'W', 'W', 'L'],
         }));
-        return { pointsTable: mapped, year: latestYear, allYears: years, isLiveApi: true };
+        return { pointsTable: mapped, year: yearToUse, allYears: years.reverse(), isLiveApi: true };
       }
     }
   } catch (err) {
