@@ -8,27 +8,20 @@ import Header from './src/components/Header';
 import CricbuzzHomeScreen from './src/screens/CricbuzzHomeScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
 import SeriesScreen from './src/screens/SeriesScreen';
-import VideosScreen from './src/screens/VideosScreen';
 import NewsScreen from './src/screens/NewsScreen';
-import CricbuzzDrawerModal from './src/components/CricbuzzDrawerModal';
-import LoginModal from './src/components/LoginModal';
-import ServerConfigModal from './src/components/ServerConfigModal';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 function MainApp() {
   const { theme, isDarkMode } = useTheme();
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'matches' | 'series' | 'videos' | 'news'
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'matches' | 'series' | 'news' | 'settings'
   const [seriesInitialSubTab, setSeriesInitialSubTab] = useState('table');
-
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [loginVisible, setLoginVisible] = useState(false);
-  const [serverModalVisible, setServerModalVisible] = useState(false);
 
   const tabs = [
     { id: 'home', label: 'Home', icon: 'home', iconOutline: 'home-outline' },
     { id: 'matches', label: 'Matches', icon: 'baseball', iconOutline: 'baseball-outline' },
     { id: 'series', label: 'Series', icon: 'trophy', iconOutline: 'trophy-outline' },
-    { id: 'videos', label: 'Videos', icon: 'play-circle', iconOutline: 'play-circle-outline' },
     { id: 'news', label: 'News', icon: 'newspaper', iconOutline: 'newspaper-outline' },
+    { id: 'settings', label: 'Settings', icon: 'settings', iconOutline: 'settings-outline' },
   ];
 
   const handleNavigateToTab = (tabId, subTab) => {
@@ -45,11 +38,8 @@ function MainApp() {
         backgroundColor={theme.headerBg}
       />
 
-      {/* Official Cricbuzz Header (Hamburger, Logo, Log In) */}
-      <Header
-        onOpenMenu={() => setDrawerVisible(true)}
-        onOpenLogin={() => setLoginVisible(true)}
-      />
+      {/* Clean Cricbuzz Header (No Login, No Sidebar) */}
+      <Header />
 
       {/* Active Tab Screen */}
       <View style={{ backgroundColor: theme.bg }} className="flex-1">
@@ -60,11 +50,11 @@ function MainApp() {
         {activeTab === 'series' && (
           <SeriesScreen initialSubTab={seriesInitialSubTab} key={seriesInitialSubTab} />
         )}
-        {activeTab === 'videos' && <VideosScreen />}
         {activeTab === 'news' && <NewsScreen />}
+        {activeTab === 'settings' && <SettingsScreen />}
       </View>
 
-      {/* Official Cricbuzz 5-Tab Bottom Navigation Bar */}
+      {/* Cricbuzz 5-Tab Bottom Navigation Bar with Settings Screen */}
       <View
         style={{
           backgroundColor: theme.navBg,
@@ -110,26 +100,6 @@ function MainApp() {
           );
         })}
       </View>
-
-      {/* Slide-out Drawer Menu */}
-      <CricbuzzDrawerModal
-        visible={drawerVisible}
-        onClose={() => setDrawerVisible(false)}
-        onNavigate={(tabId) => handleNavigateToTab(tabId)}
-        onOpenServerConfig={() => setServerModalVisible(true)}
-      />
-
-      {/* Cricbuzz Login Modal */}
-      <LoginModal
-        visible={loginVisible}
-        onClose={() => setLoginVisible(false)}
-      />
-
-      {/* Server Config Modal */}
-      <ServerConfigModal
-        visible={serverModalVisible}
-        onClose={() => setServerModalVisible(false)}
-      />
     </SafeAreaView>
   );
 }
