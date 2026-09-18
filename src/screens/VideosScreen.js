@@ -7,6 +7,7 @@ import {
   Image,
   RefreshControl,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -157,29 +158,34 @@ export default function VideosScreen() {
             activeOpacity={0.88}
           >
             {/* Video Thumbnail */}
-            <View className="relative w-full h-48 bg-slate-800 justify-center items-center">
+            <View style={{ width: '100%', height: 192, backgroundColor: '#1E293B', position: 'relative', overflow: 'hidden' }}>
               <Image
                 source={{ uri: video.imageUrl }}
-                className="w-full h-full"
+                style={StyleSheet.absoluteFillObject}
                 resizeMode="cover"
               />
               {/* Dark gradient overlay */}
-              <View className="absolute inset-0 bg-black/35" />
+              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
 
               {/* Tag in top left */}
-              <View className="absolute top-3 left-3 bg-red-600 px-2.5 py-0.5 rounded">
+              <View className="absolute top-3 left-3 bg-red-600 px-2.5 py-0.5 rounded z-10">
                 <Text className="text-white font-black text-[10px] tracking-wider uppercase">
                   {video.tag}
                 </Text>
               </View>
 
-              {/* Play Button Overlay */}
-              <View className="w-14 h-14 rounded-full bg-black/60 border-2 border-white/80 items-center justify-center shadow-lg">
-                <Ionicons name="play" size={26} color="#FFFFFF" style={{ marginLeft: 3 }} />
+              {/* Play Button Overlay centered */}
+              <View
+                style={[StyleSheet.absoluteFillObject, { justifyContent: 'center', alignItems: 'center' }]}
+                pointerEvents="none"
+              >
+                <View className="w-14 h-14 rounded-full bg-black/60 border-2 border-white/80 items-center justify-center shadow-lg">
+                  <Ionicons name="play" size={26} color="#FFFFFF" style={{ marginLeft: 3 }} />
+                </View>
               </View>
 
               {/* Duration Badge bottom right */}
-              <View className="absolute bottom-2.5 right-2.5 bg-black/80 px-2 py-0.5 rounded">
+              <View className="absolute bottom-2.5 right-2.5 bg-black/80 px-2 py-0.5 rounded z-10">
                 <Text className="text-white font-black text-xs">
                   {video.duration}
                 </Text>

@@ -20,7 +20,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
 
   const loadScorecard = async () => {
     setLoading(true);
-    const res = await getScorecard(fixture?.fixtureId || 10);
+    const res = await getScorecard(fixture?.fixtureId || 10, fixture);
     setScorecardData(res.scorecard);
     setLoading(false);
   };
@@ -298,32 +298,41 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                     </View>
                   </View>
 
-                  {(scorecardData?.commentary || []).map((comm, cIdx) => {
-                    let typeColor = theme.textSecondary;
-                    if (comm.type === 'wicket') typeColor = theme.wicketBadge;
-                    else if (comm.type === 'four') typeColor = theme.fourBadge;
-                    else if (comm.type === 'six') typeColor = theme.sixBadge;
-                    else if (comm.type === 'extra') typeColor = theme.extraBadge;
+                  {(scorecardData?.commentary && scorecardData.commentary.length > 0) ? (
+                    scorecardData.commentary.map((comm, cIdx) => {
+                      let typeColor = theme.textSecondary;
+                      if (comm.type === 'wicket') typeColor = theme.wicketBadge;
+                      else if (comm.type === 'four') typeColor = theme.fourBadge;
+                      else if (comm.type === 'six') typeColor = theme.sixBadge;
+                      else if (comm.type === 'extra') typeColor = theme.extraBadge;
 
-                    return (
-                      <View
-                        key={cIdx}
-                        className="py-2.5 border-b flex-row"
-                        style={{ borderColor: theme.cardBorderSubtle }}
-                      >
-                        <View className="w-11 mr-2 pt-0.5">
-                          <Text style={{ color: theme.accent }} className="font-bold text-xs font-mono">
-                            {comm.over}
-                          </Text>
+                      return (
+                        <View
+                          key={cIdx}
+                          className="py-2.5 border-b flex-row"
+                          style={{ borderColor: theme.cardBorderSubtle }}
+                        >
+                          <View className="w-11 mr-2 pt-0.5">
+                            <Text style={{ color: theme.accent }} className="font-bold text-xs font-mono">
+                              {comm.over}
+                            </Text>
+                          </View>
+                          <View className="flex-1">
+                            <Text style={{ color: theme.text }} className="text-xs leading-5">
+                              {comm.text}
+                            </Text>
+                          </View>
                         </View>
-                        <View className="flex-1">
-                          <Text style={{ color: theme.text }} className="text-xs leading-5">
-                            {comm.text}
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <View className="py-6 items-center justify-center">
+                      <Ionicons name="chatbubbles-outline" size={28} color={theme.textMuted} style={{ marginBottom: 6 }} />
+                      <Text style={{ color: theme.textMuted }} className="text-xs font-semibold text-center">
+                        Live ball-by-ball commentary is not available for this fixture.
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             )}
@@ -331,146 +340,163 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
             {/* 2. FULL SCORECARD TAB */}
             {activeTab === 'scorecard' && (
               <View className="space-y-3 pb-8">
-                {/* Innings selector tabs */}
-                {scorecardData?.innings && scorecardData.innings.length > 1 && (
-                  <View className="flex-row bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl mb-1">
-                    {scorecardData.innings.map((inn) => (
-                      <TouchableOpacity
-                        key={inn.inningNumber}
-                        onPress={() => setSelectedInningTab(inn.inningNumber)}
-                        style={{
-                          backgroundColor: selectedInningTab === inn.inningNumber ? theme.accent : 'transparent',
-                        }}
-                        className="flex-1 py-1.5 rounded-lg items-center"
-                      >
-                        <Text
-                          style={{
-                            color: selectedInningTab === inn.inningNumber ? '#FFFFFF' : theme.textSecondary,
-                            fontWeight: selectedInningTab === inn.inningNumber ? 'bold' : 'normal',
-                          }}
-                          className="text-xs"
-                        >
-                          {inn.teamShort} ({inn.runs}/{inn.wickets})
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-
-                {/* Batting Card */}
-                <View
-                  style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-                  className="p-3.5 rounded-2xl border shadow-sm"
-                >
-                  <View className="flex-row justify-between pb-2 border-b" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase">
-                      Batting - {currentInning?.teamName}
-                    </Text>
-                    <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
-                      R (B) • 4s • 6s • SR
-                    </Text>
-                  </View>
-
-                  {currentInning?.batting?.map((b, idx) => (
-                    <View
-                      key={idx}
-                      className="py-2 border-b flex-row justify-between items-center"
-                      style={{ borderColor: theme.cardBorderSubtle }}
-                    >
-                      <View className="flex-1 mr-2">
-                        <Text style={{ color: theme.text }} className="font-bold text-xs">
-                          {b.name}
-                        </Text>
-                        <Text style={{ color: theme.textMuted }} className="text-[10px] mt-0.5">
-                          {b.status}
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center space-x-2">
-                        <Text style={{ color: theme.text }} className="font-black text-xs w-10 text-right">
-                          {b.runs} <Text style={{ color: theme.textMuted }} className="font-normal text-[10px]">({b.balls})</Text>
-                        </Text>
-                        <Text style={{ color: theme.textSecondary }} className="text-xs w-6 text-center">{b.fours}</Text>
-                        <Text style={{ color: theme.textSecondary }} className="text-xs w-6 text-center">{b.sixes}</Text>
-                        <Text style={{ color: theme.accent }} className="text-xs font-bold w-10 text-right">{b.sr}</Text>
-                      </View>
-                    </View>
-                  ))}
-
-                  {/* Extras and Total */}
-                  <View className="pt-2.5 pb-1 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.textSecondary }} className="text-xs font-medium">Extras</Text>
-                    <Text style={{ color: theme.text }} className="text-xs font-bold">
-                      {currentInning?.extras?.total || 0} (b {currentInning?.extras?.byes || 0}, lb {currentInning?.extras?.legByes || 0}, wd {currentInning?.extras?.wides || 0}, nb {currentInning?.extras?.noBalls || 0})
-                    </Text>
-                  </View>
-                  <View className="pt-2 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.text }} className="text-sm font-extrabold">Total Score</Text>
-                    <Text style={{ color: theme.accent }} className="text-base font-black">
-                      {currentInning?.runs}/{currentInning?.wickets} <Text style={{ color: theme.textMuted }} className="text-xs font-normal">({currentInning?.overs} ov)</Text>
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Bowling Card */}
-                <View
-                  style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-                  className="p-3.5 rounded-2xl border shadow-sm"
-                >
-                  <View className="flex-row justify-between pb-2 border-b" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase">
-                      Bowling
-                    </Text>
-                    <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
-                      O • M • R • W • ECO
-                    </Text>
-                  </View>
-
-                  {currentInning?.bowling?.map((bw, idx) => (
-                    <View
-                      key={idx}
-                      className="py-2 border-b flex-row justify-between items-center"
-                      style={{ borderColor: theme.cardBorderSubtle }}
-                    >
-                      <Text style={{ color: theme.text }} className="font-bold text-xs flex-1">
-                        {bw.name}
-                      </Text>
-                      <View className="flex-row items-center space-x-2">
-                        <Text style={{ color: theme.textSecondary }} className="text-xs w-7 text-center">{bw.overs}</Text>
-                        <Text style={{ color: theme.textSecondary }} className="text-xs w-5 text-center">{bw.maidens}</Text>
-                        <Text style={{ color: theme.textSecondary }} className="text-xs w-7 text-center">{bw.runs}</Text>
-                        <Text style={{ color: theme.accent }} className="text-xs font-extrabold w-6 text-center">{bw.wickets}</Text>
-                        <Text style={{ color: theme.text }} className="text-xs font-mono w-10 text-right">{bw.economy}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Fall of Wickets */}
-                {currentInning?.fallOfWickets && currentInning.fallOfWickets.length > 0 && (
+                {(!currentInning || !scorecardData?.innings || scorecardData.innings.length === 0) ? (
                   <View
                     style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-                    className="p-3.5 rounded-2xl border shadow-sm"
+                    className="p-6 rounded-2xl border items-center justify-center my-2 shadow-xs"
                   >
-                    <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase mb-2">
-                      Fall of Wickets
+                    <Ionicons name="document-text-outline" size={38} color={theme.textMuted} style={{ marginBottom: 10 }} />
+                    <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center mb-1">
+                      No Scorecard Available
                     </Text>
-                    <View className="flex-row flex-wrap gap-2">
-                      {currentInning.fallOfWickets.map((fow, idx) => (
+                    <Text style={{ color: theme.textMuted }} className="text-xs text-center leading-relaxed">
+                      Detailed scorecard data has not been recorded in the live API for this fixture yet.
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {/* Innings selector tabs */}
+                    {scorecardData?.innings && scorecardData.innings.length > 1 && (
+                      <View className="flex-row bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl mb-1">
+                        {scorecardData.innings.map((inn) => (
+                          <TouchableOpacity
+                            key={inn.inningNumber}
+                            onPress={() => setSelectedInningTab(inn.inningNumber)}
+                            style={{
+                              backgroundColor: selectedInningTab === inn.inningNumber ? theme.accent : 'transparent',
+                            }}
+                            className="flex-1 py-1.5 rounded-lg items-center"
+                          >
+                            <Text
+                              style={{
+                                color: selectedInningTab === inn.inningNumber ? '#FFFFFF' : theme.textSecondary,
+                                fontWeight: selectedInningTab === inn.inningNumber ? 'bold' : 'normal',
+                              }}
+                              className="text-xs"
+                            >
+                              {inn.teamShort} ({inn.runs}/{inn.wickets})
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Batting Card */}
+                    <View
+                      style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                      className="p-3.5 rounded-2xl border shadow-sm"
+                    >
+                      <View className="flex-row justify-between pb-2 border-b" style={{ borderColor: theme.divider }}>
+                        <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase">
+                          Batting - {currentInning?.teamName}
+                        </Text>
+                        <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
+                          R (B) • 4s • 6s • SR
+                        </Text>
+                      </View>
+
+                      {currentInning?.batting?.map((b, idx) => (
                         <View
                           key={idx}
-                          style={{ backgroundColor: theme.inputBg, borderColor: theme.cardBorder }}
-                          className="px-2.5 py-1.5 rounded-lg border mr-2 mb-2"
+                          className="py-2 border-b flex-row justify-between items-center"
+                          style={{ borderColor: theme.cardBorderSubtle }}
                         >
-                          <Text style={{ color: theme.text }} className="text-xs font-bold">
-                            {fow.runs}/{fow.wicket}
+                          <View className="flex-1 mr-2">
+                            <Text style={{ color: theme.text }} className="font-bold text-xs">
+                              {b.name}
+                            </Text>
+                            <Text style={{ color: theme.textMuted }} className="text-[10px] mt-0.5">
+                              {b.status}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center space-x-2">
+                            <Text style={{ color: theme.text }} className="font-black text-xs w-10 text-right">
+                              {b.runs} <Text style={{ color: theme.textMuted }} className="font-normal text-[10px]">({b.balls})</Text>
+                            </Text>
+                            <Text style={{ color: theme.textSecondary }} className="text-xs w-6 text-center">{b.fours}</Text>
+                            <Text style={{ color: theme.textSecondary }} className="text-xs w-6 text-center">{b.sixes}</Text>
+                            <Text style={{ color: theme.accent }} className="text-xs font-bold w-10 text-right">{b.sr}</Text>
+                          </View>
+                        </View>
+                      ))}
+
+                      {/* Extras and Total */}
+                      <View className="pt-2.5 pb-1 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
+                        <Text style={{ color: theme.textSecondary }} className="text-xs font-medium">Extras</Text>
+                        <Text style={{ color: theme.text }} className="text-xs font-bold">
+                          {currentInning?.extras?.total || 0} (b {currentInning?.extras?.byes || 0}, lb {currentInning?.extras?.legByes || 0}, wd {currentInning?.extras?.wides || 0}, nb {currentInning?.extras?.noBalls || 0})
+                        </Text>
+                      </View>
+                      <View className="pt-2 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
+                        <Text style={{ color: theme.text }} className="text-sm font-extrabold">Total Score</Text>
+                        <Text style={{ color: theme.accent }} className="text-base font-black">
+                          {currentInning?.runs}/{currentInning?.wickets} <Text style={{ color: theme.textMuted }} className="text-xs font-normal">({currentInning?.overs} ov)</Text>
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Bowling Card */}
+                    <View
+                      style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                      className="p-3.5 rounded-2xl border shadow-sm"
+                    >
+                      <View className="flex-row justify-between pb-2 border-b" style={{ borderColor: theme.divider }}>
+                        <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase">
+                          Bowling
+                        </Text>
+                        <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
+                          O • M • R • W • ECO
+                        </Text>
+                      </View>
+
+                      {currentInning?.bowling?.map((bw, idx) => (
+                        <View
+                          key={idx}
+                          className="py-2 border-b flex-row justify-between items-center"
+                          style={{ borderColor: theme.cardBorderSubtle }}
+                        >
+                          <Text style={{ color: theme.text }} className="font-bold text-xs flex-1">
+                            {bw.name}
                           </Text>
-                          <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                            {fow.batsman} ({fow.over} ov)
-                          </Text>
+                          <View className="flex-row items-center space-x-2">
+                            <Text style={{ color: theme.textSecondary }} className="text-xs w-7 text-center">{bw.overs}</Text>
+                            <Text style={{ color: theme.textSecondary }} className="text-xs w-5 text-center">{bw.maidens}</Text>
+                            <Text style={{ color: theme.textSecondary }} className="text-xs w-7 text-center">{bw.runs}</Text>
+                            <Text style={{ color: theme.accent }} className="text-xs font-extrabold w-6 text-center">{bw.wickets}</Text>
+                            <Text style={{ color: theme.text }} className="text-xs font-mono w-10 text-right">{bw.economy}</Text>
+                          </View>
                         </View>
                       ))}
                     </View>
-                  </View>
+
+                    {/* Fall of Wickets */}
+                    {currentInning?.fallOfWickets && currentInning.fallOfWickets.length > 0 && (
+                      <View
+                        style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                        className="p-3.5 rounded-2xl border shadow-sm"
+                      >
+                        <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase mb-2">
+                          Fall of Wickets
+                        </Text>
+                        <View className="flex-row flex-wrap gap-2">
+                          {currentInning.fallOfWickets.map((fow, idx) => (
+                            <View
+                              key={idx}
+                              style={{ backgroundColor: theme.inputBg, borderColor: theme.cardBorder }}
+                              className="px-2.5 py-1.5 rounded-lg border mr-2 mb-2"
+                            >
+                              <Text style={{ color: theme.text }} className="text-xs font-bold">
+                                {fow.runs}/{fow.wicket}
+                              </Text>
+                              <Text style={{ color: theme.textMuted }} className="text-[10px]">
+                                {fow.batsman} ({fow.over} ov)
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </>
                 )}
               </View>
             )}
@@ -487,14 +513,14 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                   </Text>
 
                   {[
-                    { label: 'Series', val: scorecardData?.matchInfo?.series || fixture.series },
-                    { label: 'Match', val: scorecardData?.matchInfo?.match || fixture.title },
-                    { label: 'Date', val: scorecardData?.matchInfo?.date || fixture.matchDate || 'Today' },
-                    { label: 'Toss', val: scorecardData?.matchInfo?.toss || fixture.statusNote },
-                    { label: 'Venue', val: scorecardData?.matchInfo?.venue || fixture.venue },
-                    { label: 'Umpires', val: scorecardData?.matchInfo?.umpires || 'Nitin Menon, Chris Gaffaney' },
-                    { label: 'Third Umpire', val: scorecardData?.matchInfo?.thirdUmpire || 'Richard Illingworth' },
-                    { label: 'Match Referee', val: scorecardData?.matchInfo?.matchReferee || 'Javagal Srinath' },
+                    { label: 'Series', val: scorecardData?.matchInfo?.series || fixture.series || 'N/A' },
+                    { label: 'Match', val: scorecardData?.matchInfo?.match || fixture.title || 'N/A' },
+                    { label: 'Date', val: scorecardData?.matchInfo?.date || fixture.matchDate || 'N/A' },
+                    { label: 'Toss', val: scorecardData?.matchInfo?.toss || fixture.statusNote || 'Toss yet to take place' },
+                    { label: 'Venue', val: scorecardData?.matchInfo?.venue || fixture.venue || 'N/A' },
+                    { label: 'Umpires', val: scorecardData?.matchInfo?.umpires || 'N/A' },
+                    { label: 'Third Umpire', val: scorecardData?.matchInfo?.thirdUmpire || 'N/A' },
+                    { label: 'Match Referee', val: scorecardData?.matchInfo?.matchReferee || 'N/A' },
                   ].map((item, idx) => (
                     <View
                       key={idx}

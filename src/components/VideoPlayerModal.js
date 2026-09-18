@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
@@ -62,22 +62,44 @@ export default function VideoPlayerModal({ visible, video, onClose }) {
 
           {/* Loading spinner while buffering */}
           {status === 'loading' && (
-            <View className="absolute inset-0 items-center justify-center">
+            <View
+              style={[StyleSheet.absoluteFillObject, { justifyContent: 'center', alignItems: 'center' }]}
+              pointerEvents="none"
+            >
               <ActivityIndicator size="large" color="#FFFFFF" />
             </View>
           )}
 
-          {/* Tap area with custom Play/Pause button */}
+          {/* Tap area with custom Play/Pause button centered */}
           <TouchableOpacity
             onPress={togglePlayPause}
-            activeOpacity={0.8}
-            className="absolute inset-0 items-center justify-center"
+            activeOpacity={0.85}
+            style={[
+              StyleSheet.absoluteFillObject,
+              { justifyContent: 'center', alignItems: 'center' },
+            ]}
           >
             {status !== 'loading' && (
-              <View className="w-16 h-16 rounded-full bg-black/55 border-2 border-white/85 items-center justify-center">
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: 'rgba(0,0,0,0.65)',
+                  borderWidth: 2,
+                  borderColor: 'rgba(255,255,255,0.9)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
                 <Ionicons
                   name={isPlaying ? 'pause' : 'play'}
-                  size={30}
+                  size={32}
                   color="#FFFFFF"
                   style={{ marginLeft: isPlaying ? 0 : 3 }}
                 />
@@ -88,7 +110,18 @@ export default function VideoPlayerModal({ visible, video, onClose }) {
           {/* Close Button */}
           <TouchableOpacity
             onPress={handleClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 items-center justify-center"
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: 'rgba(0,0,0,0.65)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 30,
+            }}
             activeOpacity={0.8}
           >
             <Ionicons name="close" size={20} color="#FFFFFF" />

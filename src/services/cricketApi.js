@@ -504,24 +504,201 @@ export async function getCompletedFixtures(count = 10) {
   return { fixtures: MOCK_COMPLETED_FIXTURES, isLiveApi: false };
 }
 
-export async function getScorecard(fixtureId = 10) {
+export async function getScorecard(fixtureId = 10, matchFixture = null) {
   try {
     const res = await postApi('scorecard', { fixtureId: Number(fixtureId) || 10 });
-    if (res.data?.fixture || res.data?.data) {
-      const fix = res.data.fixture || res.data.data;
-      const merged = {
-        ...MOCK_DETAILED_SCORECARD,
-        fixtureId,
-        matchTitle: fix.homeTeam?.name ? `${fix.homeTeam.name} vs ${fix.awayTeam?.name}` : MOCK_DETAILED_SCORECARD.matchTitle,
-        venue: fix.venue || MOCK_DETAILED_SCORECARD.venue,
-        playerDetails: fix.playerDetails || [],
+    const fix = res.data?.fixture || res.data?.data;
+    if (fix) {
+      const detailsFix = fix.details?.fixture;
+      const playerDetails = fix.playerDetails || [];
+      const playerMap = new Map();
+      playerDetails.forEach((p) => {
+        const pName = p.displayName || p.name || [p.firstName, p.lastName].filter(Boolean).join(' ');
+        if (pName && p.id != null) playerMap.set(p.id, pName);
+      });
+
+      // Officials (Real API only)
+      const officials = detailsFix?.officials || [];
+      const onFieldUmpires = officials
+        .filter((o) => o.umpireType === 'OnField')
+        .map((o) => [o.firstName, o.lastName].filter(Boolean).join(' '))
+        .filter(Boolean)
+        .join(', ');
+      const thirdUmpire = officials
+        .filter((o) => o.umpireType === 'Video' || o.umpireType === 'ThirdUmpire')
+        .map((o) => [o.firstName, o.lastName].filter(Boolean).join(' '))
+        .filter(Boolean)
+        .join(', ');
+      const matchReferee = officials
+        .filter((o) => o.umpireType === 'MatchReferee')
+        .map((o) => [o.firstName, o.lastName].filter(Boolean).join(' '))
+        .filter(Boolean)
+        .join(', ');
+
+      // Venue
+      const venueObj = detailsFix?.venue;
+      let venue = matchFixture?.venue || fix.venue || '';
+      if (venueObj) {
+        venue = [venueObj.name, venueObj.city, venueObj.country?.name || venueObj.countryName]
+          .filter(Boolean)
+          .join(', ');
+      }
+
+      // Series & Match Title
+      const compName = detailsFix?.competition?.name || matchFixture?.series || fix.homeTeam?.name || '';
+      const matchTitle = detailsFix?.name || matchFixture?.title || (fix.homeTeam?.name ? `${fix.homeTeam.name} vs ${fix.awayTeam?.name}` : '');
+      const toss = detailsFix?.tossResult || (detailsFix?.tossDecision ? `Elected to ${detailsFix.tossDecision}` : (matchFixture?.statusNote || ''));
+      const result = detailsFix?.resultText || matchFixture?.statusNote || '';
+
+      // Team names
+      let team1Name = matchFixture?.team1?.name || 'Team 1';
+      let team2Name = matchFixture?.team2?.name || 'Team 2';
+      if (compName && (compName.includes(' v ') || compName.includes(' vs '))) {
+        const parts = compName.split(/ v | vs /i);
+        team1Name = parts[0]?.trim() || team1Name;
+        team2Name = parts[1]?.split(/ tests| -| 20/i)[0]?.trim() || team2Name;
+      } else if (fix.homeTeam?.name) {
+        team1Name = fix.homeTeam.name;
+        team2Name = fix.awayTeam?.name || team2Name;
+      }
+
+      const getTeamShort = (name) => {
+        if (!name) return 'T';
+        const words = name.trim().split(/\s+/);
+        if (words.length === 1) return name.slice(0, 3).toUpperCase();
+        return words.map((w) => w[0]).join('').slice(0, 4).toUpperCase();
       };
-      return { scorecard: merged, isLiveApi: true };
+
+      // Real innings from detailsFix.innings or fix.innings
+      const rawInnings = detailsFix?.innings || fix.innings || [];
+      const parsedInnings = rawInnings.map((inn, idx) => {
+        const innNum = inn.inningNumber || idx + 1;
+        const isHome = inn.battingTeamId === (detailsFix?.homeTeamId || 1);
+        const curTeamName = isHome ? team1Name : team2Name;
+        const curTeamShort = isHome
+          ? (matchFixture?.team1?.shortName || getTeamShort(curTeamName))
+          : (matchFixture?.team2?.shortName || getTeamShort(curTeamName));
+
+        const batting = (inn.batsmen || []).map((b) => ({
+          name: playerMap.get(b.playerId) || b.name || `Player ${b.playerId}`,
+          status: b.dismissalText || (b.isBatting ? 'batting *' : (b.isOut ? 'out' : 'not out')),
+          runs: b.runsScored ?? b.runs ?? 0,
+          balls: b.ballsFaced ?? b.balls ?? 0,
+          fours: b.foursScored ?? b.fours ?? 0,
+          sixes: b.sixesScored ?? b.sixes ?? 0,
+          sr: b.strikeRate != null
+            ? Number(b.strikeRate).toFixed(1)
+            : (b.ballsFaced > 0 ? ((b.runsScored / b.ballsFaced) * 100).toFixed(1) : '0.0'),
+        }));
+
+        const bowling = (inn.bowlers || []).map((bw) => ({
+          name: playerMap.get(bw.playerId) || bw.name || `Bowler ${bw.playerId}`,
+          overs: String(bw.oversBowled || '0.0'),
+          maidens: bw.maidensBowled ?? 0,
+          runs: bw.runsConceded ?? 0,
+          wickets: bw.wicketsTaken ?? 0,
+          economy: bw.economy != null ? Number(bw.economy).toFixed(2) : '0.00',
+        }));
+
+        const fallOfWickets = (inn.wickets || []).map((w, wIdx) => ({
+          wicket: w.order || wIdx + 1,
+          runs: w.runs ?? 0,
+          over: String(w.overBallDisplay || ''),
+          batsman: playerMap.get(w.playerId) || `Player ${w.playerId}`,
+        }));
+
+        return {
+          inningNumber: innNum,
+          teamName: curTeamName,
+          teamShort: curTeamShort,
+          runs: inn.runsScored ?? inn.runs ?? 0,
+          wickets: inn.numberOfWicketsFallen ?? inn.wickets ?? 0,
+          overs: String(inn.oversBowled || '0.0'),
+          extras: {
+            total: inn.totalExtras || 0,
+            wides: inn.wideBalls || 0,
+            noBalls: inn.noBalls || 0,
+            byes: inn.byesRuns || 0,
+            legByes: inn.legByesRuns || 0,
+          },
+          batting,
+          bowling,
+          fallOfWickets,
+        };
+      });
+
+      // Format match date
+      let formattedDate = matchFixture?.matchDate || '';
+      if (detailsFix?.startDateTime) {
+        try {
+          const d = new Date(detailsFix.startDateTime);
+          formattedDate = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch {
+          formattedDate = detailsFix.startDateTime;
+        }
+      }
+
+      const scorecard = {
+        fixtureId,
+        matchTitle: matchTitle || 'Match Details',
+        series: compName || 'Cricket Series',
+        venue: venue || 'Cricket Stadium',
+        toss: toss || 'N/A',
+        status: result || (parsedInnings.length > 0 ? 'Match Completed' : 'Upcoming'),
+        result: result || (parsedInnings.length > 0 ? 'Match Details' : 'Upcoming'),
+        crr: parsedInnings[0]?.currentRunRate || '-',
+        rrr: '-',
+        innings: parsedInnings,
+        commentary: [], // Real API only: No fake commentary
+        matchInfo: {
+          match: matchTitle || 'Match Details',
+          series: compName || 'Cricket Series',
+          date: formattedDate || 'N/A',
+          venue: venue || 'Cricket Stadium',
+          toss: toss || 'N/A',
+          umpires: onFieldUmpires || 'N/A',
+          thirdUmpire: thirdUmpire || 'N/A',
+          matchReferee: matchReferee || 'N/A',
+        },
+      };
+
+      return { scorecard, isLiveApi: true };
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.warn('getScorecard error:', err.message);
   }
-  return { scorecard: MOCK_DETAILED_SCORECARD, isLiveApi: false };
+
+  // If matchFixture metadata exists from live API schedule/fixtures, return clean real metadata
+  if (matchFixture) {
+    return {
+      scorecard: {
+        fixtureId,
+        matchTitle: matchFixture.title || `${matchFixture.team1?.name || ''} vs ${matchFixture.team2?.name || ''}`,
+        series: matchFixture.series || 'Cricket Match',
+        venue: matchFixture.venue || 'Cricket Stadium',
+        toss: matchFixture.statusNote || 'Toss yet to take place',
+        status: matchFixture.status || 'Upcoming',
+        result: matchFixture.statusNote || 'Match Scheduled',
+        crr: '-',
+        rrr: '-',
+        innings: [],
+        commentary: [],
+        matchInfo: {
+          match: matchFixture.title || 'Match Details',
+          series: matchFixture.series || 'Cricket Series',
+          date: matchFixture.matchDate || 'Upcoming',
+          venue: matchFixture.venue || 'Cricket Stadium',
+          toss: matchFixture.statusNote || 'Toss yet to take place',
+          umpires: 'N/A',
+          thirdUmpire: 'N/A',
+          matchReferee: 'N/A',
+        },
+      },
+      isLiveApi: false,
+    };
+  }
+
+  return { scorecard: null, isLiveApi: false };
 }
 
 export async function getIplSchedule() {
@@ -569,7 +746,7 @@ export async function getIplPointTable(requestedYear = null) {
           lost: item.losses ?? 0,
           nrr: (item.netRunRate > 0 ? `+${item.netRunRate}` : `${item.netRunRate || '0.00'}`),
           points: item.points ?? (item.wins ? item.wins * 2 : 0),
-          form: item.recentForm || ['W', 'L', 'W', 'W', 'L'],
+          form: item.recentForm || [],
         }));
         return { pointsTable: mapped, year: yearToUse, allYears: years.reverse(), isLiveApi: true };
       }
@@ -586,48 +763,11 @@ export async function getIplPlayoff() {
     const rawData = res.data?.data;
     if (rawData) {
       const playoffImages = rawData.playoffImages || [];
-      const defaultPlayoffs = [
-        {
-          stage: 'Qualifier 1',
-          date: '24 May • 7:30 PM',
-          venue: 'Narendra Modi Stadium, Ahmedabad',
-          team1: 'KKR (Rank 1)',
-          team2: 'SRH (Rank 2)',
-          status: 'Upcoming',
-          note: 'Winner directly advances to Grand Final',
-        },
-        {
-          stage: 'Eliminator',
-          date: '25 May • 7:30 PM',
-          venue: 'Narendra Modi Stadium, Ahmedabad',
-          team1: 'RR (Rank 3)',
-          team2: 'RCB (Rank 4)',
-          status: 'Upcoming',
-          note: 'Loser eliminated, Winner advances to Q2',
-        },
-        {
-          stage: 'Qualifier 2',
-          date: '27 May • 7:30 PM',
-          venue: 'MA Chidambaram Stadium, Chennai',
-          team1: 'Loser of Q1',
-          team2: 'Winner of Eliminator',
-          status: 'Upcoming',
-          note: 'Winner qualifies for Final',
-        },
-        {
-          stage: 'Grand Final',
-          date: '29 May • 7:30 PM',
-          venue: 'MA Chidambaram Stadium, Chennai',
-          team1: 'Winner of Q1',
-          team2: 'Winner of Q2',
-          status: 'Upcoming',
-          note: 'TATA IPL Championship Match 🏆',
-        },
-      ];
-      return { playoffs: defaultPlayoffs, playoffImages, isLiveApi: true };
+      const playoffs = rawData.playoffs || [];
+      return { playoffs, playoffImages, isLiveApi: true };
     }
   } catch (err) {
     console.warn('iplPlayoff fetch err:', err.message);
   }
-  return { playoffs: [], isLiveApi: false };
+  return { playoffs: [], playoffImages: [], isLiveApi: false };
 }

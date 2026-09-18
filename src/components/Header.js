@@ -1,33 +1,71 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Header() {
-  const { theme } = useTheme();
+  const { theme, isDarkMode, toggleTheme } = useTheme();
 
   return (
     <View
-      style={{ backgroundColor: theme.headerBg }}
-      className="px-4 py-3 flex-row items-center justify-center shadow-md relative"
+      style={{
+        backgroundColor: theme.headerBg,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+      }}
+      className="px-4 py-2.5 flex-row items-center justify-between border-b shadow-sm"
     >
-      {/* Centered Official Cricbuzz Logo */}
+      {/* Left: App Logo & Cricbuzz Branding */}
       <View className="flex-row items-center">
-        <View className="w-7 h-7 rounded-full bg-white/20 items-center justify-center mr-2">
-          <Ionicons name="baseball" size={17} color="#FFFFFF" />
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            backgroundColor: 'rgba(255, 255, 255, 0.18)',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.28)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 9,
+          }}
+        >
+          <Ionicons name="baseball" size={19} color="#FFFFFF" />
         </View>
-        <Text className="text-white font-black text-2xl tracking-tighter lowercase">
-          cric<Text className="text-emerald-300 font-black">buzz</Text>
+
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontWeight: '900',
+            fontSize: 22,
+            letterSpacing: -0.8,
+          }}
+        >
+          cric<Text style={{ color: '#6EE7B7', fontWeight: '900' }}>buzz</Text>
         </Text>
       </View>
 
-      {/* Right Live Dot */}
-      <View className="absolute right-4 flex-row items-center">
-        <View className="w-2 h-2 rounded-full bg-emerald-400 mr-1 animate-pulse" />
-        <Text className="text-emerald-200 text-[10px] font-extrabold uppercase tracking-widest">
-          LIVE
-        </Text>
-      </View>
+      {/* Right: Theme Mode Switch */}
+      <TouchableOpacity
+        onPress={toggleTheme}
+        activeOpacity={0.75}
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          backgroundColor: 'rgba(255, 255, 255, 0.16)',
+          borderWidth: 0.8,
+          borderColor: 'rgba(255, 255, 255, 0.25)',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name={isDarkMode ? 'sunny' : 'moon'}
+          size={17}
+          color="#FFFFFF"
+        />
+      </TouchableOpacity>
     </View>
   );
 }

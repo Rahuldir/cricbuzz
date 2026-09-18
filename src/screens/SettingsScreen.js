@@ -25,7 +25,6 @@ export default function SettingsScreen() {
     wifiOnlyVideos,
     soundHaptics,
     favoriteTeam: selectedTeam,
-    language: selectedLang,
   } = settings;
   const setMatchNotifications = (v) => updateSettings({ matchNotifications: v });
   const setWicketAlerts = (v) => updateSettings({ wicketAlerts: v });
@@ -33,14 +32,11 @@ export default function SettingsScreen() {
   const setWifiOnlyVideos = (v) => updateSettings({ wifiOnlyVideos: v });
   const setSoundHaptics = (v) => updateSettings({ soundHaptics: v });
   const setSelectedTeam = (v) => updateSettings({ favoriteTeam: v });
-  const setSelectedLang = (v) => updateSettings({ language: v });
 
   // Cache size is ephemeral, not a persisted preference
   const [cacheSize, setCacheSize] = useState('14.2 MB');
 
   const teams = IPL_TEAMS;
-
-  const languages = ['English', 'हिंदी', 'ગુજરાતી'];
 
   const handleClearCache = () => {
     Alert.alert(
@@ -108,7 +104,7 @@ export default function SettingsScreen() {
                 </View>
               </View>
               <Text style={{ color: theme.textMuted }} className="text-xs mt-0.5">
-                Fav Team: {selectedTeam} • {selectedLang}
+                Fav Team: {selectedTeam} • IPL 2026 Edition
               </Text>
             </View>
           </View>
@@ -338,38 +334,6 @@ export default function SettingsScreen() {
               );
             })}
           </ScrollView>
-
-          {/* App Language */}
-          <Text style={{ color: theme.text }} className="font-extrabold text-sm mb-1">
-            Language
-          </Text>
-          <View className="flex-row space-x-2">
-            {languages.map((lang) => {
-              const isSelected = selectedLang === lang;
-              return (
-                <TouchableOpacity
-                  key={lang}
-                  onPress={() => setSelectedLang(lang)}
-                  style={{
-                    backgroundColor: isSelected ? theme.accent : theme.inputBg,
-                    borderColor: isSelected ? theme.accent : theme.cardBorder,
-                  }}
-                  className="flex-1 py-2 rounded-xl border items-center mr-2"
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={{
-                      color: isSelected ? '#FFFFFF' : theme.text,
-                      fontWeight: isSelected ? '800' : '600',
-                    }}
-                    className="text-xs"
-                  >
-                    {lang}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </View>
 
         {/* 4. DATA & PRIVACY PERMISSIONS */}
