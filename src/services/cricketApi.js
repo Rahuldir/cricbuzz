@@ -9,68 +9,26 @@
 // - POST /iplPlayoff
 
 import { getTeamLogoUrl } from '../utils/flagHelper';
+import { apiClient } from './apiClient';
 
-// Default to user's dsquaretech live API server
-let currentServerUrl = 'https://dsquaretech.com/v1/cricket';
 let isDemoModeForced = false;
 
-export const getServerUrl = () => currentServerUrl;
+export const getServerUrl = () => apiClient.getBaseUrl();
 export const setServerUrl = (url) => {
-  let cleaned = (url || '').trim().replace(/\/+$/, '');
-  // Auto-upgrade http to https for dsquaretech to avoid 301 POST-to-GET drop
-  if (cleaned.includes('dsquaretech.com') && cleaned.startsWith('http://')) {
-    cleaned = cleaned.replace('http://', 'https://');
-  }
-  currentServerUrl = cleaned || 'https://dsquaretech.com/v1/cricket';
+  apiClient.setBaseUrl(url);
 };
 export const isDemoMode = () => isDemoModeForced;
 export const setDemoMode = (enabled) => {
   isDemoModeForced = enabled;
 };
 
-// Safe POST helper with timeout and error handling
-async function postApi(endpoint, body = {}, timeoutMs = 6000) {
+// Safe POST helper calling through apiClient with Request/Response Interceptors
+async function postApi(endpoint, body = {}) {
   if (isDemoModeForced) {
     throw new Error('Demo mode forced');
   }
-
-  const cleanEndpoint = endpoint.replace(/^\/+/, '');
-  const targetUrl = `${currentServerUrl}/${cleanEndpoint}`;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(targetUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timer);
-
-    const text = await response.text();
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      throw new Error(`Invalid JSON response (HTTP ${response.status})`);
-    }
-
-    if (!response.ok || json.status === false) {
-      const errMsg = json?.message || json?.error || `HTTP ${response.status}`;
-      throw new Error(errMsg);
-    }
-
-    return { data: json, isLiveApi: true };
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
-  }
+  const result = await apiClient.post(endpoint, body);
+  return { data: result.data, isLiveApi: true };
 }
 
 // Test connectivity to the given server URL
