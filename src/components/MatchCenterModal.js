@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, ScrollView, ActivityIndicator } fr
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getScorecard } from '../services/cricketApi';
+import { TeamFlag } from '../utils/flagHelper';
 
 export default function MatchCenterModal({ visible, fixture, onClose }) {
   const { theme, isDarkMode } = useTheme();
@@ -92,9 +93,15 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
           {/* Teams and Scores */}
           <View className="space-y-1.5 py-1">
             <View className="flex-row justify-between items-center">
-              <View className="flex-row items-center space-x-2">
-                <Text className="text-base mr-1.5">{fixture.team1?.flag || '🏏'}</Text>
-                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+              <View className="flex-row items-center space-x-2 flex-1 mr-2">
+                <TeamFlag
+                  logo={fixture.team1?.logo}
+                  teamName={fixture.team1?.name}
+                  countryCode={fixture.team1?.shortName}
+                  size={24}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
                   {fixture.team1?.name}
                 </Text>
               </View>
@@ -109,9 +116,15 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
             </View>
 
             <View className="flex-row justify-between items-center">
-              <View className="flex-row items-center space-x-2">
-                <Text className="text-base mr-1.5">{fixture.team2?.flag || '🏏'}</Text>
-                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+              <View className="flex-row items-center space-x-2 flex-1 mr-2">
+                <TeamFlag
+                  logo={fixture.team2?.logo}
+                  teamName={fixture.team2?.name}
+                  countryCode={fixture.team2?.shortName}
+                  size={24}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
                   {fixture.team2?.name}
                 </Text>
               </View>

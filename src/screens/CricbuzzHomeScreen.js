@@ -19,6 +19,7 @@ import MatchCenterModal from '../components/MatchCenterModal';
 import ServerConfigModal from '../components/ServerConfigModal';
 import { MatchCardSkeleton, FeaturedCarouselSkeleton } from '../components/ShimmerSkeleton';
 import EmptyStateView from '../components/EmptyStateView';
+import { TeamFlag } from '../utils/flagHelper';
 
 const { width } = Dimensions.get('window');
 
@@ -239,9 +240,15 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                     {/* Scores */}
                     <View className="py-2.5 space-y-2">
                       <View className="flex-row justify-between items-center">
-                        <View className="flex-row items-center space-x-1.5">
-                          <Text className="text-base mr-1">{item.team1?.flag}</Text>
-                          <Text style={{ color: theme.text }} className="font-bold text-sm">
+                        <View className="flex-row items-center space-x-1.5 flex-1 mr-2">
+                          <TeamFlag
+                            logo={item.team1?.logo}
+                            teamName={item.team1?.name}
+                            countryCode={item.team1?.shortName}
+                            size={22}
+                            style={{ marginRight: 6 }}
+                          />
+                          <Text style={{ color: theme.text }} className="font-bold text-sm flex-1" numberOfLines={1}>
                             {item.team1?.name}
                           </Text>
                         </View>
@@ -254,9 +261,15 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                       </View>
 
                       <View className="flex-row justify-between items-center">
-                        <View className="flex-row items-center space-x-1.5">
-                          <Text className="text-base mr-1">{item.team2?.flag}</Text>
-                          <Text style={{ color: theme.text }} className="font-bold text-sm">
+                        <View className="flex-row items-center space-x-1.5 flex-1 mr-2">
+                          <TeamFlag
+                            logo={item.team2?.logo}
+                            teamName={item.team2?.name}
+                            countryCode={item.team2?.shortName}
+                            size={22}
+                            style={{ marginRight: 6 }}
+                          />
+                          <Text style={{ color: theme.text }} className="font-bold text-sm flex-1" numberOfLines={1}>
                             {item.team2?.name}
                           </Text>
                         </View>
@@ -370,9 +383,15 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                   {/* Teams & Scores */}
                   <View className="py-2.5 space-y-2">
                     <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2">
-                        <Text className="text-base mr-1.5">{match.team1?.flag || '🏏'}</Text>
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
+                        <TeamFlag
+                          logo={match.team1?.logo}
+                          teamName={match.team1?.name}
+                          countryCode={match.team1?.shortName}
+                          size={24}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
                           {match.team1?.name}
                         </Text>
                       </View>
@@ -387,9 +406,15 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                     </View>
 
                     <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2">
-                        <Text className="text-base mr-1.5">{match.team2?.flag || '🏏'}</Text>
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
+                        <TeamFlag
+                          logo={match.team2?.logo}
+                          teamName={match.team2?.name}
+                          countryCode={match.team2?.shortName}
+                          size={24}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
                           {match.team2?.name}
                         </Text>
                       </View>

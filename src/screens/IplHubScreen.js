@@ -16,6 +16,7 @@ import {
 } from '../services/cricketApi';
 import { MatchCardSkeleton, SkeletonBox } from '../components/ShimmerSkeleton';
 import EmptyStateView from '../components/EmptyStateView';
+import { TeamFlag } from '../utils/flagHelper';
 
 export default function IplHubScreen() {
   const { theme } = useTheme();
@@ -193,9 +194,15 @@ export default function IplHubScreen() {
                           </View>
 
                           <View className="flex-1 flex-row items-center ml-1">
-                            <Text className="text-sm mr-1.5">{item.flag || '🏏'}</Text>
-                            <View>
-                              <Text style={{ color: theme.text }} className="text-xs font-extrabold">
+                            <TeamFlag
+                              logo={item.logo}
+                              teamName={item.team}
+                              countryCode={item.shortName}
+                              size={22}
+                              style={{ marginRight: 6 }}
+                            />
+                            <View className="flex-1">
+                              <Text style={{ color: theme.text }} className="text-xs font-extrabold" numberOfLines={1}>
                                 {item.shortName || item.team}
                               </Text>
                               <Text style={{ color: theme.textMuted }} className="text-[9px]" numberOfLines={1}>
@@ -272,20 +279,38 @@ export default function IplHubScreen() {
                     </View>
 
                     <View className="py-3 flex-row justify-between items-center">
-                      <Text style={{ color: theme.text }} className="text-sm font-extrabold flex-1 text-center">
-                        {item.team1}
-                      </Text>
+                      <View className="flex-row items-center justify-center flex-1 space-x-1.5 mr-1">
+                        <TeamFlag
+                          logo={item.team1Logo}
+                          teamName={item.team1}
+                          countryCode={item.team1}
+                          size={24}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center" numberOfLines={1}>
+                          {item.team1}
+                        </Text>
+                      </View>
                       <View
                         style={{ backgroundColor: theme.inputBg }}
-                        className="px-2.5 py-1 rounded-full mx-2"
+                        className="px-2.5 py-1 rounded-full mx-1"
                       >
                         <Text style={{ color: theme.textMuted }} className="text-[10px] font-black">
                           VS
                         </Text>
                       </View>
-                      <Text style={{ color: theme.text }} className="text-sm font-extrabold flex-1 text-center">
-                        {item.team2}
-                      </Text>
+                      <View className="flex-row items-center justify-center flex-1 space-x-1.5 ml-1">
+                        <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center" numberOfLines={1}>
+                          {item.team2}
+                        </Text>
+                        <TeamFlag
+                          logo={item.team2Logo}
+                          teamName={item.team2}
+                          countryCode={item.team2}
+                          size={24}
+                          style={{ marginLeft: 6 }}
+                        />
+                      </View>
                     </View>
 
                     <View className="pt-2 border-t flex-row items-center" style={{ borderColor: theme.divider }}>

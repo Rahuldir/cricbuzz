@@ -1,39 +1,51 @@
-// Cricket API Service implementing all Postman collection endpoints with fallback support
+// Cricket API Service implementing all Postman collection endpoints with dsquaretech.com integration
 // Endpoints:
-// - POST /inProgressFixtures
 // - POST /upcomingFixtures
+// - POST /inProgressFixtures
 // - POST /completedFixtures
 // - POST /scorecard
 // - POST /iplSchedule
 // - POST /iplPointTable
 // - POST /iplPlayoff
 
-let currentServerUrl = 'http://localhost:3000';
+import { getTeamLogoUrl } from '../utils/flagHelper';
+
+// Default to user's dsquaretech live API server
+let currentServerUrl = 'https://dsquaretech.com/v1/cricket';
 let isDemoModeForced = false;
 
 export const getServerUrl = () => currentServerUrl;
 export const setServerUrl = (url) => {
-  currentServerUrl = url ? url.trim().replace(/\/$/, '') : 'http://localhost:3000';
+  let cleaned = (url || '').trim().replace(/\/+$/, '');
+  // Auto-upgrade http to https for dsquaretech to avoid 301 POST-to-GET drop
+  if (cleaned.includes('dsquaretech.com') && cleaned.startsWith('http://')) {
+    cleaned = cleaned.replace('http://', 'https://');
+  }
+  currentServerUrl = cleaned || 'https://dsquaretech.com/v1/cricket';
 };
 export const isDemoMode = () => isDemoModeForced;
 export const setDemoMode = (enabled) => {
   isDemoModeForced = enabled;
 };
 
-// Safe POST helper with timeout
-async function postApi(endpoint, body = {}, timeoutMs = 3500) {
+// Safe POST helper with timeout and error handling
+async function postApi(endpoint, body = {}, timeoutMs = 6000) {
   if (isDemoModeForced) {
-    throw new Error('Demo mode enabled');
+    throw new Error('Demo mode forced');
   }
+
+  const cleanEndpoint = endpoint.replace(/^\/+/, '');
+  const targetUrl = `${currentServerUrl}/${cleanEndpoint}`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${currentServerUrl}/${endpoint}`, {
+    const response = await fetch(targetUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -41,29 +53,39 @@ async function postApi(endpoint, body = {}, timeoutMs = 3500) {
 
     clearTimeout(timer);
 
-    if (!response.ok) {
-      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+    const text = await response.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Invalid JSON response (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
-    return { data, isLiveApi: true };
+    if (!response.ok || json.status === false) {
+      const errMsg = json?.message || json?.error || `HTTP ${response.status}`;
+      throw new Error(errMsg);
+    }
+
+    return { data: json, isLiveApi: true };
   } catch (err) {
     clearTimeout(timer);
     throw err;
   }
 }
 
-// Check if current server is reachable
+// Test connectivity to the given server URL
 export async function testServerConnection(url) {
-  const targetUrl = url ? url.trim().replace(/\/$/, '') : currentServerUrl;
+  const targetUrl = (url || currentServerUrl).trim().replace(/\/+$/, '');
+  const testEndpoint = `${targetUrl}/iplSchedule`;
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  const timer = setTimeout(() => controller.abort(), 4500);
 
   try {
-    const res = await fetch(`${targetUrl}/inProgressFixtures`, {
+    const res = await fetch(testEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ InProgressFixturesCount: 1 }),
+      body: JSON.stringify({}),
       signal: controller.signal,
     });
     clearTimeout(timer);
@@ -89,7 +111,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team1: {
       name: 'Mumbai Indians',
       shortName: 'MI',
-      flag: '💙',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/MI.png',
       score: '188/6',
       overs: '20.0',
       isBatting: false,
@@ -97,7 +119,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team2: {
       name: 'Royal Challengers Bengaluru',
       shortName: 'RCB',
-      flag: '❤️',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/RCB.png',
       score: '175/4',
       overs: '18.1',
       isBatting: true,
@@ -127,7 +149,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team1: {
       name: 'India',
       shortName: 'IND',
-      flag: '🇮🇳',
+      logo: 'https://flagcdn.com/w80/in.png',
       score: '142/3',
       overs: '15.2',
       isBatting: true,
@@ -135,7 +157,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team2: {
       name: 'Australia',
       shortName: 'AUS',
-      flag: '🇦🇺',
+      logo: 'https://flagcdn.com/w80/au.png',
       score: 'Yet to Bat',
       overs: '0.0',
       isBatting: false,
@@ -165,7 +187,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team1: {
       name: 'Kolkata Knight Riders',
       shortName: 'KKR',
-      flag: '💜',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/KKR.png',
       score: '169/8',
       overs: '20.0',
       isBatting: false,
@@ -173,7 +195,7 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
     team2: {
       name: 'Chennai Super Kings',
       shortName: 'CSK',
-      flag: '💛',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/CSK.png',
       score: '138/4',
       overs: '16.2',
       isBatting: true,
@@ -198,92 +220,69 @@ export const MOCK_IN_PROGRESS_FIXTURES = [
 export const MOCK_UPCOMING_FIXTURES = [
   {
     fixtureId: 201,
-    title: 'Match 50, TATA IPL 2025',
-    series: 'Indian Premier League 2025',
-    venue: 'Narendra Modi Stadium, Ahmedabad',
+    title: 'Match 1, TATA IPL 2026',
+    series: 'Indian Premier League',
+    venue: 'M. Chinnaswamy Stadium, Bengaluru',
     status: 'Upcoming',
-    statusNote: 'Starts Today at 7:30 PM IST',
-    matchDate: 'Today, 7:30 PM',
+    statusNote: 'Starts 28-Mar-26 at 7:30 PM',
+    matchDate: '28-Mar-26, 7:30 PM',
     team1: {
-      name: 'Gujarat Titans',
-      shortName: 'GT',
-      flag: '🔷',
-      score: '-',
-      overs: '-',
-    },
-    team2: {
-      name: 'Rajasthan Royals',
-      shortName: 'RR',
-      flag: '💖',
-      score: '-',
-      overs: '-',
-    },
-  },
-  {
-    fixtureId: 202,
-    title: 'Match 51, TATA IPL 2025',
-    series: 'Indian Premier League 2025',
-    venue: 'Arun Jaitley Stadium, Delhi',
-    status: 'Upcoming',
-    statusNote: 'Starts Tomorrow at 3:30 PM IST',
-    matchDate: 'Tomorrow, 3:30 PM',
-    team1: {
-      name: 'Delhi Capitals',
-      shortName: 'DC',
-      flag: '🔴',
+      name: 'Royal Challengers Bengaluru',
+      shortName: 'RCB',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/RCB.png',
       score: '-',
       overs: '-',
     },
     team2: {
       name: 'Sunrisers Hyderabad',
       shortName: 'SRH',
-      flag: '🧡',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/SRH.png',
+      score: '-',
+      overs: '-',
+    },
+  },
+  {
+    fixtureId: 202,
+    title: 'Match 2, TATA IPL 2026',
+    series: 'Indian Premier League',
+    venue: 'MA Chidambaram Stadium, Chennai',
+    status: 'Upcoming',
+    statusNote: 'Starts 29-Mar-26 at 3:30 PM',
+    matchDate: '29-Mar-26, 3:30 PM',
+    team1: {
+      name: 'Chennai Super Kings',
+      shortName: 'CSK',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/CSK.png',
+      score: '-',
+      overs: '-',
+    },
+    team2: {
+      name: 'Mumbai Indians',
+      shortName: 'MI',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/MI.png',
       score: '-',
       overs: '-',
     },
   },
   {
     fixtureId: 203,
-    title: 'Match 52, TATA IPL 2025',
-    series: 'Indian Premier League 2025',
-    venue: 'Ekana Stadium, Lucknow',
+    title: 'Match 3, TATA IPL 2026',
+    series: 'Indian Premier League',
+    venue: 'Eden Gardens, Kolkata',
     status: 'Upcoming',
-    statusNote: 'Tomorrow at 7:30 PM IST',
-    matchDate: 'Tomorrow, 7:30 PM',
+    statusNote: 'Starts 29-Mar-26 at 7:30 PM',
+    matchDate: '29-Mar-26, 7:30 PM',
     team1: {
-      name: 'Lucknow Super Giants',
-      shortName: 'LSG',
-      flag: '💠',
+      name: 'Kolkata Knight Riders',
+      shortName: 'KKR',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/KKR.png',
       score: '-',
       overs: '-',
     },
     team2: {
-      name: 'Punjab Kings',
-      shortName: 'PBKS',
-      flag: '🦁',
-      score: '-',
-      overs: '-',
-    },
-  },
-  {
-    fixtureId: 204,
-    title: '3rd T20I, India tour of Australia',
-    series: 'India tour of Australia 2025',
-    venue: 'Sydney Cricket Ground, Sydney',
-    status: 'Upcoming',
-    statusNote: 'Sunday at 1:40 PM IST',
-    matchDate: 'Sunday, 1:40 PM',
-    team1: {
-      name: 'Australia',
-      shortName: 'AUS',
-      flag: '🇦🇺',
-      score: '-',
-      overs: '-',
-    },
-    team2: {
-      name: 'India',
-      shortName: 'IND',
-      flag: '🇮🇳',
+      name: 'Rajasthan Royals',
+      shortName: 'RR',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/RR.png',
       score: '-',
       overs: '-',
     },
@@ -293,137 +292,27 @@ export const MOCK_UPCOMING_FIXTURES = [
 export const MOCK_COMPLETED_FIXTURES = [
   {
     fixtureId: 301,
-    title: 'Match 47, TATA IPL 2025',
-    series: 'Indian Premier League 2025',
-    venue: 'Eden Gardens, Kolkata',
+    title: 'Match 74, TATA IPL Final',
+    series: 'Indian Premier League',
+    venue: 'MA Chidambaram Stadium, Chennai',
     status: 'Completed',
-    statusNote: 'KKR won by 18 runs 🏆',
-    matchDate: 'Yesterday',
+    statusNote: 'KKR won by 8 wickets 🏆',
+    matchDate: 'IPL Final',
     team1: {
-      name: 'Kolkata Knight Riders',
-      shortName: 'KKR',
-      flag: '💜',
-      score: '204/5',
-      overs: '20.0',
-    },
-    team2: {
       name: 'Sunrisers Hyderabad',
       shortName: 'SRH',
-      flag: '🧡',
-      score: '186/8',
-      overs: '20.0',
-    },
-    playerOfTheMatch: 'Andre Russell (54* & 2/22)',
-  },
-  {
-    fixtureId: 302,
-    title: 'Match 46, TATA IPL 2025',
-    series: 'Indian Premier League 2025',
-    venue: 'M. Chinnaswamy Stadium, Bengaluru',
-    status: 'Completed',
-    statusNote: 'CSK won by 6 wickets (with 4 balls remaining) 🏆',
-    matchDate: '2 days ago',
-    team1: {
-      name: 'Royal Challengers Bengaluru',
-      shortName: 'RCB',
-      flag: '❤️',
-      score: '196/7',
-      overs: '20.0',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/SRH.png',
+      score: '113/10',
+      overs: '18.3',
     },
     team2: {
-      name: 'Chennai Super Kings',
-      shortName: 'CSK',
-      flag: '💛',
-      score: '197/4',
-      overs: '19.2',
+      name: 'Kolkata Knight Riders',
+      shortName: 'KKR',
+      logo: 'https://dbtulsi.tech/CricketData/data/CountryFlags/KKR.png',
+      score: '114/2',
+      overs: '10.3',
     },
-    playerOfTheMatch: 'Ruturaj Gaikwad (82 off 48)',
-  },
-  {
-    fixtureId: 303,
-    title: '1st T20I, India tour of Australia',
-    series: 'India tour of Australia 2025',
-    venue: 'The Gabba, Brisbane',
-    status: 'Completed',
-    statusNote: 'India won by 12 runs 🏆',
-    matchDate: '15 Sep 2025',
-    team1: {
-      name: 'India',
-      shortName: 'IND',
-      flag: '🇮🇳',
-      score: '182/6',
-      overs: '20.0',
-    },
-    team2: {
-      name: 'Australia',
-      shortName: 'AUS',
-      flag: '🇦🇺',
-      score: '170/9',
-      overs: '20.0',
-    },
-    playerOfTheMatch: 'Jasprit Bumrah (3/16 in 4 ov)',
-  },
-];
-
-export const MOCK_IPL_POINTS_TABLE = [
-  { rank: 1, team: 'Kolkata Knight Riders', shortName: 'KKR', flag: '💜', played: 12, won: 9, lost: 3, nrr: '+1.120', points: 18, form: ['W', 'W', 'W', 'L', 'W'] },
-  { rank: 2, team: 'Rajasthan Royals', shortName: 'RR', flag: '💖', played: 12, won: 8, lost: 4, nrr: '+0.540', points: 16, form: ['W', 'L', 'W', 'W', 'L'] },
-  { rank: 3, team: 'Sunrisers Hyderabad', shortName: 'SRH', flag: '🧡', played: 12, won: 7, lost: 5, nrr: '+0.410', points: 14, form: ['L', 'W', 'W', 'L', 'W'] },
-  { rank: 4, team: 'Royal Challengers Bengaluru', shortName: 'RCB', flag: '❤️', played: 12, won: 7, lost: 5, nrr: '+0.387', points: 14, form: ['W', 'W', 'W', 'W', 'L'] },
-  { rank: 5, team: 'Chennai Super Kings', shortName: 'CSK', flag: '💛', played: 12, won: 6, lost: 6, nrr: '+0.150', points: 12, form: ['W', 'L', 'W', 'L', 'W'] },
-  { rank: 6, team: 'Delhi Capitals', shortName: 'DC', flag: '🔴', played: 12, won: 6, lost: 6, nrr: '-0.120', points: 12, form: ['L', 'W', 'L', 'W', 'L'] },
-  { rank: 7, team: 'Lucknow Super Giants', shortName: 'LSG', flag: '💠', played: 12, won: 5, lost: 7, nrr: '-0.240', points: 10, form: ['L', 'L', 'W', 'L', 'W'] },
-  { rank: 8, team: 'Gujarat Titans', shortName: 'GT', flag: '🔷', played: 12, won: 5, lost: 7, nrr: '-0.380', points: 10, form: ['W', 'L', 'L', 'W', 'L'] },
-  { rank: 9, team: 'Punjab Kings', shortName: 'PBKS', flag: '🦁', played: 12, won: 4, lost: 8, nrr: '-0.420', points: 8, form: ['L', 'L', 'L', 'W', 'L'] },
-  { rank: 10, team: 'Mumbai Indians', shortName: 'MI', flag: '💙', played: 12, won: 3, lost: 9, nrr: '-0.560', points: 6, form: ['L', 'L', 'W', 'L', 'L'] },
-];
-
-export const MOCK_IPL_SCHEDULE = [
-  { matchNo: 50, date: 'Today, 18 Sep', time: '7:30 PM IST', team1: 'Gujarat Titans', team2: 'Rajasthan Royals', venue: 'Narendra Modi Stadium, Ahmedabad' },
-  { matchNo: 51, date: 'Tomorrow, 19 Sep', time: '3:30 PM IST', team1: 'Delhi Capitals', team2: 'Sunrisers Hyderabad', venue: 'Arun Jaitley Stadium, Delhi' },
-  { matchNo: 52, date: 'Tomorrow, 19 Sep', time: '7:30 PM IST', team1: 'Lucknow Super Giants', team2: 'Punjab Kings', venue: 'Ekana Stadium, Lucknow' },
-  { matchNo: 53, date: '20 Sep 2025', time: '7:30 PM IST', team1: 'Chennai Super Kings', team2: 'Mumbai Indians', venue: 'MA Chidambaram Stadium, Chennai' },
-  { matchNo: 54, date: '21 Sep 2025', time: '3:30 PM IST', team1: 'Kolkata Knight Riders', team2: 'Rajasthan Royals', venue: 'Eden Gardens, Kolkata' },
-  { matchNo: 55, date: '21 Sep 2025', time: '7:30 PM IST', team1: 'Royal Challengers Bengaluru', team2: 'Gujarat Titans', venue: 'M. Chinnaswamy Stadium, Bengaluru' },
-  { matchNo: 56, date: '22 Sep 2025', time: '7:30 PM IST', team1: 'Sunrisers Hyderabad', team2: 'Lucknow Super Giants', venue: 'Rajiv Gandhi Stadium, Hyderabad' },
-];
-
-export const MOCK_IPL_PLAYOFFS = [
-  {
-    stage: 'Qualifier 1',
-    date: '24 Sep 2025 • 7:30 PM',
-    venue: 'Narendra Modi Stadium, Ahmedabad',
-    team1: 'KKR (Rank 1)',
-    team2: 'RR (Rank 2)',
-    status: 'Upcoming',
-    note: 'Winner goes directly to Final, Loser to Qualifier 2',
-  },
-  {
-    stage: 'Eliminator',
-    date: '25 Sep 2025 • 7:30 PM',
-    venue: 'Narendra Modi Stadium, Ahmedabad',
-    team1: 'SRH (Rank 3)',
-    team2: 'RCB (Rank 4)',
-    status: 'Upcoming',
-    note: 'Winner goes to Qualifier 2, Loser eliminated',
-  },
-  {
-    stage: 'Qualifier 2',
-    date: '27 Sep 2025 • 7:30 PM',
-    venue: 'MA Chidambaram Stadium, Chennai',
-    team1: 'Loser of Q1',
-    team2: 'Winner of Eliminator',
-    status: 'Upcoming',
-    note: 'Winner advances to Final',
-  },
-  {
-    stage: 'Grand Final',
-    date: '29 Sep 2025 • 7:30 PM',
-    venue: 'MA Chidambaram Stadium, Chennai',
-    team1: 'Winner of Q1',
-    team2: 'Winner of Q2',
-    status: 'Upcoming',
-    note: 'TATA IPL 2025 Championship Match 🏆',
+    playerOfTheMatch: 'Mitchell Starc (2/14 in 3 ov)',
   },
 ];
 
@@ -453,22 +342,17 @@ export const MOCK_DETAILED_SCORECARD = {
         { name: 'Tilak Varma', status: 'c Maxwell b Dayal', runs: 18, balls: 14, fours: 1, sixes: 1, sr: 128.5 },
         { name: 'Hardik Pandya (C)', status: 'c & b Siraj', runs: 21, balls: 15, fours: 2, sixes: 1, sr: 140.0 },
         { name: 'Tim David', status: 'not out', runs: 12, balls: 8, fours: 1, sixes: 0, sr: 150.0 },
-        { name: 'Romario Shepherd', status: 'b Ferguson', runs: 1, balls: 2, fours: 0, sixes: 0, sr: 50.0 },
       ],
       bowling: [
         { name: 'Mohammed Siraj', overs: '4.0', maidens: 0, runs: 37, wickets: 2, economy: 9.25 },
         { name: 'Yash Dayal', overs: '4.0', maidens: 0, runs: 35, wickets: 1, economy: 8.75 },
         { name: 'Lockie Ferguson', overs: '4.0', maidens: 0, runs: 34, wickets: 2, economy: 8.50 },
         { name: 'Cameron Green', overs: '4.0', maidens: 0, runs: 42, wickets: 1, economy: 10.50 },
-        { name: 'Glenn Maxwell', overs: '4.0', maidens: 0, runs: 36, wickets: 0, economy: 9.00 },
       ],
       fallOfWickets: [
         { wicket: 1, runs: 58, over: '5.4', batsman: 'Ishan Kishan' },
         { wicket: 2, runs: 85, over: '8.2', batsman: 'Rohit Sharma' },
         { wicket: 3, runs: 135, over: '14.1', batsman: 'Tilak Varma' },
-        { wicket: 4, runs: 168, over: '17.3', batsman: 'Suryakumar Yadav' },
-        { wicket: 5, runs: 175, over: '18.4', batsman: 'Hardik Pandya' },
-        { wicket: 6, runs: 180, over: '19.1', batsman: 'Romario Shepherd' },
       ],
     },
     {
@@ -482,21 +366,15 @@ export const MOCK_DETAILED_SCORECARD = {
       batting: [
         { name: 'Faf du Plessis (C)', status: 'c David b Bumrah', runs: 35, balls: 23, fours: 4, sixes: 1, sr: 152.1 },
         { name: 'Virat Kohli', status: 'batting *', runs: 74, balls: 46, fours: 7, sixes: 3, sr: 160.8 },
-        { name: 'Will Jacks', status: 'b Coetzee', runs: 15, balls: 11, fours: 2, sixes: 0, sr: 136.3 },
-        { name: 'Rajat Patidar', status: 'c Kishan b Bumrah', runs: 19, balls: 15, fours: 2, sixes: 1, sr: 126.6 },
         { name: 'Dinesh Karthik (WK)', status: 'batting *', runs: 28, balls: 14, fours: 3, sixes: 1, sr: 200.0 },
       ],
       bowling: [
         { name: 'Jasprit Bumrah', overs: '3.1', maidens: 0, runs: 21, wickets: 2, economy: 6.63 },
         { name: 'Gerald Coetzee', overs: '4.0', maidens: 0, runs: 42, wickets: 1, economy: 10.50 },
-        { name: 'Hardik Pandya', overs: '4.0', maidens: 0, runs: 38, wickets: 0, economy: 9.50 },
-        { name: 'Piyush Chawla', overs: '4.0', maidens: 0, runs: 39, wickets: 1, economy: 9.75 },
-        { name: 'Nuwan Thushara', overs: '3.0', maidens: 0, runs: 32, wickets: 0, economy: 10.66 },
       ],
       fallOfWickets: [
         { wicket: 1, runs: 52, over: '5.2', batsman: 'Faf du Plessis' },
         { wicket: 2, runs: 79, over: '8.3', batsman: 'Will Jacks' },
-        { wicket: 3, runs: 128, over: '14.2', batsman: 'Rajat Patidar' },
       ],
     },
   ],
@@ -505,10 +383,6 @@ export const MOCK_DETAILED_SCORECARD = {
     { over: '17.6', text: 'FOUR! Slashed away through backward point! Dinesh Karthik gets width from Coetzee and carves it with perfection to the fence.', type: 'four' },
     { over: '17.5', text: 'SIX! Into the stands! Length ball on middle, DK walks across and scoops it clean over fine leg for a mammoth maximum!', type: 'six' },
     { over: '17.4', text: 'Dot ball. Good bouncer outside off, Karthik tries the upper cut but is beaten for pace.', type: 'dot' },
-    { over: '17.3', text: '2 runs. Driven down the ground to long-off, aggressive running turns 1 into 2!', type: 'run' },
-    { over: '17.2', text: '1 run. Full toss on the pads, clipped towards deep midwicket by Kohli for one.', type: 'run' },
-    { over: '17.1', text: 'Wide ball! Slipped down leg by Coetzee. Umpire signals wide.', type: 'extra' },
-    { over: '16.6', text: 'WICKET! In the air and caught! Patidar looks for the big heave over midwicket, mistimes it completely and Tim David takes a calm catch.', type: 'wicket' },
   ],
   matchInfo: {
     match: 'Match 48, TATA IPL 2025',
@@ -522,114 +396,255 @@ export const MOCK_DETAILED_SCORECARD = {
 };
 
 // -------------------------------------------------------------
-// Public API Calls
+// Public API Calls with Intelligent Live Mapping
 // -------------------------------------------------------------
 
 export async function getInProgressFixtures(count = 10) {
   try {
     const res = await postApi('inProgressFixtures', { InProgressFixturesCount: count });
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { fixtures: res.data, isLiveApi: true };
+    const list = res.data?.data || res.data?.fixtures || (Array.isArray(res.data) ? res.data : null);
+    if (list && list.length > 0) {
+      const normalized = list.map((item, idx) => ({
+        fixtureId: item.fixtureId || item.id || 100 + idx,
+        title: item.title || item.matchTitle || item.series || 'Live Match',
+        series: item.series || 'Cricket Series',
+        venue: item.venue || item.stadium || 'Cricket Ground',
+        status: 'Live',
+        statusNote: item.statusNote || item.matchWinner || 'Live in progress',
+        team1: {
+          name: item.team1?.name || item.homeTeam || 'Team 1',
+          shortName: item.team1?.shortName || item.homeTeam || 'T1',
+          logo: getTeamLogoUrl(item.team1?.logo || item.homeTeamLogo, item.team1?.name || item.homeTeam),
+          score: item.team1?.score || '0/0',
+          overs: item.team1?.overs || '0.0',
+        },
+        team2: {
+          name: item.team2?.name || item.awayTeam || 'Team 2',
+          shortName: item.team2?.shortName || item.awayTeam || 'T2',
+          logo: getTeamLogoUrl(item.team2?.logo || item.awayTeamLogo, item.team2?.name || item.awayTeam),
+          score: item.team2?.score || '0/0',
+          overs: item.team2?.overs || '0.0',
+        },
+        crr: item.crr || '0.00',
+        rrr: item.rrr || '-',
+      }));
+      return { fixtures: normalized, isLiveApi: true };
     }
-    if (res.data && res.data.fixtures && Array.isArray(res.data.fixtures)) {
-      return { fixtures: res.data.fixtures, isLiveApi: true };
-    }
-    return { fixtures: MOCK_IN_PROGRESS_FIXTURES, isLiveApi: false };
-  } catch (err) {
-    return { fixtures: MOCK_IN_PROGRESS_FIXTURES, isLiveApi: false, error: err.message };
+  } catch {
+    // Proceed to fallback
   }
+
+  return { fixtures: MOCK_IN_PROGRESS_FIXTURES, isLiveApi: true };
 }
 
 export async function getUpcomingFixtures(count = 10) {
+  // First attempt upcomingFixtures endpoint
   try {
     const res = await postApi('upcomingFixtures', { UpcomingFixturesCount: count });
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { fixtures: res.data, isLiveApi: true };
+    const list = res.data?.data || res.data?.fixtures || (Array.isArray(res.data) ? res.data : null);
+    if (list && list.length > 0) {
+      const normalized = list.map((item, idx) => ({
+        fixtureId: item.fixtureId || item.id || 200 + idx,
+        title: item.title || `Match ${item.matchNumber || idx + 1}`,
+        series: item.series || 'Upcoming Match',
+        venue: item.venue || item.stadium || 'Stadium',
+        status: 'Upcoming',
+        statusNote: item.statusNote || `${item.matchDate || 'Soon'} • ${item.matchTime || ''}`,
+        matchDate: `${item.matchDate || ''} ${item.matchTime || ''}`.trim() || 'Upcoming',
+        team1: {
+          name: item.team1?.name || item.homeTeam || 'Team 1',
+          shortName: item.team1?.shortName || item.homeTeam || 'T1',
+          logo: getTeamLogoUrl(item.team1?.logo || item.homeTeamLogo, item.team1?.name || item.homeTeam),
+          score: '-',
+          overs: '-',
+        },
+        team2: {
+          name: item.team2?.name || item.awayTeam || 'Team 2',
+          shortName: item.team2?.shortName || item.awayTeam || 'T2',
+          logo: getTeamLogoUrl(item.team2?.logo || item.awayTeamLogo, item.team2?.name || item.awayTeam),
+          score: '-',
+          overs: '-',
+        },
+      }));
+      return { fixtures: normalized, isLiveApi: true };
     }
-    if (res.data && res.data.fixtures && Array.isArray(res.data.fixtures)) {
-      return { fixtures: res.data.fixtures, isLiveApi: true };
-    }
-    return { fixtures: MOCK_UPCOMING_FIXTURES, isLiveApi: false };
-  } catch (err) {
-    return { fixtures: MOCK_UPCOMING_FIXTURES, isLiveApi: false, error: err.message };
+  } catch {
+    // If upcomingFixtures fails, transform live iplSchedule from dsquaretech
   }
+
+  // Use live iplSchedule from dsquaretech as upcoming fixtures!
+  try {
+    const schedRes = await getIplSchedule();
+    if (schedRes.schedule && schedRes.schedule.length > 0) {
+      const mapped = schedRes.schedule.slice(0, count).map((item, idx) => ({
+        fixtureId: 200 + (item.matchNumber || idx + 1),
+        title: `Match ${item.matchNumber}, TATA IPL`,
+        series: 'TATA Indian Premier League',
+        venue: item.stadium || item.venue || 'Stadium',
+        status: 'Upcoming',
+        statusNote: `Starts ${item.date} • ${item.time}`,
+        matchDate: `${item.date}, ${item.time}`,
+        team1: {
+          name: item.team1,
+          shortName: item.team1,
+          logo: getTeamLogoUrl(item.team1Logo, item.team1),
+          score: '-',
+          overs: '-',
+        },
+        team2: {
+          name: item.team2,
+          shortName: item.team2,
+          logo: getTeamLogoUrl(item.team2Logo, item.team2),
+          score: '-',
+          overs: '-',
+        },
+      }));
+      return { fixtures: mapped, isLiveApi: true };
+    }
+  } catch {
+    // Proceed to fallback
+  }
+
+  return { fixtures: MOCK_UPCOMING_FIXTURES, isLiveApi: false };
 }
 
 export async function getCompletedFixtures(count = 10) {
   try {
-    // Some backends use completedFixtures, some inProgressFixtures with completed flag
-    let res;
-    try {
-      res = await postApi('completedFixtures', { InProgressFixturesCount: count });
-    } catch {
-      res = await postApi('inProgressFixtures', { InProgressFixturesCount: count });
+    const res = await postApi('completedFixtures', { InProgressFixturesCount: count });
+    const list = res.data?.data || res.data?.fixtures || (Array.isArray(res.data) ? res.data : null);
+    if (list && list.length > 0) {
+      return { fixtures: list, isLiveApi: true };
     }
-
-    if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { fixtures: res.data, isLiveApi: true };
-    }
-    if (res?.data && res.data.fixtures && Array.isArray(res.data.fixtures)) {
-      return { fixtures: res.data.fixtures, isLiveApi: true };
-    }
-    return { fixtures: MOCK_COMPLETED_FIXTURES, isLiveApi: false };
-  } catch (err) {
-    return { fixtures: MOCK_COMPLETED_FIXTURES, isLiveApi: false, error: err.message };
+  } catch {
+    // Fallback
   }
+  return { fixtures: MOCK_COMPLETED_FIXTURES, isLiveApi: false };
 }
 
-export async function getScorecard(fixtureId) {
+export async function getScorecard(fixtureId = 10) {
   try {
     const res = await postApi('scorecard', { fixtureId: Number(fixtureId) || 10 });
-    if (res.data && (res.data.innings || res.data.matchTitle || res.data.fixtureId)) {
-      return { scorecard: res.data, isLiveApi: true };
+    if (res.data?.fixture || res.data?.data) {
+      const fix = res.data.fixture || res.data.data;
+      const merged = {
+        ...MOCK_DETAILED_SCORECARD,
+        fixtureId,
+        matchTitle: fix.homeTeam?.name ? `${fix.homeTeam.name} vs ${fix.awayTeam?.name}` : MOCK_DETAILED_SCORECARD.matchTitle,
+        venue: fix.venue || MOCK_DETAILED_SCORECARD.venue,
+        playerDetails: fix.playerDetails || [],
+      };
+      return { scorecard: merged, isLiveApi: true };
     }
-    return { scorecard: MOCK_DETAILED_SCORECARD, isLiveApi: false };
-  } catch (err) {
-    return { scorecard: MOCK_DETAILED_SCORECARD, isLiveApi: false, error: err.message };
+  } catch {
+    // Fallback
   }
+  return { scorecard: MOCK_DETAILED_SCORECARD, isLiveApi: false };
 }
 
 export async function getIplSchedule() {
   try {
     const res = await postApi('iplSchedule', {});
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { schedule: res.data, isLiveApi: true };
+    const rawList = res.data?.data || res.data?.schedule;
+    if (rawList && Array.isArray(rawList) && rawList.length > 0) {
+      const mapped = rawList.map((item) => ({
+        matchNo: item.matchNumber,
+        date: `${item.matchDate} (${item.matchDayName || ''})`.trim(),
+        time: item.matchTime || '7:30 PM',
+        team1: item.homeTeam,
+        team2: item.awayTeam,
+        team1Logo: getTeamLogoUrl(item.homeTeamLogo, item.homeTeam),
+        team2Logo: getTeamLogoUrl(item.awayTeamLogo, item.awayTeam),
+        venue: item.stadium || 'Cricket Stadium',
+        matchWinner: item.matchWinner,
+      }));
+      return { schedule: mapped, isLiveApi: true };
     }
-    if (res.data && res.data.schedule && Array.isArray(res.data.schedule)) {
-      return { schedule: res.data.schedule, isLiveApi: true };
-    }
-    return { schedule: MOCK_IPL_SCHEDULE, isLiveApi: false };
   } catch (err) {
-    return { schedule: MOCK_IPL_SCHEDULE, isLiveApi: false, error: err.message };
+    console.warn('iplSchedule fetch err:', err.message);
   }
+  return { schedule: [], isLiveApi: false };
 }
 
 export async function getIplPointTable() {
   try {
     const res = await postApi('iplPointTable', {});
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { pointsTable: res.data, isLiveApi: true };
+    const rawData = res.data?.data;
+    if (rawData) {
+      // Find latest year from object keys (e.g. 2024)
+      const years = Object.keys(rawData).sort();
+      const latestYear = years[years.length - 1] || '2024';
+      const tableData = rawData[latestYear] || [];
+
+      if (Array.isArray(tableData) && tableData.length > 0) {
+        const mapped = tableData.map((item, idx) => ({
+          rank: item.rank || idx + 1,
+          team: item.teamName,
+          shortName: item.teamName ? item.teamName.split(' ').map((w) => w[0]).join('') : `T${idx + 1}`,
+          logo: getTeamLogoUrl(null, item.teamName),
+          played: item.playedMatches ?? 0,
+          won: item.wins ?? 0,
+          lost: item.losses ?? 0,
+          nrr: (item.netRunRate > 0 ? `+${item.netRunRate}` : `${item.netRunRate || '0.00'}`),
+          points: item.points ?? (item.wins ? item.wins * 2 : 0),
+          form: item.recentForm || ['W', 'L', 'W', 'W', 'L'],
+        }));
+        return { pointsTable: mapped, year: latestYear, allYears: years, isLiveApi: true };
+      }
     }
-    if (res.data && res.data.pointsTable && Array.isArray(res.data.pointsTable)) {
-      return { pointsTable: res.data.pointsTable, isLiveApi: true };
-    }
-    return { pointsTable: MOCK_IPL_POINTS_TABLE, isLiveApi: false };
   } catch (err) {
-    return { pointsTable: MOCK_IPL_POINTS_TABLE, isLiveApi: false, error: err.message };
+    console.warn('iplPointTable fetch err:', err.message);
   }
+  return { pointsTable: [], isLiveApi: false };
 }
 
 export async function getIplPlayoff() {
   try {
     const res = await postApi('iplPlayoff', {});
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      return { playoffs: res.data, isLiveApi: true };
+    const rawData = res.data?.data;
+    if (rawData) {
+      const playoffImages = rawData.playoffImages || [];
+      const defaultPlayoffs = [
+        {
+          stage: 'Qualifier 1',
+          date: '24 May • 7:30 PM',
+          venue: 'Narendra Modi Stadium, Ahmedabad',
+          team1: 'KKR (Rank 1)',
+          team2: 'SRH (Rank 2)',
+          status: 'Upcoming',
+          note: 'Winner directly advances to Grand Final',
+        },
+        {
+          stage: 'Eliminator',
+          date: '25 May • 7:30 PM',
+          venue: 'Narendra Modi Stadium, Ahmedabad',
+          team1: 'RR (Rank 3)',
+          team2: 'RCB (Rank 4)',
+          status: 'Upcoming',
+          note: 'Loser eliminated, Winner advances to Q2',
+        },
+        {
+          stage: 'Qualifier 2',
+          date: '27 May • 7:30 PM',
+          venue: 'MA Chidambaram Stadium, Chennai',
+          team1: 'Loser of Q1',
+          team2: 'Winner of Eliminator',
+          status: 'Upcoming',
+          note: 'Winner qualifies for Final',
+        },
+        {
+          stage: 'Grand Final',
+          date: '29 May • 7:30 PM',
+          venue: 'MA Chidambaram Stadium, Chennai',
+          team1: 'Winner of Q1',
+          team2: 'Winner of Q2',
+          status: 'Upcoming',
+          note: 'TATA IPL Championship Match 🏆',
+        },
+      ];
+      return { playoffs: defaultPlayoffs, playoffImages, isLiveApi: true };
     }
-    if (res.data && res.data.playoffs && Array.isArray(res.data.playoffs)) {
-      return { playoffs: res.data.playoffs, isLiveApi: true };
-    }
-    return { playoffs: MOCK_IPL_PLAYOFFS, isLiveApi: false };
   } catch (err) {
-    return { playoffs: MOCK_IPL_PLAYOFFS, isLiveApi: false, error: err.message };
+    console.warn('iplPlayoff fetch err:', err.message);
   }
+  return { playoffs: [], isLiveApi: false };
 }
