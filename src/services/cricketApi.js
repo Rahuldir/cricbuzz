@@ -249,6 +249,31 @@ export const MOCK_UPCOMING_FIXTURES = [
 
 export const MOCK_COMPLETED_FIXTURES = [
   {
+    fixtureId: 300,
+    title: "4th Quarter Final • Women's Asian Games",
+    series: "Women's Asian Games",
+    format: 'T20I',
+    venue: 'Pingfeng Campus Cricket Field, Hangzhou',
+    status: 'Completed',
+    statusNote: 'India Women won by 8 wkts',
+    matchDate: 'Asian Games QF',
+    team1: {
+      name: 'Japan Women',
+      shortName: 'JPNW',
+      logo: 'https://flagcdn.com/w80/jp.png',
+      score: '57',
+      overs: '19.5',
+    },
+    team2: {
+      name: 'India Women',
+      shortName: 'INDW',
+      logo: 'https://flagcdn.com/w80/in.png',
+      score: '59-2',
+      overs: '5',
+    },
+    playerOfTheMatch: 'Pooja Vastrakar (4/17)',
+  },
+  {
     fixtureId: 301,
     title: 'Match 74, TATA IPL Final',
     series: 'Indian Premier League',

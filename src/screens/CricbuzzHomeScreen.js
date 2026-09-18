@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -16,80 +17,102 @@ import {
   getCompletedFixtures,
 } from '../services/cricketApi';
 import MatchCenterModal from '../components/MatchCenterModal';
-import ServerConfigModal from '../components/ServerConfigModal';
-import { MatchCardSkeleton, FeaturedCarouselSkeleton } from '../components/ShimmerSkeleton';
-import EmptyStateView from '../components/EmptyStateView';
 import { TeamFlag } from '../utils/flagHelper';
 
 const { width } = Dimensions.get('window');
 
-export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
+const FEATURED_VIDEOS_DATA = [
+  {
+    id: 'roko-1',
+    title: 'No debate around Rohit & Kohli; selection is a must: Mohit',
+    duration: '7:06',
+    tag: 'RO-KO STILL TOO GOOD?',
+    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
+  },
+  {
+    id: 'ipl-analysis-2',
+    title: 'How KKR dismantled opponents with aggressive opening burst',
+    duration: '5:48',
+    tag: 'IPL MASTERCLASS',
+    imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b107e775a?w=800&q=80',
+  },
+  {
+    id: 'dhoni-classic-3',
+    title: 'Behind the stumps: The tactical genius of MS Dhoni',
+    duration: '10:14',
+    tag: 'CRICBUZZ RETRO',
+    imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
+  },
+];
+
+const TOP_STORIES_DATA = [
+  {
+    id: 'story-1',
+    title: 'Team India announces preliminary squad for ICC T20 World Cup',
+    timeAgo: '1h ago',
+    source: 'Cricbuzz Staff',
+    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
+  },
+  {
+    id: 'story-2',
+    title: 'Hardik on form: "Every setback teaches you how to rise again"',
+    timeAgo: '3h ago',
+    source: 'Interview',
+    imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&q=80',
+  },
+  {
+    id: 'story-3',
+    title: 'Pitch report: Expect high-scoring thriller in Ahmedabad clash',
+    timeAgo: '5h ago',
+    source: 'Match Preview',
+    imageUrl: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800&q=80',
+  },
+];
+
+export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const { theme } = useTheme();
 
-  const [activeSubTab, setActiveSubTab] = useState('live'); // 'live' | 'upcoming' | 'completed' | 'all'
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const [liveFixtures, setLiveFixtures] = useState([]);
-  const [upcomingFixtures, setUpcomingFixtures] = useState([]);
-  const [completedFixtures, setCompletedFixtures] = useState([]);
-  const [isLiveApiActive, setIsLiveApiActive] = useState(false);
-
+  const [matches, setMatches] = useState([]);
+  const [activeChip, setActiveChip] = useState('All');
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [matchCenterVisible, setMatchCenterVisible] = useState(false);
-  const [serverModalVisible, setServerModalVisible] = useState(false);
 
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-  const [elapsedSec, setElapsedSec] = useState(0);
-
-  const fetchAllData = useCallback(async (isSilent = false) => {
+  const fetchMatches = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
-      const [liveRes, upRes, compRes] = await Promise.all([
-        getInProgressFixtures(10),
-        getUpcomingFixtures(10),
+      const [liveRes, compRes, upRes] = await Promise.all([
+        getInProgressFixtures(5),
         getCompletedFixtures(10),
+        getUpcomingFixtures(5),
       ]);
 
-      setLiveFixtures(liveRes.fixtures || []);
-      setUpcomingFixtures(upRes.fixtures || []);
-      setCompletedFixtures(compRes.fixtures || []);
+      const combined = [
+        ...(compRes.fixtures || []),
+        ...(liveRes.fixtures || []),
+        ...(upRes.fixtures || []),
+      ];
 
-      const anyLiveApi = liveRes.isLiveApi || upRes.isLiveApi || compRes.isLiveApi;
-      setIsLiveApiActive(anyLiveApi);
-      setLastUpdated(new Date());
-      setElapsedSec(0);
+      // Ensure the Asian Games match from screenshot or live matches are shown
+      setMatches(combined);
     } catch (err) {
-      console.warn('Fetch error:', err);
+      console.warn('Matches fetch error:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  // Initial fetch + 30s auto-polling interval
   useEffect(() => {
-    fetchAllData();
-
-    // Auto-polling interval: re-calls API every 30 seconds
-    const pollTimer = setInterval(() => {
-      fetchAllData(true);
-    }, 30000);
-
-    // Elapsed timer: updates seconds since last sync every 5 seconds
-    const elapsedTimer = setInterval(() => {
-      setElapsedSec((prev) => prev + 5);
-    }, 5000);
-
-    return () => {
-      clearInterval(pollTimer);
-      clearInterval(elapsedTimer);
-    };
-  }, [fetchAllData]);
+    fetchMatches();
+    const interval = setInterval(() => fetchMatches(true), 30000);
+    return () => clearInterval(interval);
+  }, [fetchMatches]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchAllData();
+    fetchMatches();
   };
 
   const openFixtureDetail = (fixture) => {
@@ -97,417 +120,322 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
     setMatchCenterVisible(true);
   };
 
-  // Filtered fixtures based on tab
-  let displayedFixtures = [];
-  if (activeSubTab === 'live') displayedFixtures = liveFixtures;
-  else if (activeSubTab === 'upcoming') displayedFixtures = upcomingFixtures;
-  else if (activeSubTab === 'completed') displayedFixtures = completedFixtures;
-  else displayedFixtures = [...liveFixtures, ...upcomingFixtures, ...completedFixtures];
-
-  const elapsedText = elapsedSec < 8 ? 'Just now' : elapsedSec < 60 ? `${elapsedSec}s ago` : `${Math.floor(elapsedSec / 60)}m ago`;
+  const chips = [
+    { id: 'India - Men', label: 'India - Men', icon: 'people' },
+    { id: 'India - Women', label: 'India - Women', icon: 'people' },
+    { id: 'IPL 2024', label: 'IPL 2024', icon: 'trophy' },
+    { id: 'World Cup', label: 'World Cup', icon: 'globe' },
+  ];
 
   return (
     <View style={{ backgroundColor: theme.bg }} className="flex-1">
-      {/* Top API status bar */}
-      <View
-        style={{
-          backgroundColor: isLiveApiActive ? '#065F4620' : theme.statCardBg,
-          borderColor: isLiveApiActive ? '#10B98150' : theme.cardBorder,
-        }}
-        className="mx-4 mt-2 px-3 py-1.5 rounded-xl border flex-row justify-between items-center"
-      >
-        <View className="flex-row items-center space-x-1.5">
-          <View
-            style={{ backgroundColor: isLiveApiActive ? '#10B981' : '#F59E0B' }}
-            className="w-2 h-2 rounded-full mr-1.5 animate-pulse"
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.accent}
+            colors={[theme.accent, '#009270']}
           />
-          <Text style={{ color: theme.textSecondary }} className="text-[11px] font-semibold">
-            {isLiveApiActive ? `Live API Synced • ${elapsedText}` : `Cricbuzz Live • ${elapsedText}`}
-          </Text>
-        </View>
-
-        <View className="flex-row items-center space-x-2">
-          <TouchableOpacity
-            onPress={onRefresh}
-            className="flex-row items-center py-0.5 px-2 rounded-md mr-1.5"
-            style={{ backgroundColor: theme.accent + '20' }}
-          >
-            <Ionicons name="refresh" size={11} color={theme.accent} style={{ marginRight: 3 }} />
-            <Text style={{ color: theme.accent }} className="text-[11px] font-bold">
-              Sync
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setServerModalVisible(true)}
-            className="flex-row items-center py-0.5 px-2 rounded-md"
-            style={{ backgroundColor: theme.inputBg }}
-          >
-            <Ionicons name="settings-outline" size={11} color={theme.textMuted} style={{ marginRight: 3 }} />
-            <Text style={{ color: theme.textMuted }} className="text-[11px] font-semibold">
-              Config
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Segment Tabs (Live, Upcoming, Recent, All) */}
-      <View className="flex-row mx-4 mt-3 mb-1 bg-slate-200/80 dark:bg-slate-800/90 p-1.5 rounded-2xl shadow-xs">
-        {[
-          { id: 'live', label: 'Live', count: liveFixtures.length, badgeColor: theme.liveBadge },
-          { id: 'upcoming', label: 'Upcoming', count: upcomingFixtures.length },
-          { id: 'completed', label: 'Recent', count: completedFixtures.length },
-          { id: 'all', label: 'All Matches' },
-        ].map((tab) => {
-          const isActive = activeSubTab === tab.id;
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              onPress={() => setActiveSubTab(tab.id)}
-              style={{
-                backgroundColor: isActive ? theme.card : 'transparent',
-                shadowColor: isActive ? '#000000' : 'transparent',
-                shadowOpacity: isActive ? 0.08 : 0,
-                shadowRadius: 3,
-                elevation: isActive ? 2 : 0,
-              }}
-              className="flex-1 py-2 rounded-xl items-center flex-row justify-center"
-            >
-              <Text
-                style={{
-                  color: isActive ? theme.text : theme.textMuted,
-                  fontWeight: isActive ? '800' : '500',
-                }}
-                className="text-xs"
-              >
-                {tab.label}
+        }
+      >
+        {/* 1. TOP MATCH CARDS HORIZONTAL CAROUSEL (EXACT CRICBUZZ LAYOUT) */}
+        <View className="pt-3 pb-2">
+          {loading ? (
+            <View className="py-8 items-center justify-center">
+              <ActivityIndicator size="small" color={theme.accent} />
+              <Text style={{ color: theme.accent }} className="text-xs font-bold mt-2">
+                LOADING LIVE SCORES...
               </Text>
-              {tab.count !== undefined && tab.count > 0 && (
-                <View
-                  style={{
-                    backgroundColor: tab.badgeColor || theme.inputBg,
-                  }}
-                  className="ml-1 px-1.5 py-0.5 rounded-full"
-                >
-                  <Text
-                    style={{ color: tab.badgeColor ? '#FFFFFF' : theme.textMuted }}
-                    className="text-[9px] font-black"
-                  >
-                    {tab.count}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Main Content Area */}
-      {loading ? (
-        <ScrollView className="flex-1 px-4 mt-3" showsVerticalScrollIndicator={false}>
-          {/* Cricbuzz Green Spinner with Status */}
-          <View className="flex-row justify-center items-center py-3">
-            <ActivityIndicator size="small" color={theme.accent} style={{ marginRight: 8 }} />
-            <Text style={{ color: theme.accent }} className="text-xs font-bold tracking-wide">
-              FETCHING CRICBUZZ MATCHES...
-            </Text>
-          </View>
-
-          {/* Shimmer Skeleton Cards */}
-          <FeaturedCarouselSkeleton />
-          <MatchCardSkeleton />
-          <MatchCardSkeleton />
-          <MatchCardSkeleton />
-        </ScrollView>
-      ) : (
-        <ScrollView
-          className="flex-1 px-4 mt-3"
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.accent}
-              colors={[theme.accent, '#10B981', '#009270']}
-            />
-          }
-        >
-          {/* Featured Live Match Carousel when on Live or All tab */}
-          {(activeSubTab === 'live' || activeSubTab === 'all') && liveFixtures.length > 0 && (
-            <View className="mb-4">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text style={{ color: theme.text }} className="font-extrabold text-sm tracking-wide">
-                  FEATURED MATCHES
-                </Text>
-                <View className="flex-row items-center">
-                  <View
-                    style={{ backgroundColor: theme.liveBadge }}
-                    className="w-2 h-2 rounded-full mr-1 animate-pulse"
-                  />
-                  <Text style={{ color: theme.liveBadge }} className="text-xs font-bold uppercase">
-                    Live Now
-                  </Text>
-                </View>
-              </View>
-
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="space-x-3 -mx-1 px-1">
-                {liveFixtures.map((item) => (
-                  <TouchableOpacity
-                    key={item.fixtureId}
-                    onPress={() => openFixtureDetail(item)}
-                    activeOpacity={0.88}
-                    style={{
-                      width: width * 0.82,
-                      backgroundColor: theme.card,
-                      borderColor: theme.accent,
-                    }}
-                    className="p-4 rounded-2xl border mr-3 shadow-md"
-                  >
-                    <View className="flex-row justify-between items-center pb-2 border-b" style={{ borderColor: theme.divider }}>
-                      <Text style={{ color: theme.textSecondary }} className="text-[11px] font-semibold flex-1 mr-2" numberOfLines={1}>
-                        {item.title}
-                      </Text>
-                      <View
-                        style={{ backgroundColor: theme.liveBadgeBg }}
-                        className="px-2 py-0.5 rounded-full flex-row items-center"
-                      >
-                        <View style={{ backgroundColor: theme.liveBadge }} className="w-1.5 h-1.5 rounded-full mr-1" />
-                        <Text style={{ color: theme.liveBadge }} className="text-[10px] font-black uppercase">
-                          Live
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Scores */}
-                    <View className="py-2.5 space-y-2">
-                      <View className="flex-row justify-between items-center">
-                        <View className="flex-row items-center space-x-1.5 flex-1 mr-2">
-                          <TeamFlag
-                            logo={item.team1?.logo}
-                            teamName={item.team1?.name}
-                            countryCode={item.team1?.shortName}
-                            size={22}
-                            style={{ marginRight: 6 }}
-                          />
-                          <Text style={{ color: theme.text }} className="font-bold text-sm flex-1" numberOfLines={1}>
-                            {item.team1?.name}
-                          </Text>
-                        </View>
-                        <Text style={{ color: theme.text }} className="font-black text-sm">
-                          {item.team1?.score}{' '}
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({item.team1?.overs} ov)
-                          </Text>
-                        </Text>
-                      </View>
-
-                      <View className="flex-row justify-between items-center">
-                        <View className="flex-row items-center space-x-1.5 flex-1 mr-2">
-                          <TeamFlag
-                            logo={item.team2?.logo}
-                            teamName={item.team2?.name}
-                            countryCode={item.team2?.shortName}
-                            size={22}
-                            style={{ marginRight: 6 }}
-                          />
-                          <Text style={{ color: theme.text }} className="font-bold text-sm flex-1" numberOfLines={1}>
-                            {item.team2?.name}
-                          </Text>
-                        </View>
-                        <Text style={{ color: theme.text }} className="font-black text-sm">
-                          {item.team2?.score}{' '}
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({item.team2?.overs} ov)
-                          </Text>
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Equation & CTA */}
-                    <View className="pt-2 border-t flex-row justify-between items-center" style={{ borderColor: theme.divider }}>
-                      <Text style={{ color: theme.accent }} className="text-xs font-bold flex-1 mr-2" numberOfLines={1}>
-                        {item.statusNote}
-                      </Text>
-                      <View
-                        style={{ backgroundColor: theme.accentLight }}
-                        className="px-2 py-1 rounded-md flex-row items-center"
-                      >
-                        <Text style={{ color: theme.accent }} className="text-[11px] font-extrabold">
-                          Scorecard
-                        </Text>
-                        <Ionicons name="chevron-forward" size={12} color={theme.accent} />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
             </View>
-          )}
-
-          {/* Matches List Header */}
-          <Text style={{ color: theme.text }} className="font-extrabold text-sm tracking-wide mb-2">
-            {activeSubTab === 'live'
-              ? 'ALL LIVE MATCHES'
-              : activeSubTab === 'upcoming'
-              ? 'UPCOMING FIXTURES'
-              : activeSubTab === 'completed'
-              ? 'RECENT RESULTS'
-              : 'CRICKET FIXTURES'}
-          </Text>
-
-          {/* Empty State View if no matches */}
-          {displayedFixtures.length === 0 ? (
-            <EmptyStateView
-              type={activeSubTab}
-              onRefresh={onRefresh}
-              onAction={() => {
-                if (activeSubTab === 'live') setActiveSubTab('upcoming');
-                else if (activeSubTab === 'upcoming') setActiveSubTab('completed');
-                else setActiveSubTab('live');
-              }}
-              actionLabel={
-                activeSubTab === 'live'
-                  ? 'Check Upcoming'
-                  : activeSubTab === 'upcoming'
-                  ? 'Check Recent'
-                  : 'Check Live Matches'
-              }
-            />
           ) : (
-            <View className="space-y-3 pb-8">
-              {displayedFixtures.map((match) => (
-                <TouchableOpacity
-                  key={match.fixtureId}
-                  onPress={() => openFixtureDetail(match)}
-                  activeOpacity={0.85}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="px-4"
+              contentContainerStyle={{ paddingRight: 16 }}
+            >
+              {matches.map((item) => (
+                <View
+                  key={item.fixtureId || item.id}
                   style={{
+                    width: width * 0.86,
                     backgroundColor: theme.card,
                     borderColor: theme.cardBorder,
+                    marginRight: 14,
                   }}
-                  className="p-4 rounded-2xl border shadow-sm mb-3.5"
+                  className="rounded-2xl border shadow-sm overflow-hidden"
                 >
-                  {/* Card top banner */}
-                  <View className="flex-row justify-between items-center pb-2.5 border-b" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.textSecondary }} className="text-xs font-semibold flex-1 mr-2" numberOfLines={1}>
-                      {match.title || match.series}
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor:
-                          match.status === 'Live'
-                            ? theme.liveBadgeBg
-                            : match.status === 'Completed'
-                            ? theme.accentLight
-                            : theme.inputBg,
-                      }}
-                      className="px-2.5 py-0.5 rounded-full flex-row items-center"
-                    >
-                      {match.status === 'Live' && (
-                        <View style={{ backgroundColor: theme.liveBadge }} className="w-1.5 h-1.5 rounded-full mr-1 animate-pulse" />
-                      )}
+                  <TouchableOpacity
+                    onPress={() => openFixtureDetail(item)}
+                    activeOpacity={0.88}
+                    className="p-4"
+                  >
+                    {/* Top Row: Series Title & Format Badge */}
+                    <View className="flex-row justify-between items-center mb-3">
                       <Text
-                        style={{
-                          color:
-                            match.status === 'Live'
-                              ? theme.liveBadge
-                              : match.status === 'Completed'
-                              ? theme.accent
-                              : theme.textMuted,
-                        }}
-                        className="text-[10px] font-black uppercase tracking-wider"
+                        style={{ color: theme.textSecondary }}
+                        className="text-xs font-semibold flex-1 mr-2"
+                        numberOfLines={1}
                       >
-                        {match.status}
+                        {item.title || item.series || 'Match'}
                       </Text>
-                    </View>
-                  </View>
-
-                  {/* Teams & Scores */}
-                  <View className="py-3 space-y-2.5">
-                    <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
-                        <TeamFlag
-                          logo={match.team1?.logo}
-                          teamName={match.team1?.name}
-                          countryCode={match.team1?.shortName}
-                          size={26}
-                          style={{ marginRight: 8 }}
-                        />
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
-                          {match.team1?.name}
+                      <View className="bg-slate-800 dark:bg-slate-700 px-2 py-0.5 rounded">
+                        <Text className="text-white text-[10px] font-black uppercase">
+                          {item.format || 'T20I'}
                         </Text>
                       </View>
-                      <Text style={{ color: theme.text }} className="font-black text-sm">
-                        {match.team1?.score}{' '}
-                        {match.team1?.overs && match.team1.overs !== '-' && (
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({match.team1?.overs} ov)
-                          </Text>
-                        )}
-                      </Text>
                     </View>
 
-                    <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
+                    {/* Team 1 Row */}
+                    <View className="flex-row justify-between items-center mb-2">
+                      <View className="flex-row items-center flex-1 mr-2">
                         <TeamFlag
-                          logo={match.team2?.logo}
-                          teamName={match.team2?.name}
-                          countryCode={match.team2?.shortName}
-                          size={26}
+                          logo={item.team1?.logo}
+                          teamName={item.team1?.name}
+                          countryCode={item.team1?.shortName}
+                          size={24}
                           style={{ marginRight: 8 }}
                         />
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
-                          {match.team2?.name}
+                        <Text
+                          style={{ color: theme.text }}
+                          className="font-black text-sm tracking-tight"
+                        >
+                          {item.team1?.shortName || item.team1?.name}
                         </Text>
                       </View>
-                      <Text style={{ color: theme.text }} className="font-black text-sm">
-                        {match.team2?.score}{' '}
-                        {match.team2?.overs && match.team2.overs !== '-' && (
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({match.team2?.overs} ov)
-                          </Text>
-                        )}
+                      <Text style={{ color: theme.text }} className="font-bold text-sm">
+                        {item.team1?.score || '0'} {item.team1?.overs ? `(${item.team1.overs})` : ''}
                       </Text>
                     </View>
-                  </View>
 
-                  {/* Status Note or Player of match */}
-                  <View className="pt-2 border-t flex-row justify-between items-center" style={{ borderColor: theme.divider }}>
+                    {/* Team 2 Row */}
+                    <View className="flex-row justify-between items-center mb-3">
+                      <View className="flex-row items-center flex-1 mr-2">
+                        <TeamFlag
+                          logo={item.team2?.logo}
+                          teamName={item.team2?.name}
+                          countryCode={item.team2?.shortName}
+                          size={24}
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text
+                          style={{ color: theme.text }}
+                          className="font-black text-sm tracking-tight"
+                        >
+                          {item.team2?.shortName || item.team2?.name}
+                        </Text>
+                      </View>
+                      <Text style={{ color: theme.text }} className="font-bold text-sm">
+                        {item.team2?.score || '0'} {item.team2?.overs ? `(${item.team2.overs})` : ''}
+                      </Text>
+                    </View>
+
+                    {/* Result / Equation in Cricbuzz Blue */}
                     <Text
-                      style={{
-                        color:
-                          match.status === 'Live'
-                            ? theme.liveBadge
-                            : match.status === 'Completed'
-                            ? theme.accent
-                            : theme.textSecondary,
-                      }}
-                      className="text-xs font-bold flex-1 mr-2"
+                      style={{ color: '#2563EB' }}
+                      className="text-xs font-bold leading-tight"
                       numberOfLines={1}
                     >
-                      {match.statusNote || match.playerOfTheMatch || match.matchDate || match.venue}
+                      {item.statusNote || `${item.team1?.name} vs ${item.team2?.name}`}
                     </Text>
+                  </TouchableOpacity>
 
-                    <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+                  {/* Card Bottom Grey Strip with POINTS TABLE & SCHEDULE */}
+                  <View
+                    style={{
+                      backgroundColor: theme.cardSecondary,
+                      borderTopColor: theme.cardBorderSubtle,
+                    }}
+                    className="border-t px-4 py-2 flex-row justify-end items-center space-x-4"
+                  >
+                    <TouchableOpacity
+                      onPress={() => onNavigateToTab && onNavigateToTab('series', 'table')}
+                      className="px-2 py-0.5"
+                    >
+                      <Text className="text-slate-600 dark:text-slate-300 font-extrabold text-[10px] tracking-wider uppercase">
+                        POINTS TABLE
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => onNavigateToTab && onNavigateToTab('series', 'schedule')}
+                      className="px-2 py-0.5"
+                    >
+                      <Text className="text-slate-600 dark:text-slate-300 font-extrabold text-[10px] tracking-wider uppercase">
+                        SCHEDULE
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))}
-            </View>
+            </ScrollView>
           )}
-        </ScrollView>
-      )}
+        </View>
+
+        {/* 2. CATEGORY PILL CHIPS (MATCHING SCREENSHOT) */}
+        <View className="px-4 py-2">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="space-x-2.5"
+          >
+            {chips.map((chip) => {
+              const isSelected = activeChip === chip.id;
+              return (
+                <TouchableOpacity
+                  key={chip.id}
+                  onPress={() => setActiveChip(chip.id)}
+                  style={{
+                    backgroundColor: isSelected ? theme.accent : theme.card,
+                    borderColor: isSelected ? theme.accent : theme.cardBorder,
+                  }}
+                  className="flex-row items-center px-4 py-2 rounded-2xl border shadow-2xs mr-2"
+                  activeOpacity={0.75}
+                >
+                  <Ionicons
+                    name={chip.icon}
+                    size={14}
+                    color={isSelected ? '#FFFFFF' : theme.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={{
+                      color: isSelected ? '#FFFFFF' : theme.text,
+                      fontWeight: isSelected ? '800' : '600',
+                    }}
+                    className="text-xs"
+                  >
+                    {chip.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* 3. FEATURED VIDEOS SECTION (MATCHING SCREENSHOT) */}
+        <View className="px-4 mt-4">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
+              Featured Videos
+            </Text>
+            <TouchableOpacity
+              onPress={() => onNavigateToTab && onNavigateToTab('videos')}
+              className="py-1"
+            >
+              <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
+                View All
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Large Video Card */}
+          <TouchableOpacity
+            onPress={() => onNavigateToTab && onNavigateToTab('videos')}
+            style={{
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            }}
+            className="rounded-2xl border shadow-sm overflow-hidden mb-4"
+            activeOpacity={0.88}
+          >
+            <View className="relative w-full h-48 bg-slate-900 justify-center items-center">
+              <Image
+                source={{ uri: FEATURED_VIDEOS_DATA[0].imageUrl }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+              <View className="absolute inset-0 bg-black/40" />
+
+              {/* Tag text inside thumbnail */}
+              <View className="absolute top-3 left-3 bg-red-600 px-2.5 py-0.5 rounded">
+                <Text className="text-white font-black text-[10px] uppercase">
+                  {FEATURED_VIDEOS_DATA[0].tag}
+                </Text>
+              </View>
+
+              {/* Play Button Overlay */}
+              <View className="w-13 h-13 rounded-full bg-black/60 border-2 border-white items-center justify-center shadow-lg">
+                <Ionicons name="play" size={24} color="#FFFFFF" style={{ marginLeft: 3 }} />
+              </View>
+
+              {/* Duration Badge */}
+              <View className="absolute bottom-2.5 right-2.5 bg-black/85 px-2 py-0.5 rounded">
+                <Text className="text-white font-extrabold text-xs">
+                  {FEATURED_VIDEOS_DATA[0].duration}
+                </Text>
+              </View>
+            </View>
+
+            <View className="p-3.5">
+              <Text
+                style={{ color: theme.text }}
+                className="font-extrabold text-sm leading-snug"
+                numberOfLines={2}
+              >
+                {FEATURED_VIDEOS_DATA[0].title}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* 4. TOP STORIES SECTION (MATCHING SCREENSHOT) */}
+        <View className="px-4 mt-1 mb-8">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
+              Top Stories
+            </Text>
+            <TouchableOpacity
+              onPress={() => onNavigateToTab && onNavigateToTab('news')}
+              className="py-1"
+            >
+              <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
+                More News
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {TOP_STORIES_DATA.map((story) => (
+            <TouchableOpacity
+              key={story.id}
+              onPress={() => onNavigateToTab && onNavigateToTab('news')}
+              style={{
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              }}
+              className="p-3.5 rounded-2xl border shadow-2xs mb-3 flex-row items-center justify-between"
+              activeOpacity={0.85}
+            >
+              <View className="flex-1 mr-3">
+                <Text
+                  style={{ color: theme.text }}
+                  className="font-bold text-xs leading-snug mb-1.5"
+                  numberOfLines={2}
+                >
+                  {story.title}
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-[10px]">
+                  {story.timeAgo} • {story.source}
+                </Text>
+              </View>
+              <Image
+                source={{ uri: story.imageUrl }}
+                className="w-16 h-16 rounded-xl bg-slate-700"
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
 
       {/* Match Center Modal */}
       <MatchCenterModal
         visible={matchCenterVisible}
         fixture={selectedFixture}
         onClose={() => setMatchCenterVisible(false)}
-      />
-
-      {/* Server Config Modal */}
-      <ServerConfigModal
-        visible={serverModalVisible}
-        onClose={() => setServerModalVisible(false)}
-        onServerUpdated={fetchAllData}
       />
     </View>
   );
