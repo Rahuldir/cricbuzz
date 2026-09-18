@@ -152,7 +152,7 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
       </View>
 
       {/* Segment Tabs (Live, Upcoming, Recent, All) */}
-      <View className="flex-row mx-4 mt-2.5 bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl">
+      <View className="flex-row mx-4 mt-3 mb-1 bg-slate-200/80 dark:bg-slate-800/90 p-1.5 rounded-2xl shadow-xs">
         {[
           { id: 'live', label: 'Live', count: liveFixtures.length, badgeColor: theme.liveBadge },
           { id: 'upcoming', label: 'Upcoming', count: upcomingFixtures.length },
@@ -166,13 +166,17 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
               onPress={() => setActiveSubTab(tab.id)}
               style={{
                 backgroundColor: isActive ? theme.card : 'transparent',
+                shadowColor: isActive ? '#000000' : 'transparent',
+                shadowOpacity: isActive ? 0.08 : 0,
+                shadowRadius: 3,
+                elevation: isActive ? 2 : 0,
               }}
-              className="flex-1 py-1.5 rounded-lg items-center flex-row justify-center"
+              className="flex-1 py-2 rounded-xl items-center flex-row justify-center"
             >
               <Text
                 style={{
                   color: isActive ? theme.text : theme.textMuted,
-                  fontWeight: isActive ? 'bold' : 'normal',
+                  fontWeight: isActive ? '800' : '500',
                 }}
                 className="text-xs"
               >
@@ -183,7 +187,7 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                   style={{
                     backgroundColor: tab.badgeColor || theme.inputBg,
                   }}
-                  className="ml-1 px-1.5 py-0.2 rounded-full"
+                  className="ml-1 px-1.5 py-0.5 rounded-full"
                 >
                   <Text
                     style={{ color: tab.badgeColor ? '#FFFFFF' : theme.textMuted }}
@@ -380,10 +384,10 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                     backgroundColor: theme.card,
                     borderColor: theme.cardBorder,
                   }}
-                  className="p-4 rounded-2xl border shadow-sm mb-3"
+                  className="p-4 rounded-2xl border shadow-sm mb-3.5"
                 >
                   {/* Card top banner */}
-                  <View className="flex-row justify-between items-center pb-2 border-b" style={{ borderColor: theme.divider }}>
+                  <View className="flex-row justify-between items-center pb-2.5 border-b" style={{ borderColor: theme.divider }}>
                     <Text style={{ color: theme.textSecondary }} className="text-xs font-semibold flex-1 mr-2" numberOfLines={1}>
                       {match.title || match.series}
                     </Text>
@@ -396,7 +400,7 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                             ? theme.accentLight
                             : theme.inputBg,
                       }}
-                      className="px-2 py-0.5 rounded-full flex-row items-center"
+                      className="px-2.5 py-0.5 rounded-full flex-row items-center"
                     >
                       {match.status === 'Live' && (
                         <View style={{ backgroundColor: theme.liveBadge }} className="w-1.5 h-1.5 rounded-full mr-1 animate-pulse" />
@@ -410,7 +414,7 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                               ? theme.accent
                               : theme.textMuted,
                         }}
-                        className="text-[10px] font-black uppercase"
+                        className="text-[10px] font-black uppercase tracking-wider"
                       >
                         {match.status}
                       </Text>
@@ -418,14 +422,14 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                   </View>
 
                   {/* Teams & Scores */}
-                  <View className="py-2.5 space-y-2">
+                  <View className="py-3 space-y-2.5">
                     <View className="flex-row justify-between items-center">
                       <View className="flex-row items-center space-x-2 flex-1 mr-2">
                         <TeamFlag
                           logo={match.team1?.logo}
                           teamName={match.team1?.name}
                           countryCode={match.team1?.shortName}
-                          size={24}
+                          size={26}
                           style={{ marginRight: 8 }}
                         />
                         <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
@@ -448,7 +452,7 @@ export default function CricbuzzHomeScreen({ onNavigateToScorer }) {
                           logo={match.team2?.logo}
                           teamName={match.team2?.name}
                           countryCode={match.team2?.shortName}
-                          size={24}
+                          size={26}
                           style={{ marginRight: 8 }}
                         />
                         <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
