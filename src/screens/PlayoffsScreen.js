@@ -103,7 +103,7 @@ export default function PlayoffsScreen() {
             />
           }
         >
-          {playoffs.length === 0 ? (
+          {playoffs.length === 0 && playoffImages.length === 0 ? (
             <EmptyStateView
               type="general"
               onRefresh={onRefresh}
@@ -111,6 +111,22 @@ export default function PlayoffsScreen() {
             />
           ) : (
             <View className="space-y-4 pb-8">
+              {playoffs.length === 0 && (
+                <View
+                  style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                  className="p-4 rounded-3xl border shadow-sm mb-4"
+                >
+                  <View className="flex-row items-center mb-2">
+                    <Ionicons name="information-circle" size={20} color={theme.accent} style={{ marginRight: 8 }} />
+                    <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                      Playoffs Qualification in Progress
+                    </Text>
+                  </View>
+                  <Text style={{ color: theme.textSecondary }} className="text-xs leading-relaxed">
+                    Official playoff dates and venues will be locked in as the league stage concludes. Top 4 teams from the Points Table qualify for Qualifier 1 and Eliminator.
+                  </Text>
+                </View>
+              )}
               {playoffs.map((item, idx) => {
                 const isFinal = item.stage === 'Grand Final';
                 return (

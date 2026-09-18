@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
 import { View, Text, Image } from 'react-native';
 
+// Local asset imports for historic/old IPL franchises
+const OLD_IPL_TEAM_ASSETS = {
+  RPS: require('../../assets/rps.png'),
+  'RISING PUNE SUPERGIANT': require('../../assets/rps.png'),
+  'RISING PUNE SUPERGIANTS': require('../../assets/rps.png'),
+  'PUNE SUPERGIANT': require('../../assets/rps.png'),
+  'PUNE SUPERGIANTS': require('../../assets/rps.png'),
+  GL: require('../../assets/gl.png'),
+  'GUJARAT LIONS': require('../../assets/gl.png'),
+  'GUJRAT LIONS': require('../../assets/gl.png'),
+  DCH: require('../../assets/dc_old.png'),
+  'DECCAN CHARGERS': require('../../assets/dc_old.png'),
+  PWI: require('../../assets/pwi.png'),
+  'PUNE WARRIORS': require('../../assets/pwi.png'),
+  'PUNE WARRIORS INDIA': require('../../assets/pwi.png'),
+};
+
 // IPL Team Logos from dbtulsi CDN (verified working 200 OK)
 export const IPL_TEAM_LOGOS = {
   CSK: 'https://dbtulsi.tech/CricketData/data/CountryFlags/CSK.png',
@@ -23,7 +40,6 @@ export const IPL_TEAM_LOGOS = {
   'LUCKNOW SUPER GIANTS': 'https://dbtulsi.tech/CricketData/data/CountryFlags/LSG.png',
   SRH: 'https://dbtulsi.tech/CricketData/data/CountryFlags/SRH.png',
   'SUNRISERS HYDERABAD': 'https://dbtulsi.tech/CricketData/data/CountryFlags/SRH.png',
-  'DECCAN CHARGERS': 'https://dbtulsi.tech/CricketData/data/CountryFlags/SRH.png',
   PBKS: 'https://dbtulsi.tech/CricketData/data/CountryFlags/PBKS.png',
   PK: 'https://dbtulsi.tech/CricketData/data/CountryFlags/PBKS.png',
   'PUNJAB KINGS': 'https://dbtulsi.tech/CricketData/data/CountryFlags/PBKS.png',
@@ -99,36 +115,55 @@ export const COUNTRY_EMOJIS = {
 };
 
 /**
- * Resolves the best available flag/logo image URL
+ * Resolves the best available flag/logo image source (either a remote URI object or local require asset)
  * 1. Checks if a valid remote URL is provided in response
- * 2. Checks IPL logos dictionary
- * 3. Checks International country flags dictionary
+ * 2. Checks local assets for historic franchises (RPS, GL, DCH, PWI)
+ * 3. Checks IPL logos dictionary
+ * 4. Checks International country flags dictionary
  */
-export function getTeamLogoUrl(imageUrl, teamName, countryCode) {
+export function getTeamLogoSource(imageUrl, teamName, countryCode) {
   // 1. If direct remote URL provided
   if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
-    return imageUrl;
+    return { uri: imageUrl };
   }
 
-  // 2. Check by country code
   const codeKey = (countryCode || '').trim().toUpperCase();
-  if (codeKey) {
-    if (IPL_TEAM_LOGOS[codeKey]) return IPL_TEAM_LOGOS[codeKey];
-    if (COUNTRY_FLAGS[codeKey]) return COUNTRY_FLAGS[codeKey];
+  const nameKey = (teamName || '').trim().toUpperCase();
+
+  // 2. Check local historic IPL franchises
+  if (codeKey && OLD_IPL_TEAM_ASSETS[codeKey]) {
+    return OLD_IPL_TEAM_ASSETS[codeKey];
+  }
+  if (nameKey) {
+    if (OLD_IPL_TEAM_ASSETS[nameKey]) return OLD_IPL_TEAM_ASSETS[nameKey];
+    for (const [k, asset] of Object.entries(OLD_IPL_TEAM_ASSETS)) {
+      if (nameKey.includes(k) || k.includes(nameKey)) return asset;
+    }
   }
 
-  // 3. Check by team name
-  const nameKey = (teamName || '').trim().toUpperCase();
-  if (nameKey) {
-    if (IPL_TEAM_LOGOS[nameKey]) return IPL_TEAM_LOGOS[nameKey];
-    if (COUNTRY_FLAGS[nameKey]) return COUNTRY_FLAGS[nameKey];
+  // 3. Check IPL logos dictionary
+  if (codeKey && IPL_TEAM_LOGOS[codeKey]) {
+    return { uri: IPL_TEAM_LOGOS[codeKey] };
+  }
+  if (nameKey && IPL_TEAM_LOGOS[nameKey]) {
+    return { uri: IPL_TEAM_LOGOS[nameKey] };
+  }
 
-    // Substring checks (e.g. "Chennai Super Kings" contains "CHENNAI")
+  // 4. Check International country flags dictionary
+  if (codeKey && COUNTRY_FLAGS[codeKey]) {
+    return { uri: COUNTRY_FLAGS[codeKey] };
+  }
+  if (nameKey && COUNTRY_FLAGS[nameKey]) {
+    return { uri: COUNTRY_FLAGS[nameKey] };
+  }
+
+  // Substring checks
+  if (nameKey) {
     for (const [k, url] of Object.entries(IPL_TEAM_LOGOS)) {
-      if (nameKey.includes(k) || k.includes(nameKey)) return url;
+      if (nameKey.includes(k) || k.includes(nameKey)) return { uri: url };
     }
     for (const [k, url] of Object.entries(COUNTRY_FLAGS)) {
-      if (nameKey.includes(k) || k.includes(nameKey)) return url;
+      if (nameKey.includes(k) || k.includes(nameKey)) return { uri: url };
     }
   }
 
@@ -136,8 +171,19 @@ export function getTeamLogoUrl(imageUrl, teamName, countryCode) {
 }
 
 /**
+ * Resolves remote string URL if available (maintains backwards compatibility)
+ */
+export function getTeamLogoUrl(imageUrl, teamName, countryCode) {
+  const src = getTeamLogoSource(imageUrl, teamName, countryCode);
+  if (src && typeof src === 'object' && src.uri) {
+    return src.uri;
+  }
+  return null;
+}
+
+/**
  * TeamFlag Component
- * Renders Image if URL exists, else renders stylized fallback badge with initials or emoji
+ * Renders Image if URL or local asset exists, else renders stylized fallback badge with initials or emoji
  */
 export function TeamFlag({
   logo,
@@ -147,13 +193,13 @@ export function TeamFlag({
   style,
 }) {
   const [imageError, setImageError] = useState(false);
-  const resolvedUrl = getTeamLogoUrl(logo, teamName, countryCode);
+  const resolvedSource = getTeamLogoSource(logo, teamName, countryCode);
 
   const cleanName = (teamName || countryCode || 'CR').trim();
   const initials = (countryCode || cleanName.slice(0, 3)).toUpperCase();
   const emoji = COUNTRY_EMOJIS[(countryCode || '').toUpperCase()] || COUNTRY_EMOJIS[cleanName.toUpperCase()];
 
-  if (resolvedUrl && !imageError) {
+  if (resolvedSource && !imageError) {
     return (
       <View
         style={[
@@ -170,7 +216,7 @@ export function TeamFlag({
         ]}
       >
         <Image
-          source={{ uri: resolvedUrl }}
+          source={resolvedSource}
           style={{ width: size, height: size, borderRadius: size / 2 }}
           resizeMode="cover"
           onError={() => setImageError(true)}

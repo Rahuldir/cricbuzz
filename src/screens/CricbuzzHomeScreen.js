@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -15,65 +16,14 @@ import {
   getInProgressFixtures,
   getUpcomingFixtures,
   getCompletedFixtures,
+  getCricketNews,
+  getCricketVideos,
 } from '../services/cricketApi';
 import MatchCenterModal from '../components/MatchCenterModal';
 import VideoPlayerModal from '../components/VideoPlayerModal';
 import { TeamFlag } from '../utils/flagHelper';
 
 const { width } = Dimensions.get('window');
-
-const SAMPLE_BASE = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/';
-
-const FEATURED_VIDEOS_DATA = [
-  {
-    id: 'roko-1',
-    title: 'No debate around Rohit & Kohli; selection is a must: Mohit',
-    duration: '7:06',
-    tag: 'RO-KO STILL TOO GOOD?',
-    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
-    videoUrl: `${SAMPLE_BASE}ForBiggerJoyrides.mp4`,
-  },
-  {
-    id: 'ipl-analysis-2',
-    title: 'How KKR dismantled opponents with aggressive opening burst',
-    duration: '5:48',
-    tag: 'IPL MASTERCLASS',
-    imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b107e775a?w=800&q=80',
-    videoUrl: `${SAMPLE_BASE}ForBiggerFun.mp4`,
-  },
-  {
-    id: 'dhoni-classic-3',
-    title: 'Behind the stumps: The tactical genius of MS Dhoni',
-    duration: '10:14',
-    tag: 'CRICBUZZ RETRO',
-    imageUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
-    videoUrl: `${SAMPLE_BASE}ForBiggerBlazes.mp4`,
-  },
-];
-
-const TOP_STORIES_DATA = [
-  {
-    id: 'story-1',
-    title: 'Team India announces preliminary squad for ICC T20 World Cup',
-    timeAgo: '1h ago',
-    source: 'Cricbuzz Staff',
-    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=800&q=80',
-  },
-  {
-    id: 'story-2',
-    title: 'Hardik on form: "Every setback teaches you how to rise again"',
-    timeAgo: '3h ago',
-    source: 'Interview',
-    imageUrl: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&q=80',
-  },
-  {
-    id: 'story-3',
-    title: 'Pitch report: Expect high-scoring thriller in Ahmedabad clash',
-    timeAgo: '5h ago',
-    source: 'Match Preview',
-    imageUrl: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?w=800&q=80',
-  },
-];
 
 export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const { theme } = useTheme();
@@ -86,14 +36,18 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const [matchCenterVisible, setMatchCenterVisible] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(null);
   const [playerVisible, setPlayerVisible] = useState(false);
+  const [featuredVideos, setFeaturedVideos] = useState([]);
+  const [topStories, setTopStories] = useState([]);
 
   const fetchMatches = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
-      const [liveRes, compRes, upRes] = await Promise.all([
+      const [liveRes, compRes, upRes, newsRes, vidRes] = await Promise.all([
         getInProgressFixtures(5),
         getCompletedFixtures(10),
         getUpcomingFixtures(5),
+        getCricketNews(),
+        getCricketVideos(),
       ]);
 
       const combined = [
@@ -102,8 +56,9 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
         ...(upRes.fixtures || []),
       ];
 
-      // Ensure the Asian Games match from screenshot or live matches are shown
       setMatches(combined);
+      setTopStories(newsRes.news || []);
+      setFeaturedVideos(vidRes.videos || []);
     } catch (err) {
       console.warn('Matches fetch error:', err);
     } finally {
@@ -329,119 +284,128 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
           </ScrollView>
         </View>
 
-        {/* 3. FEATURED VIDEOS SECTION (MATCHING SCREENSHOT) */}
-        <View className="px-4 mt-4">
-          <View className="flex-row justify-between items-center mb-3">
-            <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
-              Featured Videos
-            </Text>
-            <TouchableOpacity
-              onPress={() => onNavigateToTab && onNavigateToTab('videos')}
-              className="py-1"
-            >
-              <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
-                View All
+        {/* 3. FEATURED VIDEOS SECTION */}
+        {featuredVideos.length > 0 && (
+          <View className="px-4 mt-4">
+            <View className="flex-row justify-between items-center mb-3">
+              <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
+                Featured Videos
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Large Video Card */}
-          <TouchableOpacity
-            onPress={() => openVideo(FEATURED_VIDEOS_DATA[0])}
-            style={{
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-            }}
-            className="rounded-2xl border shadow-sm overflow-hidden mb-4"
-            activeOpacity={0.88}
-          >
-            <View className="relative w-full h-48 bg-slate-900 justify-center items-center">
-              <Image
-                source={{ uri: FEATURED_VIDEOS_DATA[0].imageUrl }}
-                className="w-full h-full"
-                resizeMode="cover"
-              />
-              <View className="absolute inset-0 bg-black/40" />
-
-              {/* Tag text inside thumbnail */}
-              <View className="absolute top-3 left-3 bg-red-600 px-2.5 py-0.5 rounded">
-                <Text className="text-white font-black text-[10px] uppercase">
-                  {FEATURED_VIDEOS_DATA[0].tag}
-                </Text>
-              </View>
-
-              {/* Play Button Overlay */}
-              <View className="w-13 h-13 rounded-full bg-black/60 border-2 border-white items-center justify-center shadow-lg">
-                <Ionicons name="play" size={24} color="#FFFFFF" style={{ marginLeft: 3 }} />
-              </View>
-
-              {/* Duration Badge */}
-              <View className="absolute bottom-2.5 right-2.5 bg-black/85 px-2 py-0.5 rounded">
-                <Text className="text-white font-extrabold text-xs">
-                  {FEATURED_VIDEOS_DATA[0].duration}
-                </Text>
-              </View>
-            </View>
-
-            <View className="p-3.5">
-              <Text
-                style={{ color: theme.text }}
-                className="font-extrabold text-sm leading-snug"
-                numberOfLines={2}
+              <TouchableOpacity
+                onPress={() => onNavigateToTab && onNavigateToTab('videos')}
+                className="py-1"
               >
-                {FEATURED_VIDEOS_DATA[0].title}
-              </Text>
+                <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
+                  View All
+                </Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </View>
 
-        {/* 4. TOP STORIES SECTION (MATCHING SCREENSHOT) */}
-        <View className="px-4 mt-1 mb-8">
-          <View className="flex-row justify-between items-center mb-3">
-            <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
-              Top Stories
-            </Text>
+            {/* Large Video Card */}
             <TouchableOpacity
-              onPress={() => onNavigateToTab && onNavigateToTab('news')}
-              className="py-1"
-            >
-              <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
-                More News
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {TOP_STORIES_DATA.map((story) => (
-            <TouchableOpacity
-              key={story.id}
-              onPress={() => onNavigateToTab && onNavigateToTab('news')}
+              onPress={() => openVideo(featuredVideos[0])}
               style={{
                 backgroundColor: theme.card,
                 borderColor: theme.cardBorder,
               }}
-              className="p-3.5 rounded-2xl border shadow-2xs mb-3 flex-row items-center justify-between"
-              activeOpacity={0.85}
+              className="rounded-2xl border shadow-sm overflow-hidden mb-4"
+              activeOpacity={0.88}
             >
-              <View className="flex-1 mr-3">
+              <View style={{ width: '100%', height: 192, backgroundColor: '#0F172A', position: 'relative', overflow: 'hidden' }}>
+                <Image
+                  source={{ uri: featuredVideos[0].imageUrl }}
+                  style={StyleSheet.absoluteFillObject}
+                  resizeMode="cover"
+                />
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.4)' }]} />
+
+                {/* Tag text inside thumbnail */}
+                <View className="absolute top-3 left-3 bg-red-600 px-2.5 py-0.5 rounded z-10">
+                  <Text className="text-white font-black text-[10px] uppercase">
+                    {featuredVideos[0].tag}
+                  </Text>
+                </View>
+
+                {/* Play Button Overlay centered */}
+                <View
+                  style={[StyleSheet.absoluteFillObject, { justifyContent: 'center', alignItems: 'center' }]}
+                  pointerEvents="none"
+                >
+                  <View className="w-14 h-14 rounded-full bg-black/60 border-2 border-white items-center justify-center shadow-lg">
+                    <Ionicons name="play" size={26} color="#FFFFFF" style={{ marginLeft: 3 }} />
+                  </View>
+                </View>
+
+                {/* Duration Badge */}
+                <View className="absolute bottom-2.5 right-2.5 bg-black/85 px-2 py-0.5 rounded z-10">
+                  <Text className="text-white font-extrabold text-xs">
+                    {featuredVideos[0].duration}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="p-3.5">
                 <Text
                   style={{ color: theme.text }}
-                  className="font-bold text-xs leading-snug mb-1.5"
+                  className="font-extrabold text-sm leading-snug"
                   numberOfLines={2}
                 >
-                  {story.title}
-                </Text>
-                <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                  {story.timeAgo} • {story.source}
+                  {featuredVideos[0].title}
                 </Text>
               </View>
-              <Image
-                source={{ uri: story.imageUrl }}
-                className="w-16 h-16 rounded-xl bg-slate-700"
-                resizeMode="cover"
-              />
             </TouchableOpacity>
-          ))}
-        </View>
+          </View>
+        )}
+
+        {/* 4. TOP STORIES SECTION */}
+        {topStories.length > 0 && (
+          <View className="px-4 mt-1 mb-8">
+            <View className="flex-row justify-between items-center mb-3">
+              <Text style={{ color: theme.text }} className="font-extrabold text-base tracking-tight">
+                Top Stories
+              </Text>
+              <TouchableOpacity
+                onPress={() => onNavigateToTab && onNavigateToTab('news')}
+                className="py-1"
+              >
+                <Text style={{ color: '#2563EB' }} className="font-bold text-xs">
+                  More News
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {topStories.map((story) => (
+              <TouchableOpacity
+                key={story.id}
+                onPress={() => onNavigateToTab && onNavigateToTab('news')}
+                style={{
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                }}
+                className="p-3.5 rounded-2xl border shadow-2xs mb-3 flex-row items-center justify-between"
+                activeOpacity={0.85}
+              >
+                <View className="flex-1 mr-3">
+                  <Text
+                    style={{ color: theme.text }}
+                    className="font-bold text-xs leading-snug mb-1.5"
+                    numberOfLines={2}
+                  >
+                    {story.headline || story.title}
+                  </Text>
+                  <Text style={{ color: theme.textMuted }} className="text-[10px]">
+                    {story.timeAgo} • {story.category || 'Live API'}
+                  </Text>
+                </View>
+                <Image
+                  source={{ uri: story.imageUrl }}
+                  className="w-16 h-16 rounded-xl bg-slate-700"
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
 
       {/* Match Center Modal */}
