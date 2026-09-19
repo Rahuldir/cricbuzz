@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
 
-export default function WelcomeQuizModal({ visible, onClose }) {
-  const { theme } = useTheme();
-  const [step, setStep] = useState('welcome'); // 'welcome' | 'quiz' | 'finished'
-  const [selectedOption, setSelectedOption] = useState('A');
+const { width } = Dimensions.get('window');
+
+export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz' }) {
   const [questionIndex, setQuestionIndex] = useState(1);
+  const [selectedOption, setSelectedOption] = useState('A');
 
   if (!visible) return null;
 
@@ -24,12 +33,12 @@ export default function WelcomeQuizModal({ visible, onClose }) {
     },
     {
       id: 2,
-      question: 'Which is your favorite Cricket format?',
+      question: 'Select your favourite player..?',
       options: [
-        { id: 'A', text: 'T20 International / IPL' },
-        { id: 'B', text: 'One Day International (ODI)' },
-        { id: 'C', text: 'Test Cricket' },
-        { id: 'D', text: 'Domestic T20 Leagues' },
+        { id: 'A', text: 'Virat Kohli' },
+        { id: 'B', text: 'MS Dhoni' },
+        { id: 'C', text: 'Faf Du Plessis' },
+        { id: 'D', text: 'Travis Head' },
       ],
     },
   ];
@@ -41,204 +50,373 @@ export default function WelcomeQuizModal({ visible, onClose }) {
       setQuestionIndex(questionIndex + 1);
       setSelectedOption('A');
     } else {
-      setStep('finished');
+      onClose();
+    }
+  };
+
+  const handleBack = () => {
+    if (questionIndex > 1) {
+      setQuestionIndex(questionIndex - 1);
+      setSelectedOption('A');
+    } else {
+      onClose();
     }
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
-      <View style={{ backgroundColor: theme.bg }} className="flex-1">
-        {/* Top Header Bar */}
-        <View className="bg-emerald-700 dark:bg-emerald-900 px-4 pt-12 pb-3.5 flex-row items-center justify-between shadow-md">
-          <TouchableOpacity onPress={onClose} className="p-1">
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar barStyle="light-content" backgroundColor="#007A3B" />
+
+        {/* Top Header Bar matching exact screenshot */}
+        <View style={styles.topHeaderBar}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={28} color="#000000" />
           </TouchableOpacity>
 
-          <Text className="text-white font-extrabold text-base tracking-tight">
-            {step === 'welcome' ? 'Live Cricket TV HD' : `Fan Zone • Question ${questionIndex}`}
-          </Text>
-
-          <TouchableOpacity onPress={onClose} className="p-1">
-            <Ionicons name="close" size={22} color="#FFFFFF" />
-          </TouchableOpacity>
+          {/* Top Right Circular AD Badge */}
+          <View style={styles.topRightAdBadge}>
+            <View style={styles.adBadgeBlueCircle}>
+              <View style={styles.adRedBall} />
+              <View style={styles.adSmallPill}>
+                <Text style={styles.adSmallPillText}>AD</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        {/* STEP 1: WELCOME SCREEN (IMAGE 1 EXACT MATCH) */}
-        {step === 'welcome' && (
-          <ScrollView className="flex-1 px-6 pt-4 pb-8" showsVerticalScrollIndicator={false}>
-            {/* Top Ad Banner Simulation */}
-            <View className="bg-slate-100 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 mb-6 shadow-xs">
-              <View className="flex-row items-center mb-2">
-                <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center mr-2">
-                  <Ionicons name="baseball" size={18} color="#FFFFFF" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-xs font-black text-slate-800 dark:text-slate-100">
-                    Live Match Stats
-                  </Text>
-                  <Text className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Get real-time stats & commentary for every Cricket match
-                  </Text>
+        <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollInner} showsVerticalScrollIndicator={false}>
+          {/* Top Ad Banner Card */}
+          <View style={styles.adBannerCard}>
+            <View style={styles.adIconBox}>
+              <View style={styles.adCricketBallCircle}>
+                <Ionicons name="baseball" size={22} color="#DC2626" />
+                <View style={styles.adTagPill}>
+                  <Text style={styles.adTagText}>AD</Text>
                 </View>
               </View>
-
-              {/* Banner Graphic */}
-              <View className="bg-emerald-800 rounded-xl p-4 items-center justify-center my-2 shadow-sm">
-                <Text className="text-white font-black text-xs uppercase tracking-widest mb-1 text-center">
-                  LATEST CRICKET UPDATE
-                </Text>
-                <Text className="text-emerald-200 font-extrabold text-sm text-center mb-2">
-                  STAY UPDATED • ALL MATCHES LATEST SCORE
-                </Text>
-                <View className="bg-red-600 px-3 py-1 rounded-full">
-                  <Text className="text-white text-[10px] font-black uppercase">LIVE SCORECARD</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={() => setStep('quiz')}
-                className="bg-emerald-700 py-2.5 rounded-xl items-center mt-2 shadow-xs"
-              >
-                <Text className="text-white font-black text-xs uppercase tracking-wide">
-                  View Stats
-                </Text>
-              </TouchableOpacity>
             </View>
 
-            {/* Cricket Graphic */}
-            <View className="items-center justify-center my-4 py-4">
-              <View className="w-36 h-36 rounded-full bg-emerald-500/15 items-center justify-center border-4 border-emerald-500/20 shadow-inner">
-                <Ionicons name="trophy" size={68} color="#007A3B" />
-              </View>
+            <View style={styles.adTextBox}>
+              <Text style={styles.adTitle} numberOfLines={1}>IPL Live Matches</Text>
+              <Text style={styles.adSubtitle} numberOfLines={1}>Watch live Cricket matches on your phone. Don't</Text>
             </View>
 
-            {/* Welcome Titles */}
-            <View className="items-center mb-8">
-              <Text style={{ color: theme.text }} className="text-2xl font-black text-center">
-                Welcome To,
-              </Text>
-              <Text className="text-3xl font-black text-emerald-600 text-center tracking-tight">
-                Live Cricket <Text className="underline text-emerald-700">TV HD</Text>
-              </Text>
-
-              <Text style={{ color: theme.textMuted }} className="text-xs text-center leading-relaxed mt-3 px-4 font-medium">
-                Highly engaging and entertaining ball-by-ball commentary and real-time live score updates.
-              </Text>
-            </View>
-
-            {/* Get Started Button */}
-            <TouchableOpacity
-              onPress={() => setStep('quiz')}
-              className="bg-emerald-700 py-3.5 px-6 rounded-2xl flex-row items-center justify-center shadow-md mb-8"
-              activeOpacity={0.85}
-            >
-              <Text className="text-white font-black text-base mr-3 tracking-wide">
-                Get Started
-              </Text>
-              <View className="w-7 h-7 rounded-lg bg-emerald-800 items-center justify-center">
-                <Ionicons name="baseball-outline" size={18} color="#FFFFFF" />
-              </View>
-            </TouchableOpacity>
-          </ScrollView>
-        )}
-
-        {/* STEP 2: CRICKET FAN QUIZ (IMAGE 4 EXACT MATCH) */}
-        {step === 'quiz' && (
-          <ScrollView className="flex-1 px-6 pt-6 pb-8" showsVerticalScrollIndicator={false}>
-            {/* Ad Bar */}
-            <View className="bg-slate-100 dark:bg-slate-800/80 p-3 rounded-2xl flex-row justify-between items-center mb-6">
-              <View className="flex-row items-center flex-1 mr-2">
-                <Ionicons name="trophy-outline" size={20} color="#007A3B" style={{ marginRight: 8 }} />
-                <View className="flex-1">
-                  <Text className="text-xs font-black text-slate-800 dark:text-slate-100">IPL Live Matches</Text>
-                  <Text className="text-[10px] text-slate-500">Watch live Cricket matches on your phone.</Text>
-                </View>
-              </View>
-              <TouchableOpacity className="bg-emerald-700 px-3 py-1.5 rounded-lg">
-                <Text className="text-white text-[11px] font-bold">Install</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Question Header */}
-            <Text className="text-center font-black text-lg text-slate-900 dark:text-slate-100 mb-4 underline">
-              Question {questionIndex}
-            </Text>
-
-            {/* Question Box Card */}
-            <View className="bg-slate-100 dark:bg-slate-800 p-6 rounded-3xl mb-6 shadow-xs border border-slate-200 dark:border-slate-700">
-              <Text className="text-center font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
-                {currentQuiz.question}
-              </Text>
-            </View>
-
-            {/* Multiple Choice Options A, B, C, D */}
-            <View className="space-y-3.5 mb-8">
-              {currentQuiz.options.map((opt) => {
-                const isSelected = selectedOption === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setSelectedOption(opt.id)}
-                    style={{
-                      borderColor: isSelected ? '#007A3B' : theme.cardBorder,
-                      backgroundColor: isSelected ? (theme.isDarkMode ? '#064E3B40' : '#E6F4EA') : theme.card,
-                    }}
-                    className="p-4 rounded-2xl border-2 flex-row items-center shadow-2xs mb-3"
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={{ color: isSelected ? '#007A3B' : theme.text }}
-                      className="font-black text-sm tracking-wide flex-1"
-                    >
-                      ({opt.id})   {opt.text}
-                    </Text>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={20} color="#007A3B" />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Next Button (Matching Green Image 4) */}
-            <TouchableOpacity
-              onPress={handleNextQuiz}
-              className="bg-emerald-700 py-3.5 px-6 rounded-2xl flex-row items-center justify-between shadow-md"
-              activeOpacity={0.85}
-            >
-              <View />
-              <Text className="text-white font-black text-base tracking-wider">
-                Next
-              </Text>
-              <Ionicons name="chevron-forward-circle" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </ScrollView>
-        )}
-
-        {/* STEP 3: QUIZ COMPLETE / REDIRECT */}
-        {step === 'finished' && (
-          <View className="flex-1 items-center justify-center p-6 text-center">
-            <View className="w-20 h-20 rounded-full bg-emerald-500/20 items-center justify-center mb-4">
-              <Ionicons name="checkmark-done-circle" size={48} color="#007A3B" />
-            </View>
-            <Text style={{ color: theme.text }} className="text-xl font-black text-center mb-2">
-              Setup Complete!
-            </Text>
-            <Text style={{ color: theme.textMuted }} className="text-xs text-center leading-relaxed mb-6">
-              Your fan preferences have been saved. Enjoy fast live line scores and telemetry updates!
-            </Text>
-
-            <TouchableOpacity
-              onPress={onClose}
-              className="bg-emerald-700 py-3 px-8 rounded-2xl shadow-md"
-            >
-              <Text className="text-white font-black text-sm uppercase">
-                Go to Live Score
-              </Text>
+            <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+              <Text style={styles.installButtonText}>Install</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </View>
+
+          {/* Question Title Header: Quetion 1 / Quetion 2 */}
+          <View style={styles.quetionHeaderBox}>
+            <Text style={styles.quetionHeaderText}>
+              Quetion {questionIndex}
+            </Text>
+            <View style={styles.quetionHeaderUnderline} />
+          </View>
+
+          {/* Question Box Card (Light Purple Tinted Box) */}
+          <View style={styles.questionCardBox}>
+            <Text style={styles.questionText}>
+              {currentQuiz.question}
+            </Text>
+          </View>
+
+          {/* Multiple Choice Options (A, B, C, D) */}
+          <View style={styles.optionsContainer}>
+            {currentQuiz.options.map((opt) => {
+              const isSelected = selectedOption === opt.id;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  onPress={() => setSelectedOption(opt.id)}
+                  style={[
+                    styles.optionItem,
+                    isSelected && styles.optionItemSelected,
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                    ({opt.id})   {opt.text}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Next Button (Matching Green Image 1 & 4) */}
+          <View style={styles.nextButtonContainer}>
+            <TouchableOpacity
+              onPress={handleNextQuiz}
+              style={styles.nextButton}
+              activeOpacity={0.85}
+            >
+              <View style={{ width: 32 }} />
+              <Text style={styles.nextButtonText}>Next</Text>
+              <View style={styles.nextIconCircle}>
+                <Ionicons name="chevron-forward-sharp" size={16} color="#007A3B" style={{ marginLeft: -1 }} />
+                <Ionicons name="chevron-forward-sharp" size={16} color="#007A3B" style={{ marginLeft: -8 }} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Bottom Ad Banner */}
+        <View style={styles.bottomAdBanner}>
+          <View style={styles.adIconBox}>
+            <View style={styles.adTrophyCircle}>
+              <Ionicons name="trophy" size={20} color="#D97706" />
+              <View style={styles.adTagPillGreen}>
+                <Text style={styles.adTagText}>AD</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.adTextBox}>
+            <Text style={styles.adTitle} numberOfLines={1}>IPL News</Text>
+            <Text style={styles.adSubtitle} numberOfLines={1}>Stay updated with the latest IPL news and</Text>
+          </View>
+
+          <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+            <Text style={styles.installButtonText}>Install</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  topHeaderBar: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    padding: 4,
+  },
+  topRightAdBadge: {
+    padding: 4,
+  },
+  adBadgeBlueCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0284C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  adRedBall: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#EF4444',
+  },
+  adSmallPill: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#38BDF8',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  adSmallPillText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  scrollContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scrollInner: {
+    paddingTop: 8,
+    paddingBottom: 20,
+  },
+  adBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  adIconBox: {
+    marginRight: 10,
+  },
+  adCricketBallCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    position: 'relative',
+  },
+  adTagPill: {
+    position: 'absolute',
+    top: -3,
+    left: -3,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+  adTagText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  adTextBox: {
+    flex: 1,
+    marginRight: 8,
+  },
+  adTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  adSubtitle: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  installButton: {
+    backgroundColor: '#008000',
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 8,
+  },
+  installButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quetionHeaderBox: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  quetionHeaderText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#000000',
+    textAlign: 'center',
+  },
+  quetionHeaderUnderline: {
+    width: 110,
+    height: 2.5,
+    backgroundColor: '#000000',
+    marginTop: 2,
+  },
+  questionCardBox: {
+    backgroundColor: '#EDEBF5',
+    borderRadius: 16,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    marginBottom: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questionText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  optionsContainer: {
+    marginBottom: 24,
+  },
+  optionItem: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#000000',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  optionItemSelected: {
+    borderColor: '#008000',
+    backgroundColor: '#E6F4EA',
+  },
+  optionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  optionTextSelected: {
+    color: '#008000',
+  },
+  nextButtonContainer: {
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  nextButton: {
+    width: width * 0.65,
+    height: 48,
+    backgroundColor: '#007A3B',
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  nextButtonText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  nextIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomAdBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  adTrophyCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  adTagPillGreen: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
+});

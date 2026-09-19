@@ -39,8 +39,14 @@ function MainApp() {
   if (showSplash) {
     return (
       <SplashScreen
-        onFinish={() => setShowSplash(false)}
-        onClose={() => setShowSplash(false)}
+        onFinish={() => {
+          setShowSplash(false);
+          setQuizVisible(true);
+        }}
+        onClose={() => {
+          setShowSplash(false);
+          setQuizVisible(true);
+        }}
       />
     );
   }

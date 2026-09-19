@@ -7,10 +7,8 @@ import {
   StyleSheet,
   Dimensions,
   StatusBar,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -33,26 +31,24 @@ export default function SplashScreen({ onFinish, isPreview = false, onClose }) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
 
-  const handleDismiss = () => {
-    if (onClose) onClose();
-    if (onFinish) onFinish();
-  };
+    // Auto transition directly to next screen after splash display
+    let timer;
+    if (onFinish) {
+      timer = setTimeout(() => {
+        if (onClose) onClose();
+        if (onFinish) onFinish();
+      }, 2500);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      {/* Top action button to enter main app whenever user wants */}
-      <View style={styles.topBar}>
-        {(isPreview || onClose || onFinish) && (
-          <TouchableOpacity style={styles.enterAppButton} onPress={handleDismiss} activeOpacity={0.8}>
-            <Text style={styles.enterAppText}>Continue</Text>
-            <Ionicons name="arrow-forward" size={14} color="#0F172A" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        )}
-      </View>
 
       {/* Center Main Content Container (Image 3 exact match) */}
       <Animated.View
@@ -64,7 +60,7 @@ export default function SplashScreen({ onFinish, isPreview = false, onClose }) {
           },
         ]}
       >
-        {/* App Logo Icon with Shadow */}
+        {/* App Logo Icon */}
         <View style={styles.logoShadowBox}>
           <Image
             source={require('../../assets/splash_logo.jpg')}
@@ -106,34 +102,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  topBar: {
-    width: '100%',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    alignItems: 'flex-end',
-    height: 48,
-  },
-  enterAppButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  enterAppText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginTop: -20,
+    marginTop: 20,
   },
   logoShadowBox: {
     width: 160,
