@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getCricketNews } from '../services/cricketApi';
 import EmptyStateView from '../components/EmptyStateView';
+import ArticleWebViewModal from '../components/ArticleWebViewModal';
 
 export default function NewsScreen() {
   const { theme } = useTheme();
@@ -19,6 +20,8 @@ export default function NewsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [newsList, setNewsList] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [webViewVisible, setWebViewVisible] = useState(false);
 
   const loadNews = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -112,6 +115,12 @@ export default function NewsScreen() {
             <>
               {/* Featured Big News Banner */}
               <TouchableOpacity
+                onPress={() => {
+                  if (filteredNews[0].link) {
+                    setSelectedArticle(filteredNews[0]);
+                    setWebViewVisible(true);
+                  }
+                }}
                 style={{
                   backgroundColor: theme.card,
                   borderColor: theme.cardBorder,
@@ -142,7 +151,7 @@ export default function NewsScreen() {
                     <Text style={{ color: theme.textMuted }} className="text-[11px]">
                       {filteredNews[0].timeAgo} • {filteredNews[0].readTime}
                     </Text>
-                    <Ionicons name="bookmark-outline" size={16} color={theme.textMuted} />
+                    <Ionicons name="reader-outline" size={16} color={theme.accent} />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -152,6 +161,12 @@ export default function NewsScreen() {
                 {filteredNews.slice(1).map((item) => (
                   <TouchableOpacity
                     key={item.id}
+                    onPress={() => {
+                      if (item.link) {
+                        setSelectedArticle(item);
+                        setWebViewVisible(true);
+                      }
+                    }}
                     style={{
                       backgroundColor: theme.card,
                       borderColor: theme.cardBorder,
@@ -190,6 +205,16 @@ export default function NewsScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* In-app Embedded Article WebView Modal */}
+      <ArticleWebViewModal
+        visible={webViewVisible}
+        article={selectedArticle}
+        onClose={() => {
+          setWebViewVisible(false);
+          setSelectedArticle(null);
+        }}
+      />
     </View>
   );
 }

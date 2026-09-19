@@ -21,6 +21,7 @@ import {
 } from '../services/cricketApi';
 import MatchCenterModal from '../components/MatchCenterModal';
 import VideoPlayerModal from '../components/VideoPlayerModal';
+import ArticleWebViewModal from '../components/ArticleWebViewModal';
 import { TeamFlag } from '../utils/flagHelper';
 
 const { width } = Dimensions.get('window');
@@ -38,6 +39,8 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const [playerVisible, setPlayerVisible] = useState(false);
   const [featuredVideos, setFeaturedVideos] = useState([]);
   const [topStories, setTopStories] = useState([]);
+  const [selectedStory, setSelectedStory] = useState(null);
+  const [storyModalVisible, setStoryModalVisible] = useState(false);
 
   const fetchMatches = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -377,7 +380,14 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
             {topStories.map((story) => (
               <TouchableOpacity
                 key={story.id}
-                onPress={() => onNavigateToTab && onNavigateToTab('news')}
+                onPress={() => {
+                  if (story.link) {
+                    setSelectedStory(story);
+                    setStoryModalVisible(true);
+                  } else if (onNavigateToTab) {
+                    onNavigateToTab('news');
+                  }
+                }}
                 style={{
                   backgroundColor: theme.card,
                   borderColor: theme.cardBorder,
@@ -420,6 +430,16 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
         visible={playerVisible}
         video={playingVideo}
         onClose={() => setPlayerVisible(false)}
+      />
+
+      {/* Article In-App WebView Modal */}
+      <ArticleWebViewModal
+        visible={storyModalVisible}
+        article={selectedStory}
+        onClose={() => {
+          setStoryModalVisible(false);
+          setSelectedStory(null);
+        }}
       />
     </View>
   );

@@ -31,11 +31,12 @@ export default function IplHubScreen() {
   const [selectedYear, setSelectedYear] = useState('2024');
   const [allYears, setAllYears] = useState(['2024', '2023', '2022', '2021', '2020']);
 
-  const loadIplData = useCallback(async (yearToFetch = selectedYear, isSilent = false) => {
+  const loadIplData = useCallback(async (yearToFetch, isSilent = false) => {
+    const yr = yearToFetch || '2024';
     if (!isSilent) setLoading(true);
     try {
       const [tableRes, schedRes, playRes] = await Promise.all([
-        getIplPointTable(yearToFetch),
+        getIplPointTable(yr),
         getIplSchedule(),
         getIplPlayoff(),
       ]);
@@ -45,7 +46,7 @@ export default function IplHubScreen() {
         setAllYears(tableRes.allYears);
       }
       if (tableRes.year) {
-        setSelectedYear(tableRes.year);
+        setSelectedYear((prev) => (prev !== tableRes.year ? tableRes.year : prev));
       }
       setSchedule(schedRes.schedule || []);
       setPlayoffs(playRes.playoffs || []);
@@ -55,7 +56,7 @@ export default function IplHubScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedYear]);
+  }, []);
 
   useEffect(() => {
     loadIplData(selectedYear);
@@ -75,7 +76,6 @@ export default function IplHubScreen() {
 
   const onSelectYear = (yr) => {
     setSelectedYear(yr);
-    loadIplData(yr);
   };
 
   return (
