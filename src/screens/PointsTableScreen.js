@@ -190,8 +190,8 @@ export default function PointsTableScreen() {
                         backgroundColor: isFavorite
                           ? theme.accent + '18'
                           : isTopFour
-                          ? theme.accent + '06'
-                          : 'transparent',
+                            ? theme.accent + '06'
+                            : 'transparent',
                       }}
                     >
                       {/* Rank badge */}

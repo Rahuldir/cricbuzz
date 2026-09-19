@@ -45,21 +45,30 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const fetchMatches = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
-      const [liveRes, compRes, upRes, newsRes, vidRes] = await Promise.all([
-        getInProgressFixtures(5),
+      const [liveRes, upRes, compRes, newsRes, vidRes] = await Promise.all([
+        getInProgressFixtures(10),
+        getUpcomingFixtures(15),
         getCompletedFixtures(10),
-        getUpcomingFixtures(5),
         getCricketNews(),
         getCricketVideos(),
       ]);
 
-      const combined = [
-        ...(compRes.fixtures || []),
-        ...(liveRes.fixtures || []),
-        ...(upRes.fixtures || []),
+      const liveFixtures = liveRes.fixtures || [];
+      const upcomingFixtures = (upRes.fixtures || []).sort((a, b) => {
+        const timeA = a.kickoffTimestamp || (a.kickoff_utc ? new Date(a.kickoff_utc).getTime() : 0);
+        const timeB = b.kickoffTimestamp || (b.kickoff_utc ? new Date(b.kickoff_utc).getTime() : 0);
+        return timeA - timeB; // Earliest upcoming match first
+      });
+      const completedFixtures = compRes.fixtures || [];
+
+      // Priority Order: LIVE matches first, UPCOMING matches by time, then COMPLETED matches
+      const combinedMatches = [
+        ...liveFixtures,
+        ...upcomingFixtures,
+        ...completedFixtures,
       ];
 
-      setMatches(combined);
+      setMatches(combinedMatches);
       setTopStories(newsRes.news || []);
       setFeaturedVideos(vidRes.videos || []);
     } catch (err) {
@@ -94,7 +103,7 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
   const chips = [
     { id: 'India - Men', label: 'India - Men', icon: 'people' },
     { id: 'India - Women', label: 'India - Women', icon: 'people' },
-    { id: 'IPL 2024', label: 'IPL 2024', icon: 'trophy' },
+    { id: 'IPL 2026', label: 'IPL 2026', icon: 'trophy' },
     { id: 'World Cup', label: 'World Cup', icon: 'globe' },
   ];
 
@@ -153,9 +162,12 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
                       >
                         {item.title || item.series || 'Match'}
                       </Text>
-                      <View className="bg-slate-800 dark:bg-slate-700 px-2 py-0.5 rounded">
+                      <View className="bg-slate-800 dark:bg-slate-700 px-2 py-0.5 rounded flex-row items-center">
+                        {item.status === 'Live' && (
+                          <View className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1 animate-pulse" />
+                        )}
                         <Text className="text-white text-[10px] font-black uppercase">
-                          {item.format || 'T20I'}
+                          {item.status === 'Live' ? 'LIVE' : (item.format || 'T20I')}
                         </Text>
                       </View>
                     </View>
@@ -172,13 +184,14 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
                         />
                         <Text
                           style={{ color: theme.text }}
-                          className="font-black text-sm tracking-tight"
+                          className="font-black text-sm tracking-tight flex-1"
+                          numberOfLines={1}
                         >
                           {item.team1?.shortName || item.team1?.name}
                         </Text>
                       </View>
                       <Text style={{ color: theme.text }} className="font-bold text-sm">
-                        {item.team1?.score || '0'} {item.team1?.overs ? `(${item.team1.overs})` : ''}
+                        {item.team1?.score || '0'} {item.team1?.overs && item.team1.overs !== '-' ? `(${item.team1.overs})` : ''}
                       </Text>
                     </View>
 
@@ -194,19 +207,20 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
                         />
                         <Text
                           style={{ color: theme.text }}
-                          className="font-black text-sm tracking-tight"
+                          className="font-black text-sm tracking-tight flex-1"
+                          numberOfLines={1}
                         >
                           {item.team2?.shortName || item.team2?.name}
                         </Text>
                       </View>
                       <Text style={{ color: theme.text }} className="font-bold text-sm">
-                        {item.team2?.score || '0'} {item.team2?.overs ? `(${item.team2.overs})` : ''}
+                        {item.team2?.score || '0'} {item.team2?.overs && item.team2.overs !== '-' ? `(${item.team2.overs})` : ''}
                       </Text>
                     </View>
 
                     {/* Result / Equation in Cricbuzz Blue */}
                     <Text
-                      style={{ color: '#2563EB' }}
+                      style={{ color: item.status === 'Live' ? '#EF4444' : '#2563EB' }}
                       className="text-xs font-bold leading-tight"
                       numberOfLines={1}
                     >
@@ -214,7 +228,7 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
                     </Text>
                   </TouchableOpacity>
 
-                  {/* Card Bottom Grey Strip with POINTS TABLE & SCHEDULE */}
+                  {/* Card Bottom Strip with POINTS TABLE & SCHEDULE */}
                   <View
                     style={{
                       backgroundColor: theme.cardSecondary,
@@ -246,7 +260,7 @@ export default function CricbuzzHomeScreen({ onNavigateToTab }) {
           )}
         </View>
 
-        {/* 2. CATEGORY PILL CHIPS (MATCHING SCREENSHOT) */}
+        {/* 2. CATEGORY PILL CHIPS */}
         <View className="px-4 py-2">
           <ScrollView
             horizontal

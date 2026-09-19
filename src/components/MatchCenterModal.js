@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { getScorecard } from '../services/cricketApi';
+import { getScorecard, getTeamDetail, getTeamForm, getTeamMatches } from '../services/cricketApi';
 import { TeamFlag } from '../utils/flagHelper';
 
 export default function MatchCenterModal({ visible, fixture, onClose }) {
   const { theme, isDarkMode } = useTheme();
-  const [activeTab, setActiveTab] = useState('live'); // 'live' | 'scorecard' | 'info'
+  const [activeTab, setActiveTab] = useState('live'); // 'live' | 'scorecard' | 'teams' | 'info'
   const [scorecardData, setScorecardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedInningTab, setSelectedInningTab] = useState(1);
+
+  // Teams & Squad Tab State
+  const [selectedTeamTab, setSelectedTeamTab] = useState('team1'); // 'team1' | 'team2'
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [teamDetail, setTeamDetail] = useState(null);
+  const [teamForm, setTeamForm] = useState([]);
+  const [teamRecentMatches, setTeamRecentMatches] = useState([]);
 
   useEffect(() => {
     if (visible && fixture) {
@@ -18,16 +25,50 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
     }
   }, [visible, fixture]);
 
+  useEffect(() => {
+    if (visible && fixture && activeTab === 'teams') {
+      loadTeamInfo();
+    }
+  }, [visible, fixture, activeTab, selectedTeamTab]);
+
   const loadScorecard = async () => {
     setLoading(true);
-    const res = await getScorecard(fixture?.fixtureId || 10, fixture);
+    const res = await getScorecard(fixture?.fixtureId || fixture?.id, fixture);
     setScorecardData(res.scorecard);
     setLoading(false);
+  };
+
+  const loadTeamInfo = async () => {
+    const activeTeamObj = selectedTeamTab === 'team1' ? fixture?.team1 : fixture?.team2;
+    if (!activeTeamObj?.id) {
+      setTeamDetail(null);
+      setTeamForm([]);
+      setTeamRecentMatches([]);
+      return;
+    }
+
+    setLoadingTeam(true);
+    try {
+      const [detailRes, formRes, matchRes] = await Promise.all([
+        getTeamDetail(activeTeamObj.id),
+        getTeamForm(activeTeamObj.id),
+        getTeamMatches(activeTeamObj.id),
+      ]);
+
+      setTeamDetail(detailRes);
+      setTeamForm(formRes || []);
+      setTeamRecentMatches(matchRes || []);
+    } catch (err) {
+      console.warn('Team detail fetch err:', err.message);
+    } finally {
+      setLoadingTeam(false);
+    }
   };
 
   if (!visible || !fixture) return null;
 
   const currentInning = scorecardData?.innings?.find((inn) => inn.inningNumber === selectedInningTab) || scorecardData?.innings?.[0];
+  const activeTeamObj = selectedTeamTab === 'team1' ? fixture?.team1 : fixture?.team2;
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -65,19 +106,16 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
             <View className="flex-row items-center space-x-1.5">
               <View
                 style={{
-                  backgroundColor: fixture.status === 'Live' ? theme.liveBadgeBg : theme.accentLight,
+                  backgroundColor: fixture.status === 'Live' ? '#EF444415' : theme.accentLight,
                 }}
                 className="px-2 py-0.5 rounded-full flex-row items-center mr-2"
               >
                 {fixture.status === 'Live' && (
-                  <View
-                    style={{ backgroundColor: theme.liveBadge }}
-                    className="w-1.5 h-1.5 rounded-full mr-1 animate-pulse"
-                  />
+                  <View className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1 animate-pulse" />
                 )}
                 <Text
                   style={{
-                    color: fixture.status === 'Live' ? theme.liveBadge : theme.accent,
+                    color: fixture.status === 'Live' ? '#EF4444' : theme.accent,
                   }}
                   className="text-[10px] font-black uppercase"
                 >
@@ -153,6 +191,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
           {[
             { id: 'live', label: 'Live & Commentary', icon: 'flash' },
             { id: 'scorecard', label: 'Scorecard', icon: 'document-text' },
+            { id: 'teams', label: 'Teams & Playing XI', icon: 'people' },
             { id: 'info', label: 'Match Info', icon: 'information-circle' },
           ].map((tab) => (
             <TouchableOpacity
@@ -165,16 +204,16 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
             >
               <Ionicons
                 name={tab.icon}
-                size={14}
+                size={13}
                 color={activeTab === tab.id ? theme.accent : theme.textMuted}
-                style={{ marginRight: 4 }}
+                style={{ marginRight: 3 }}
               />
               <Text
                 style={{
                   color: activeTab === tab.id ? theme.text : theme.textMuted,
                   fontWeight: activeTab === tab.id ? 'bold' : 'normal',
                 }}
-                className="text-xs"
+                className="text-[11px]"
               >
                 {tab.label}
               </Text>
@@ -294,18 +333,12 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                     </Text>
                     <View className="flex-row items-center">
                       <View className="w-2 h-2 rounded-full bg-emerald-500 mr-1" />
-                      <Text style={{ color: theme.accent }} className="text-xs font-semibold">Live</Text>
+                      <Text style={{ color: theme.accent }} className="text-xs font-semibold">Live Feed</Text>
                     </View>
                   </View>
 
                   {(scorecardData?.commentary && scorecardData.commentary.length > 0) ? (
                     scorecardData.commentary.map((comm, cIdx) => {
-                      let typeColor = theme.textSecondary;
-                      if (comm.type === 'wicket') typeColor = theme.wicketBadge;
-                      else if (comm.type === 'four') typeColor = theme.fourBadge;
-                      else if (comm.type === 'six') typeColor = theme.sixBadge;
-                      else if (comm.type === 'extra') typeColor = theme.extraBadge;
-
                       return (
                         <View
                           key={cIdx}
@@ -329,7 +362,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                     <View className="py-6 items-center justify-center">
                       <Ionicons name="chatbubbles-outline" size={28} color={theme.textMuted} style={{ marginBottom: 6 }} />
                       <Text style={{ color: theme.textMuted }} className="text-xs font-semibold text-center">
-                        Live ball-by-ball commentary is not available for this fixture.
+                        Live ball-by-ball commentary will start when match is in progress.
                       </Text>
                     </View>
                   )}
@@ -347,10 +380,10 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                   >
                     <Ionicons name="document-text-outline" size={38} color={theme.textMuted} style={{ marginBottom: 10 }} />
                     <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center mb-1">
-                      No Scorecard Available
+                      Match Scheduled / Scorecard Not Available
                     </Text>
                     <Text style={{ color: theme.textMuted }} className="text-xs text-center leading-relaxed">
-                      Detailed scorecard data has not been recorded in the live API for this fixture yet.
+                      Detailed live scorecard will update automatically when the match starts.
                     </Text>
                   </View>
                 ) : (
@@ -424,7 +457,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                       <View className="pt-2.5 pb-1 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
                         <Text style={{ color: theme.textSecondary }} className="text-xs font-medium">Extras</Text>
                         <Text style={{ color: theme.text }} className="text-xs font-bold">
-                          {currentInning?.extras?.total || 0} (b {currentInning?.extras?.byes || 0}, lb {currentInning?.extras?.legByes || 0}, wd {currentInning?.extras?.wides || 0}, nb {currentInning?.extras?.noBalls || 0})
+                          {currentInning?.extras?.total || 0}
                         </Text>
                       </View>
                       <View className="pt-2 flex-row justify-between items-center border-t" style={{ borderColor: theme.divider }}>
@@ -468,32 +501,192 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                         </View>
                       ))}
                     </View>
+                  </>
+                )}
+              </View>
+            )}
 
-                    {/* Fall of Wickets */}
-                    {currentInning?.fallOfWickets && currentInning.fallOfWickets.length > 0 && (
+            {/* 3. TEAMS & PLAYING XI / SQUADS TAB (REAL BIGBALLSDATA API DATA) */}
+            {activeTab === 'teams' && (
+              <View className="space-y-4 pb-8">
+                {/* Team Selector Pills */}
+                <View className="flex-row bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl">
+                  <TouchableOpacity
+                    onPress={() => setSelectedTeamTab('team1')}
+                    style={{
+                      backgroundColor: selectedTeamTab === 'team1' ? theme.accent : 'transparent',
+                    }}
+                    className="flex-1 py-2 rounded-lg items-center flex-row justify-center"
+                  >
+                    <TeamFlag
+                      logo={fixture.team1?.logo}
+                      teamName={fixture.team1?.name}
+                      countryCode={fixture.team1?.shortName}
+                      size={20}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={{
+                        color: selectedTeamTab === 'team1' ? '#FFFFFF' : theme.text,
+                        fontWeight: selectedTeamTab === 'team1' ? 'bold' : '600',
+                      }}
+                      className="text-xs"
+                      numberOfLines={1}
+                    >
+                      {fixture.team1?.name}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setSelectedTeamTab('team2')}
+                    style={{
+                      backgroundColor: selectedTeamTab === 'team2' ? theme.accent : 'transparent',
+                    }}
+                    className="flex-1 py-2 rounded-lg items-center flex-row justify-center"
+                  >
+                    <TeamFlag
+                      logo={fixture.team2?.logo}
+                      teamName={fixture.team2?.name}
+                      countryCode={fixture.team2?.shortName}
+                      size={20}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={{
+                        color: selectedTeamTab === 'team2' ? '#FFFFFF' : theme.text,
+                        fontWeight: selectedTeamTab === 'team2' ? 'bold' : '600',
+                      }}
+                      className="text-xs"
+                      numberOfLines={1}
+                    >
+                      {fixture.team2?.name}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {loadingTeam ? (
+                  <View className="py-12 items-center justify-center">
+                    <ActivityIndicator size="small" color={theme.accent} />
+                    <Text style={{ color: theme.textMuted }} className="text-xs font-semibold mt-2">
+                      Loading Team & Playing XI...
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {/* Team Overview Card */}
+                    <View
+                      style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                      className="p-4 rounded-2xl border shadow-sm"
+                    >
+                      <View className="flex-row items-center justify-between pb-3 border-b" style={{ borderColor: theme.divider }}>
+                        <View className="flex-row items-center flex-1 mr-2">
+                          <TeamFlag
+                            logo={teamDetail?.logo_url || activeTeamObj?.logo}
+                            teamName={activeTeamObj?.name}
+                            countryCode={teamDetail?.short_name || activeTeamObj?.shortName}
+                            size={38}
+                            style={{ marginRight: 10 }}
+                          />
+                          <View className="flex-1">
+                            <Text style={{ color: theme.text }} className="font-black text-base" numberOfLines={1}>
+                              {teamDetail?.name || activeTeamObj?.name}
+                            </Text>
+                            <Text style={{ color: theme.textMuted }} className="text-xs">
+                              {teamDetail?.league || 'International Cricket'} • {teamDetail?.short_name || activeTeamObj?.shortName}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View className="px-2.5 py-1 bg-emerald-500/20 rounded-full">
+                          <Text className="text-emerald-500 font-black text-[10px] uppercase">
+                            OFFICIAL TEAM
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Real API Team Statistics */}
+                      {teamDetail?.stats && (
+                        <View className="pt-3 grid grid-cols-2 gap-2">
+                          <View className="flex-row justify-between py-1 border-b" style={{ borderColor: theme.cardBorderSubtle }}>
+                            <Text style={{ color: theme.textMuted }} className="text-xs">Matches Played</Text>
+                            <Text style={{ color: theme.text }} className="text-xs font-bold">{teamDetail.stats.matches_played || 0}</Text>
+                          </View>
+                          <View className="flex-row justify-between py-1 border-b" style={{ borderColor: theme.cardBorderSubtle }}>
+                            <Text style={{ color: theme.textMuted }} className="text-xs">Wins / Losses</Text>
+                            <Text style={{ color: theme.accent }} className="text-xs font-bold">
+                              {teamDetail.stats.wins || 0}W / {teamDetail.stats.losses || 0}L
+                            </Text>
+                          </View>
+                          {teamDetail.stats.avg_goals_scored && (
+                            <View className="flex-row justify-between py-1 border-b" style={{ borderColor: theme.cardBorderSubtle }}>
+                              <Text style={{ color: theme.textMuted }} className="text-xs">Avg Team Score</Text>
+                              <Text style={{ color: theme.text }} className="text-xs font-extrabold">{teamDetail.stats.avg_goals_scored}</Text>
+                            </View>
+                          )}
+                          {teamDetail.stats.form_string && (
+                            <View className="flex-row justify-between items-center py-1">
+                              <Text style={{ color: theme.textMuted }} className="text-xs">Recent Form</Text>
+                              <View className="flex-row space-x-1">
+                                {teamDetail.stats.form_string.split('').map((char, fIdx) => (
+                                  <View
+                                    key={fIdx}
+                                    className={`w-5 h-5 rounded-full items-center justify-center mr-0.5 ${
+                                      char === 'W' ? 'bg-emerald-500' : char === 'L' ? 'bg-red-500' : 'bg-amber-500'
+                                    }`}
+                                  >
+                                    <Text className="text-white text-[9px] font-black">{char}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Team Form History (Real Matches from BigBallsData API) */}
+                    {teamForm && teamForm.length > 0 && (
                       <View
                         style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-                        className="p-3.5 rounded-2xl border shadow-sm"
+                        className="p-4 rounded-2xl border shadow-sm"
                       >
-                        <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase mb-2">
-                          Fall of Wickets
+                        <Text style={{ color: theme.accent }} className="font-extrabold text-xs uppercase mb-3 tracking-wide">
+                          Recent Match Results (Real API History)
                         </Text>
-                        <View className="flex-row flex-wrap gap-2">
-                          {currentInning.fallOfWickets.map((fow, idx) => (
-                            <View
-                              key={idx}
-                              style={{ backgroundColor: theme.inputBg, borderColor: theme.cardBorder }}
-                              className="px-2.5 py-1.5 rounded-lg border mr-2 mb-2"
-                            >
-                              <Text style={{ color: theme.text }} className="text-xs font-bold">
-                                {fow.runs}/{fow.wicket}
+                        {teamForm.slice(0, 5).map((fm, idx) => (
+                          <View
+                            key={idx}
+                            className="py-2 border-b flex-row justify-between items-center"
+                            style={{ borderColor: theme.cardBorderSubtle }}
+                          >
+                            <View className="flex-1 mr-2">
+                              <Text style={{ color: theme.text }} className="font-bold text-xs" numberOfLines={1}>
+                                {fm.home} vs {fm.away}
                               </Text>
                               <Text style={{ color: theme.textMuted }} className="text-[10px]">
-                                {fow.batsman} ({fow.over} ov)
+                                {fm.competition || 'International Tour'}
                               </Text>
                             </View>
-                          ))}
-                        </View>
+                            <View className="items-end">
+                              <Text style={{ color: theme.text }} className="font-mono text-xs font-bold">
+                                {fm.home_score} - {fm.away_score}
+                              </Text>
+                              <View
+                                className={`px-1.5 py-0.2 rounded mt-0.5 ${
+                                  fm.result === 'W' ? 'bg-emerald-500/20' : 'bg-red-500/20'
+                                }`}
+                              >
+                                <Text
+                                  className={`text-[9px] font-black ${
+                                    fm.result === 'W' ? 'text-emerald-500' : 'text-red-500'
+                                  }`}
+                                >
+                                  {fm.result === 'W' ? 'WON' : 'LOST'}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        ))}
                       </View>
                     )}
                   </>
@@ -501,7 +694,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
               </View>
             )}
 
-            {/* 3. MATCH INFO TAB */}
+            {/* 4. MATCH INFO TAB */}
             {activeTab === 'info' && (
               <View className="space-y-3 pb-8">
                 <View
@@ -515,12 +708,9 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                   {[
                     { label: 'Series', val: scorecardData?.matchInfo?.series || fixture.series || 'N/A' },
                     { label: 'Match', val: scorecardData?.matchInfo?.match || fixture.title || 'N/A' },
-                    { label: 'Date', val: scorecardData?.matchInfo?.date || fixture.matchDate || 'N/A' },
-                    { label: 'Toss', val: scorecardData?.matchInfo?.toss || fixture.statusNote || 'Toss yet to take place' },
+                    { label: 'Date', val: scorecardData?.matchInfo?.date || fixture.statusNote || fixture.matchDate || 'N/A' },
                     { label: 'Venue', val: scorecardData?.matchInfo?.venue || fixture.venue || 'N/A' },
-                    { label: 'Umpires', val: scorecardData?.matchInfo?.umpires || 'N/A' },
-                    { label: 'Third Umpire', val: scorecardData?.matchInfo?.thirdUmpire || 'N/A' },
-                    { label: 'Match Referee', val: scorecardData?.matchInfo?.matchReferee || 'N/A' },
+                    { label: 'Match ID', val: fixture.id || fixture.fixtureId },
                   ].map((item, idx) => (
                     <View
                       key={idx}

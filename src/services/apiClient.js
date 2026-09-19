@@ -3,7 +3,8 @@
  * Base URL: https://dsquaretech.com/v1/cricket
  */
 
-const DEFAULT_BASE_URL = 'https://dsquaretech.com/v1/cricket';
+const DEFAULT_BASE_URL = 'https://api.bigballsdata.com';
+const API_KEY = process.env.EXPO_PUBLIC_BBS_API_KEY || 'bbs_live_00000pw1io8dWRX5apHC4Y9Mfidwj6hoMYb5cdgkRFMI4qF3';
 const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production');
 
 class ApiClient {
@@ -12,6 +13,7 @@ class ApiClient {
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      'x-api-key': API_KEY,
     };
     this.requestInterceptors = [];
     this.responseInterceptors = [];

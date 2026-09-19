@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings, IPL_TEAMS } from '../context/SettingsContext';
 import { TeamFlag } from '../utils/flagHelper';
+import { getUserMe, getApiUsage } from '../services/cricketApi';
 
 export default function SettingsScreen() {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { settings, updateSettings } = useSettings();
+
+  // BigBallsData API status state
+  const [apiUserInfo, setApiUserInfo] = useState(null);
+  const [apiUsageInfo, setApiUsageInfo] = useState(null);
+
+  useEffect(() => {
+    async function loadApiStatus() {
+      const u = await getUserMe();
+      const us = await getApiUsage();
+      if (u) setApiUserInfo(u);
+      if (us) setApiUsageInfo(us);
+    }
+    loadApiStatus();
+  }, []);
 
   // Notification Permissions & Alerts (persisted)
   const {
@@ -105,6 +120,67 @@ export default function SettingsScreen() {
               </View>
               <Text style={{ color: theme.textMuted }} className="text-xs mt-0.5">
                 Fav Team: {selectedTeam} • IPL 2026 Edition
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* BigBallsData API Telemetry Card */}
+        <Text style={{ color: theme.textMuted }} className="text-xs font-black uppercase tracking-wider px-1 mb-2">
+          BigBallsData Unified API Status
+        </Text>
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+          }}
+          className="p-4 rounded-3xl border shadow-xs mb-5"
+        >
+          <View className="flex-row items-center justify-between pb-3 border-b" style={{ borderColor: theme.divider }}>
+            <View className="flex-row items-center">
+              <View className="w-8 h-8 rounded-xl bg-emerald-500/15 items-center justify-center mr-2.5">
+                <Ionicons name="server-outline" size={18} color="#10B981" />
+              </View>
+              <View>
+                <Text style={{ color: theme.text }} className="font-extrabold text-sm">
+                  bigballsdata.com
+                </Text>
+                <Text style={{ color: theme.textMuted }} className="text-[10px]">
+                  https://api.bigballsdata.com/v1
+                </Text>
+              </View>
+            </View>
+            <View className="px-2.5 py-1 bg-emerald-500/20 rounded-full flex-row items-center">
+              <View className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
+              <Text className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase">
+                CONNECTED
+              </Text>
+            </View>
+          </View>
+
+          <View className="pt-3 space-y-2">
+            <View className="flex-row justify-between items-center">
+              <Text style={{ color: theme.textMuted }} className="text-xs">API Key</Text>
+              <Text style={{ color: theme.text }} className="text-xs font-mono font-bold">
+                bbs_live_...4qF3
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text style={{ color: theme.textMuted }} className="text-xs">Account Plan</Text>
+              <Text style={{ color: theme.accent }} className="text-xs font-extrabold uppercase">
+                {apiUserInfo?.plan || 'Free Developer Tier'}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text style={{ color: theme.textMuted }} className="text-xs">Daily Limit</Text>
+              <Text style={{ color: theme.text }} className="text-xs font-bold">
+                {apiUsageInfo?.limits?.per_day || 500} requests/day
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text style={{ color: theme.textMuted }} className="text-xs">Today's Remaining</Text>
+              <Text style={{ color: '#10B981' }} className="text-xs font-black">
+                {apiUsageInfo?.remaining_today !== undefined ? apiUsageInfo.remaining_today : 500} req left
               </Text>
             </View>
           </View>
