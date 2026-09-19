@@ -8,21 +8,51 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
+// Local high-resolution transparent PNG logos for 100% offline & clean rendering
+const LOCAL_TEAM_LOGOS = {
+  CSK: require('../../assets/team_logos/CSK.png'),
+  GT: require('../../assets/team_logos/GT.png'),
+  RCB: require('../../assets/team_logos/RCB.png'),
+  MI: require('../../assets/team_logos/MI.png'),
+  DC: require('../../assets/team_logos/DC.png'),
+  KKR: require('../../assets/team_logos/KKR.png'),
+  LSG: require('../../assets/team_logos/LSG.png'),
+  SRH: require('../../assets/team_logos/SRH.png'),
+  RR: require('../../assets/team_logos/RR.png'),
+  PBKS: require('../../assets/team_logos/PBKS.png'),
+};
+
+const IPL_TEAMS_LIST = [
+  { code: 'MI', name: 'Mumbai Indians', logo: LOCAL_TEAM_LOGOS.MI },
+  { code: 'CSK', name: 'Chennai Super Kings', logo: LOCAL_TEAM_LOGOS.CSK },
+  { code: 'DC', name: 'Delhi Capitals', logo: LOCAL_TEAM_LOGOS.DC },
+  { code: 'GT', name: 'Gujarat Titans', logo: LOCAL_TEAM_LOGOS.GT },
+  { code: 'KKR', name: 'Kolkata Knight Riders', logo: LOCAL_TEAM_LOGOS.KKR },
+  { code: 'LSG', name: 'Lucknow Super Giants', logo: LOCAL_TEAM_LOGOS.LSG },
+  { code: 'RCB', name: 'Royal Challengers Bengaluru', logo: LOCAL_TEAM_LOGOS.RCB },
+  { code: 'RR', name: 'Rajasthan Royals', logo: LOCAL_TEAM_LOGOS.RR },
+  { code: 'SRH', name: 'Sunrisers Hyderabad', logo: LOCAL_TEAM_LOGOS.SRH },
+  { code: 'PBKS', name: 'Punjab Kings', logo: LOCAL_TEAM_LOGOS.PBKS },
+];
+
 export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz' }) {
   const [questionIndex, setQuestionIndex] = useState(1);
   const [selectedOption, setSelectedOption] = useState('A');
+  const [selectedTeam, setSelectedTeam] = useState('MI');
 
   if (!visible) return null;
 
   const quizQuestions = [
     {
       id: 1,
+      type: 'options',
       question: 'What do you most like in Cricket..?',
       options: [
         { id: 'A', text: 'Batting' },
@@ -33,6 +63,7 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
     },
     {
       id: 2,
+      type: 'options',
       question: 'Select your favourite player..?',
       options: [
         { id: 'A', text: 'Virat Kohli' },
@@ -41,6 +72,12 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
         { id: 'D', text: 'Travis Head' },
       ],
     },
+    {
+      id: 3,
+      type: 'teams',
+      question: 'Which is your favorite IPL Team?',
+      teams: IPL_TEAMS_LIST,
+    },
   ];
 
   const currentQuiz = quizQuestions[questionIndex - 1] || quizQuestions[0];
@@ -48,7 +85,11 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
   const handleNextQuiz = () => {
     if (questionIndex < quizQuestions.length) {
       setQuestionIndex(questionIndex + 1);
-      setSelectedOption('A');
+      if (questionIndex + 1 === 3) {
+        setSelectedTeam('MI');
+      } else {
+        setSelectedOption('A');
+      }
     } else {
       onClose();
     }
@@ -57,7 +98,6 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
   const handleBack = () => {
     if (questionIndex > 1) {
       setQuestionIndex(questionIndex - 1);
-      setSelectedOption('A');
     } else {
       onClose();
     }
@@ -66,7 +106,7 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
   return (
     <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <StatusBar barStyle="light-content" backgroundColor="#007A3B" />
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
         {/* Top Header Bar matching exact screenshot */}
         <View style={styles.topHeaderBar}>
@@ -90,7 +130,7 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
           <View style={styles.adBannerCard}>
             <View style={styles.adIconBox}>
               <View style={styles.adCricketBallCircle}>
-                <Ionicons name="baseball" size={22} color="#DC2626" />
+                <Ionicons name="trophy" size={22} color="#D97706" />
                 <View style={styles.adTagPill}>
                   <Text style={styles.adTagText}>AD</Text>
                 </View>
@@ -98,8 +138,8 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
             </View>
 
             <View style={styles.adTextBox}>
-              <Text style={styles.adTitle} numberOfLines={1}>IPL Live Matches</Text>
-              <Text style={styles.adSubtitle} numberOfLines={1}>Watch live Cricket matches on your phone. Don't</Text>
+              <Text style={styles.adTitle} numberOfLines={1}>IPL News</Text>
+              <Text style={styles.adSubtitle} numberOfLines={1}>Stay updated with the latest IPL news and</Text>
             </View>
 
             <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
@@ -107,7 +147,7 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
             </TouchableOpacity>
           </View>
 
-          {/* Question Title Header: Quetion 1 / Quetion 2 */}
+          {/* Question Title Header: Quetion 1 / Quetion 2 / Quetion 3 */}
           <View style={styles.quetionHeaderBox}>
             <Text style={styles.quetionHeaderText}>
               Quetion {questionIndex}
@@ -122,29 +162,62 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
             </Text>
           </View>
 
-          {/* Multiple Choice Options (A, B, C, D) */}
-          <View style={styles.optionsContainer}>
-            {currentQuiz.options.map((opt) => {
-              const isSelected = selectedOption === opt.id;
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  onPress={() => setSelectedOption(opt.id)}
-                  style={[
-                    styles.optionItem,
-                    isSelected && styles.optionItemSelected,
-                  ]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                    ({opt.id})   {opt.text}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {/* TYPE 1 & 2: Multiple Choice Options A, B, C, D */}
+          {currentQuiz.type === 'options' && (
+            <View style={styles.optionsContainer}>
+              {currentQuiz.options.map((opt) => {
+                const isSelected = selectedOption === opt.id;
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    onPress={() => setSelectedOption(opt.id)}
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemSelected,
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                      ({opt.id})   {opt.text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
 
-          {/* Next Button (Matching Green Image 1 & 4) */}
+          {/* TYPE 3: IPL Teams Grid with Local Transparent PNG Logos (CSK, GT, RCB, MI at top) */}
+          {currentQuiz.type === 'teams' && (
+            <View style={styles.teamsGridContainer}>
+              {currentQuiz.teams.map((team) => {
+                const isSelected = selectedTeam === team.code;
+                return (
+                  <TouchableOpacity
+                    key={team.code}
+                    onPress={() => setSelectedTeam(team.code)}
+                    style={[
+                      styles.teamGridCard,
+                      isSelected && styles.teamGridCardSelected,
+                    ]}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.teamLogoWrapper}>
+                      <Image
+                        source={team.logo}
+                        style={styles.teamLogoImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text style={[styles.teamCodeText, isSelected && styles.teamCodeTextSelected]}>
+                      {team.code}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Next Button (Matching Green Image 1, 4 & 5) */}
           <View style={styles.nextButtonContainer}>
             <TouchableOpacity
               onPress={handleNextQuiz}
@@ -164,8 +237,8 @@ export default function WelcomeQuizModal({ visible, onClose, initialStep = 'quiz
         {/* Bottom Ad Banner */}
         <View style={styles.bottomAdBanner}>
           <View style={styles.adIconBox}>
-            <View style={styles.adTrophyCircle}>
-              <Ionicons name="trophy" size={20} color="#D97706" />
+            <View style={styles.adBallRedCircle}>
+              <Ionicons name="baseball" size={20} color="#DC2626" />
               <View style={styles.adTagPillGreen}>
                 <Text style={styles.adTagText}>AD</Text>
               </View>
@@ -240,7 +313,7 @@ const styles = StyleSheet.create({
   },
   scrollInner: {
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   adBannerCard: {
     flexDirection: 'row',
@@ -259,11 +332,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#FECACA',
     position: 'relative',
   },
   adTagPill: {
@@ -325,9 +396,9 @@ const styles = StyleSheet.create({
   questionCardBox: {
     backgroundColor: '#EDEBF5',
     borderRadius: 16,
-    paddingVertical: 26,
+    paddingVertical: 22,
     paddingHorizontal: 20,
-    marginBottom: 22,
+    marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -362,6 +433,52 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     color: '#008000',
   },
+
+  /* Quetion 3: Teams Grid Styles */
+  teamsGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  teamGridCard: {
+    width: '48%',
+    height: 115,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#000000',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    padding: 8,
+  },
+  teamGridCardSelected: {
+    borderColor: '#008000',
+    backgroundColor: '#E6F4EA',
+  },
+  teamLogoWrapper: {
+    width: 80,
+    height: 56,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  teamLogoImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+  },
+  teamCodeText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  teamCodeTextSelected: {
+    color: '#008000',
+  },
+
   nextButtonContainer: {
     alignItems: 'center',
     marginTop: 4,
@@ -401,11 +518,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
   },
-  adTrophyCircle: {
+  adBallRedCircle: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FEF2F2',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
