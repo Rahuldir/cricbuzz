@@ -177,6 +177,70 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
             </View>
           </View>
 
+          {/* Live Line Signature Widget: Recent Balls & Odds Strip */}
+          <View className="mt-2.5 pt-2.5 border-t border-dashed" style={{ borderColor: theme.cardBorderSubtle }}>
+            <View className="flex-row justify-between items-center mb-1.5">
+              <Text className="text-[10px] font-black uppercase text-amber-500 tracking-wider">
+                ⚡ RECENT BALLS
+              </Text>
+              <Text style={{ color: theme.textMuted }} className="text-[10px] font-bold">
+                CRR: {fixture.crr || '8.45'} • RRR: {fixture.rrr || '9.10'}
+              </Text>
+            </View>
+
+            {/* Recent Balls Pills */}
+            <View className="flex-row items-center space-x-1.5 py-1">
+              {['4', '1', 'W', '0', '6', '2'].map((ball, bIdx) => {
+                const isW = ball === 'W';
+                const isSix = ball === '6';
+                const isFour = ball === '4';
+                return (
+                  <View
+                    key={bIdx}
+                    className={`w-7 h-7 rounded-full items-center justify-center mr-1 shadow-xs ${
+                      isW
+                        ? 'bg-red-500'
+                        : isSix
+                        ? 'bg-emerald-500'
+                        : isFour
+                        ? 'bg-blue-500'
+                        : 'bg-slate-200 dark:bg-slate-700'
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-black ${
+                        isW || isSix || isFour ? 'text-white' : 'text-slate-800 dark:text-slate-100'
+                      }`}
+                    >
+                      {ball}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Live Odds & Session Prediction Box (Signature Live Line feature) */}
+            <View className="mt-2 flex-row justify-between bg-slate-100 dark:bg-slate-800/80 p-2 rounded-xl">
+              <View className="flex-1 pr-1 border-r border-slate-300 dark:border-slate-700">
+                <Text className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">
+                  MATCH ODDS
+                </Text>
+                <Text style={{ color: theme.accent }} className="text-xs font-black">
+                  {fixture.team1?.shortName || 'T1'}: <Text className="text-emerald-500">1.82</Text> | {fixture.team2?.shortName || 'T2'}: <Text className="text-amber-500">2.14</Text>
+                </Text>
+              </View>
+
+              <View className="flex-1 pl-2">
+                <Text className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">
+                  SESSION RUNS
+                </Text>
+                <Text style={{ color: theme.text }} className="text-xs font-black">
+                  20 OV: <Text className="text-blue-500">175 - 180</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
           {/* Match Status Note */}
           <View className="mt-2 pt-2 border-t flex-row items-center" style={{ borderColor: theme.divider }}>
             <Ionicons name="information-circle-outline" size={14} color={theme.accent} style={{ marginRight: 4 }} />
@@ -186,39 +250,50 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
           </View>
         </View>
 
-        {/* Cricbuzz Segment Tabs */}
-        <View className="flex-row mx-4 mt-3 bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl">
-          {[
-            { id: 'live', label: 'Live & Commentary', icon: 'flash' },
-            { id: 'scorecard', label: 'Scorecard', icon: 'document-text' },
-            { id: 'teams', label: 'Teams & Playing XI', icon: 'people' },
-            { id: 'info', label: 'Match Info', icon: 'information-circle' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              onPress={() => setActiveTab(tab.id)}
-              style={{
-                backgroundColor: activeTab === tab.id ? theme.card : 'transparent',
-              }}
-              className="flex-1 py-2 rounded-lg items-center flex-row justify-center shadow-xs"
-            >
-              <Ionicons
-                name={tab.icon}
-                size={13}
-                color={activeTab === tab.id ? theme.accent : theme.textMuted}
-                style={{ marginRight: 3 }}
-              />
-              <Text
-                style={{
-                  color: activeTab === tab.id ? theme.text : theme.textMuted,
-                  fontWeight: activeTab === tab.id ? 'bold' : 'normal',
-                }}
-                className="text-[11px]"
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {/* Scrollable Segment Tabs for Clean & Proper Live Line UI */}
+        <View className="px-4 mt-3">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="flex-row py-1 bg-slate-200/60 dark:bg-slate-800/80 p-1 rounded-xl"
+          >
+            {[
+              { id: 'live', label: 'Live Line', icon: 'flash' },
+              { id: 'stream', label: 'Live Stream', icon: 'tv' },
+              { id: 'scorecard', label: 'Scorecard', icon: 'document-text' },
+              { id: 'teams', label: 'Playing XI', icon: 'people' },
+              { id: 'info', label: 'Match Info', icon: 'information-circle' },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  onPress={() => setActiveTab(tab.id)}
+                  style={{
+                    backgroundColor: isActive ? theme.card : 'transparent',
+                  }}
+                  className="px-3.5 py-2 rounded-lg items-center flex-row mr-1 shadow-xs"
+                  activeOpacity={0.75}
+                >
+                  <Ionicons
+                    name={tab.icon}
+                    size={14}
+                    color={isActive ? theme.accent : theme.textMuted}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text
+                    style={{
+                      color: isActive ? theme.text : theme.textMuted,
+                      fontWeight: isActive ? '800' : '600',
+                    }}
+                    className="text-xs"
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Content Body */}
@@ -226,11 +301,39 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
           <View className="flex-1 justify-center items-center py-12">
             <ActivityIndicator size="large" color={theme.accent} />
             <Text style={{ color: theme.textMuted }} className="text-xs font-semibold mt-3">
-              Loading Match Center...
+              Loading Match Center Telemetry...
             </Text>
           </View>
         ) : (
           <ScrollView className="flex-1 px-4 mt-3" showsVerticalScrollIndicator={false}>
+            {/* LIVE STREAM TAB */}
+            {activeTab === 'stream' && (
+              <View className="space-y-3 pb-8">
+                <View
+                  style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+                  className="p-4 rounded-2xl border shadow-sm items-center"
+                >
+                  <View className="w-12 h-12 rounded-full bg-red-500/20 items-center justify-center mb-3">
+                    <Ionicons name="tv-outline" size={28} color="#EF4444" />
+                  </View>
+                  <Text style={{ color: theme.text }} className="text-base font-black text-center mb-1">
+                    Live Cricket HD Stream Player
+                  </Text>
+                  <Text style={{ color: theme.textMuted }} className="text-xs text-center leading-relaxed mb-4">
+                    Fast ultra-low latency live ball audio & commentary stream for {fixture.team1?.name} vs {fixture.team2?.name}.
+                  </Text>
+                  <View className="flex-row space-x-2">
+                    <View className="px-3 py-1.5 rounded-xl bg-emerald-500 flex-row items-center">
+                      <View className="w-2 h-2 rounded-full bg-white mr-1.5 animate-pulse" />
+                      <Text className="text-white text-xs font-bold">HD SERVER 1 (ONLINE)</Text>
+                    </View>
+                    <View className="px-3 py-1.5 rounded-xl bg-blue-600 flex-row items-center">
+                      <Text className="text-white text-xs font-bold">SERVER 2 (BACKUP)</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
             {/* 1. LIVE & COMMENTARY TAB */}
             {activeTab === 'live' && (
               <View className="space-y-3 pb-8">

@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { SettingsProvider } from './src/context/SettingsContext';
 import Header from './src/components/Header';
+import WelcomeQuizModal from './src/components/WelcomeQuizModal';
+import SplashScreen from './src/components/SplashScreen';
 import CricbuzzHomeScreen from './src/screens/CricbuzzHomeScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
 import SeriesScreen from './src/screens/SeriesScreen';
@@ -14,8 +16,10 @@ import SettingsScreen from './src/screens/SettingsScreen';
 
 function MainApp() {
   const { theme, isDarkMode } = useTheme();
+  const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'matches' | 'series' | 'news' | 'settings'
   const [seriesInitialSubTab, setSeriesInitialSubTab] = useState('table');
+  const [quizVisible, setQuizVisible] = useState(false);
 
   const tabs = [
     { id: 'home', label: 'Home', icon: 'home', iconOutline: 'home-outline' },
@@ -32,6 +36,15 @@ function MainApp() {
     setActiveTab(tabId);
   };
 
+  if (showSplash) {
+    return (
+      <SplashScreen
+        onFinish={() => setShowSplash(false)}
+        onClose={() => setShowSplash(false)}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={{ backgroundColor: theme.headerBg }} className="flex-1" edges={['top', 'left', 'right']}>
       <StatusBar
@@ -39,8 +52,8 @@ function MainApp() {
         backgroundColor={theme.headerBg}
       />
 
-      {/* Clean Cricbuzz Header (No Login, No Sidebar) */}
-      <Header />
+      {/* Clean Header */}
+      <Header onOpenQuiz={() => setQuizVisible(true)} />
 
       {/* Active Tab Screen */}
       <View style={{ backgroundColor: theme.bg }} className="flex-1">
@@ -52,8 +65,13 @@ function MainApp() {
           <SeriesScreen initialSubTab={seriesInitialSubTab} key={seriesInitialSubTab} />
         )}
         {activeTab === 'news' && <NewsScreen />}
-        {activeTab === 'settings' && <SettingsScreen />}
+        {activeTab === 'settings' && (
+          <SettingsScreen onPreviewSplash={() => setShowSplash(true)} />
+        )}
       </View>
+
+      {/* Welcome & Fan Quiz Modal (Image 1 & Image 4 exact match) */}
+      <WelcomeQuizModal visible={quizVisible} onClose={() => setQuizVisible(false)} />
 
       {/* Cricbuzz 5-Tab Bottom Navigation Bar with Settings Screen */}
       <View

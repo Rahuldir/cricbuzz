@@ -18,6 +18,7 @@ const defaultHeaders = {
 /**
  * Generic Fetcher for BigBallsData API
  */
+
 async function fetchFromBbs(endpoint, options = {}) {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${BASE_URL}${cleanEndpoint}`;
@@ -225,7 +226,7 @@ export async function getCompletedFixtures(limit = 10) {
 
   const completedMatches = allMatches.filter((f) => f.status === 'Completed');
 
-  return { fixtures: completedMatches.slice(0, limit) };
+  return { fixtures: completedMatches.slice(0, limit) }; ``
 }
 
 /**

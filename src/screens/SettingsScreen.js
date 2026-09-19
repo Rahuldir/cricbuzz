@@ -14,7 +14,7 @@ import { useSettings, IPL_TEAMS } from '../context/SettingsContext';
 import { TeamFlag } from '../utils/flagHelper';
 import { getUserMe, getApiUsage } from '../services/cricketApi';
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ onPreviewSplash }) {
   const { theme, isDarkMode, toggleTheme } = useTheme();
   const { settings, updateSettings } = useSettings();
 
@@ -281,6 +281,24 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Re-play Splash Screen Button */}
+          {onPreviewSplash && (
+            <TouchableOpacity
+              onPress={onPreviewSplash}
+              style={{ borderColor: theme.divider }}
+              className="mt-3.5 pt-3 border-t flex-row items-center justify-between"
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="play-circle-outline" size={18} color="#15803D" style={{ marginRight: 8 }} />
+                <Text style={{ color: theme.text }} className="font-extrabold text-xs">
+                  Re-play Splash Screen
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* 2. NOTIFICATIONS & PERMISSIONS */}

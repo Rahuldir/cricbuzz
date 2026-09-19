@@ -77,49 +77,56 @@ export default function MatchesScreen() {
 
   return (
     <View style={{ backgroundColor: theme.bg }} className="flex-1">
-      {/* Top Segmented Sub-Nav */}
-      <View
-        style={{
-          backgroundColor: theme.headerBg,
-        }}
-        className="flex-row px-4 pt-1 pb-2 shadow-xs"
-      >
-        {[
-          { id: 'live', label: 'Live', count: liveFixtures.length },
-          { id: 'upcoming', label: 'Upcoming', count: upcomingFixtures.length },
-          { id: 'completed', label: 'Recent', count: completedFixtures.length },
-          { id: 'all', label: 'All Matches' },
-        ].map((tab) => {
-          const isActive = activeSubTab === tab.id;
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              onPress={() => setActiveSubTab(tab.id)}
-              className="flex-1 items-center pb-1.5"
-              activeOpacity={0.7}
-            >
-              <View className="flex-row items-center">
+      {/* Top Header Bar (Matching Image 2 & 3) */}
+      <View className="bg-emerald-700 dark:bg-emerald-900 px-4 pt-3 pb-3 flex-row items-center justify-between shadow-md">
+        <TouchableOpacity className="p-1">
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <Text className="text-white font-extrabold text-lg text-center tracking-tight">
+          Live Score
+        </Text>
+
+        <View className="w-7 h-7 rounded-full bg-emerald-600 items-center justify-center">
+          <Ionicons name="location" size={15} color="#FFFFFF" />
+        </View>
+      </View>
+
+      {/* Top 3-Pill Segmented Navigation Bar (Exact Match for Image 2 & 3) */}
+      <View className="px-4 pt-3 pb-2">
+        <View className="flex-row bg-slate-200/80 dark:bg-slate-800/80 p-1.5 rounded-2xl items-center shadow-2xs">
+          {[
+            { id: 'live', label: 'Live', hasDot: false },
+            { id: 'completed', label: 'Recent', hasDot: false },
+            { id: 'upcoming', label: 'Upcoming', hasDot: true },
+          ].map((tab) => {
+            const isActive = activeSubTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                onPress={() => setActiveSubTab(tab.id)}
+                style={{
+                  backgroundColor: isActive ? '#007A3B' : 'transparent',
+                }}
+                className="flex-1 py-2.5 rounded-xl items-center justify-center flex-row shadow-xs"
+                activeOpacity={0.8}
+              >
                 <Text
                   style={{
-                    color: isActive ? '#FFFFFF' : '#A7F3D0',
+                    color: isActive ? '#FFFFFF' : theme.textSecondary,
                     fontWeight: isActive ? '800' : '600',
                   }}
-                  className="text-xs"
+                  className="text-xs tracking-tight"
                 >
                   {tab.label}
                 </Text>
-                {tab.count !== undefined && tab.count > 0 && (
-                  <View className="ml-1 px-1.5 py-0.2 bg-red-600 rounded-full">
-                    <Text className="text-white text-[9px] font-black">{tab.count}</Text>
-                  </View>
+                {tab.hasDot && (
+                  <View className="w-1.5 h-1.5 rounded-full bg-red-500 ml-1 mb-2" />
                 )}
-              </View>
-              {isActive && (
-                <View className="h-0.5 w-12 bg-white rounded-full mt-1.5" />
-              )}
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* Content Area */}

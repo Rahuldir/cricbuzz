@@ -15,22 +15,22 @@ export default function EmptyStateView({
     switch (type) {
       case 'live':
         return {
-          icon: 'radio-outline',
-          title: 'No Live Matches Right Now',
-          description: 'There are currently no international or league matches in progress. Check upcoming matches or start your own match score!',
+          icon: 'folder-outline',
+          title: 'No Live Match Available.',
+          description: 'There are currently no live matches in progress right now. Pull down to refresh or check upcoming scheduled matches.',
           secondaryAction: 'View Upcoming',
         };
       case 'upcoming':
         return {
           icon: 'calendar-outline',
-          title: 'No Upcoming Fixtures Scheduled',
-          description: 'No fixtures found in the immediate schedule. Check recent results or pull down to refresh.',
+          title: 'No Upcoming Matches Scheduled',
+          description: 'No upcoming fixtures found in the immediate schedule. Pull down to refresh.',
           secondaryAction: 'View Live Matches',
         };
       case 'completed':
         return {
           icon: 'trophy-outline',
-          title: 'No Recent Match Results',
+          title: 'No Recent Match Results Available',
           description: 'Completed matches and final scorecards will appear here as tournaments progress.',
           secondaryAction: 'Check Live Scores',
         };
@@ -61,18 +61,20 @@ export default function EmptyStateView({
       }}
       className="p-6 rounded-3xl border items-center my-4 mx-1 shadow-sm"
     >
-      {/* Icon with circular Cricbuzz green glow */}
-      <View
-        style={{ backgroundColor: theme.accentLight }}
-        className="w-16 h-16 rounded-full items-center justify-center mb-3.5"
-      >
-        <Ionicons name={details.icon} size={32} color={theme.accent} />
+      {/* Icon with Folder and Exclamation mark like Image 2 */}
+      <View className="items-center justify-center mb-4">
+        <View className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 items-center justify-center relative">
+          <Ionicons name="folder-open-outline" size={44} color="#64748B" />
+          <View className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-full p-0.5 shadow-sm">
+            <Ionicons name="alert-circle-outline" size={24} color="#64748B" />
+          </View>
+        </View>
       </View>
 
       {/* Title */}
       <Text
         style={{ color: theme.text }}
-        className="font-black text-base text-center mb-1.5"
+        className="font-extrabold text-base text-center mb-1.5 tracking-tight"
       >
         {details.title}
       </Text>
