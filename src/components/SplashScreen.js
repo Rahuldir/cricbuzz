@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -112,11 +112,13 @@ export default function SplashScreen({ onFinish, isPreview = false, onClose }) {
             style={styles.getStartedButton}
             activeOpacity={0.85}
           >
-            <View style={styles.getStartedContent}>
-              <Text style={styles.getStartedText}>Get Started</Text>
-              <View style={styles.cricketIconSquare}>
-                <Ionicons name="baseball-outline" size={22} color="#007A3B" />
-              </View>
+            <Text style={styles.getStartedText}>Get Started</Text>
+            <View style={styles.cricketIconSquare}>
+              <Image
+                source={require('../../assets/get_started_batsman_icon.jpg')}
+                style={styles.batsmanIconImage}
+                resizeMode="contain"
+              />
             </View>
           </TouchableOpacity>
         </View>
@@ -224,10 +226,10 @@ const styles = StyleSheet.create({
   /* Hero Artwork Styles */
   heroArtWrapper: {
     width: '100%',
-    height: 250,
+    height: 260,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10,
+    marginTop: -5,
     marginBottom: 10,
   },
   heroArtImage: {
@@ -283,45 +285,46 @@ const styles = StyleSheet.create({
 
   /* Bottom Get Started Button */
   bottomButtonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    alignItems: 'center',
+    paddingBottom: 24,
     paddingTop: 8,
     backgroundColor: '#FFFFFF',
   },
   getStartedButton: {
-    width: '100%',
-    height: 54,
+    width: width * 0.68,
+    height: 48,
     backgroundColor: '#007A3B',
-    borderRadius: 14,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    position: 'relative',
     elevation: 3,
     shadowColor: '#007A3B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
-  getStartedContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    width: '100%',
-  },
   getStartedText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
+    textAlign: 'center',
   },
   cricketIconSquare: {
     position: 'absolute',
-    right: 0,
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  batsmanIconImage: {
+    width: '85%',
+    height: '85%',
   },
 });
 
