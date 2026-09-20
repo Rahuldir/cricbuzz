@@ -9,20 +9,131 @@ import {
   StatusBar,
   Share,
   Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import MatchesHistoryScreen from './MatchesHistoryScreen';
 import PlayoffsScreen from './PlayoffsScreen';
 
-export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule }) {
+// --- Custom Artwork Graphic Components ---
+
+// 1. Hero Green Banner Graphic (Bat, Trophy, Wickets, Ball)
+const HeroCricketArt = () => (
+  <View style={artStyles.heroContainer}>
+    <View style={artStyles.trophyWrap}>
+      <Ionicons name="trophy" size={42} color="#FFD700" />
+    </View>
+    <View style={artStyles.batWrap}>
+      <MaterialCommunityIcons name="cricket" size={48} color="#F59E0B" />
+    </View>
+    <View style={artStyles.stumpsWrap}>
+      <View style={artStyles.stumpBar} />
+      <View style={artStyles.stumpBar} />
+      <View style={artStyles.stumpBar} />
+    </View>
+    <View style={artStyles.ballRed} />
+  </View>
+);
+
+// 2. Cricketer Batsman Graphic for IPL Schedule Card
+const BatsmanArt = () => (
+  <View style={artStyles.batsmanContainer}>
+    <View style={artStyles.batsmanBody}>
+      <MaterialCommunityIcons name="cricket" size={40} color="#0284C7" />
+    </View>
+    <View style={artStyles.ballRedSmall} />
+  </View>
+);
+
+// 3. Wickets & Ball Graphic for Play Game Card
+const WicketsGameArt = () => (
+  <View style={artStyles.wicketsContainer}>
+    <View style={artStyles.stumpsRow}>
+      <View style={artStyles.stumpYellow} />
+      <View style={artStyles.stumpYellow} />
+      <View style={artStyles.stumpYellow} />
+    </View>
+    <View style={artStyles.pinkBallWrap}>
+      <View style={artStyles.pinkBall} />
+    </View>
+    <View style={artStyles.grassBase} />
+  </View>
+);
+
+// 4. Stadium Graphic for Venues Card
+const StadiumArt = () => (
+  <View style={artStyles.stadiumContainer}>
+    <View style={artStyles.stadiumBowl}>
+      <View style={artStyles.pitchField} />
+      <View style={artStyles.flagRow}>
+        <Ionicons name="flag" size={10} color="#EF4444" />
+        <Ionicons name="flag" size={10} color="#3B82F6" />
+        <Ionicons name="flag" size={10} color="#10B981" />
+      </View>
+    </View>
+  </View>
+);
+
+// 5. Podium Graphic for Point Table Card
+const PodiumArt = () => (
+  <View style={artStyles.podiumContainer}>
+    <View style={artStyles.medalWrap}>
+      <Ionicons name="star" size={14} color="#FFD700" />
+    </View>
+    <View style={artStyles.podiumRow}>
+      <View style={[artStyles.podiumBox, { height: 18, backgroundColor: '#3B82F6' }]}>
+        <Text style={artStyles.podiumNum}>2</Text>
+      </View>
+      <View style={[artStyles.podiumBox, { height: 26, backgroundColor: '#EF4444' }]}>
+        <Text style={artStyles.podiumNum}>1</Text>
+      </View>
+      <View style={[artStyles.podiumBox, { height: 14, backgroundColor: '#10B981' }]}>
+        <Text style={artStyles.podiumNum}>3</Text>
+      </View>
+    </View>
+  </View>
+);
+
+// 6. Yellow File Folder Graphic for All Records Card
+const FolderArt = () => (
+  <View style={artStyles.folderContainer}>
+    <View style={artStyles.folderTab} />
+    <View style={artStyles.folderBack}>
+      <View style={artStyles.folderPaper} />
+      <View style={artStyles.folderFront}>
+        <View style={artStyles.folderFaceRow}>
+          <View style={artStyles.folderEye} />
+          <View style={artStyles.folderEye} />
+        </View>
+        <View style={artStyles.folderSmile} />
+      </View>
+    </View>
+  </View>
+);
+
+export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, onNavigateToTab }) {
   const [currentSubScreen, setCurrentSubScreen] = useState(null); // 'records' | 'playoffs'
+  const [venuesModalVisible, setVenuesModalVisible] = useState(false);
+  const [gameModalVisible, setGameModalVisible] = useState(false);
+
+  const venuesList = [
+    { id: '1', name: 'Narendra Modi Stadium', city: 'Ahmedabad', capacity: '132,000' },
+    { id: '2', name: 'Wankhede Stadium', city: 'Mumbai', capacity: '33,108' },
+    { id: '3', name: 'M. Chinnaswamy Stadium', city: 'Bengaluru', capacity: '40,000' },
+    { id: '4', name: 'MA Chidambaram Stadium', city: 'Chennai', capacity: '38,000' },
+    { id: '5', name: 'Eden Gardens', city: 'Kolkata', capacity: '68,000' },
+    { id: '6', name: 'Arun Jaitley Stadium', city: 'Delhi', capacity: '55,000' },
+    { id: '7', name: 'HPCA Stadium', city: 'Dharamshala', capacity: '23,000' },
+    { id: '8', name: 'Rajiv Gandhi Intl Stadium', city: 'Hyderabad', capacity: '55,000' },
+  ];
 
   const handleShareApp = async () => {
     try {
       await Share.share({
         message:
-          'Download the Live Cricket Score app for fastest live scores, IPL schedule, ball-by-ball updates, and playoffs history!',
+          'Download Live Cricket Score App for fastest live scores, IPL schedule, ball-by-ball updates, points table, and records!',
       });
     } catch (e) {
       console.log(e);
@@ -37,10 +148,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
   };
 
   const handlePlayGame = () => {
-    Alert.alert(
-      'Cricket Trivia Game',
-      'Welcome to Live Cricket Trivia Game! Test your knowledge on IPL and International cricket.'
-    );
+    setGameModalVisible(true);
   };
 
   if (currentSubScreen === 'records') {
@@ -79,7 +187,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Header Matching Screenshots 1, 3, 4 */}
+      {/* 1. Header Matching Screenshots 1, 2, 3, 4, 5 */}
       <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -87,15 +195,21 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
 
         <Text style={styles.headerTitle}>Live Cricket Score</Text>
 
-        {/* Top Right Circular AD Badge */}
-        <View style={styles.topRightAdBadge}>
-          <View style={styles.adBadgeBlueCircle}>
-            <View style={styles.adRedBall} />
-            <View style={styles.adSmallPill}>
+        {/* Top Right Circular AD Icon Badge */}
+        <TouchableOpacity
+          onPress={() => Alert.alert('Live Cricket', 'Welcome to Live Cricket Score!')}
+          style={styles.topRightAdBadge}
+          activeOpacity={0.8}
+        >
+          <View style={styles.adBadgeGreenCircle}>
+            <View style={styles.adRedBallCircleHeader}>
+              <View style={styles.redBallInner} />
+            </View>
+            <View style={styles.adSmallPillGreen}>
               <Text style={styles.adSmallPillText}>AD</Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* 2. Top Sub-Header AD Card */}
@@ -116,7 +230,11 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.installButton}
+          activeOpacity={0.85}
+          onPress={() => onNavigateToTab && onNavigateToTab('news')}
+        >
           <Text style={styles.installButtonText}>Install</Text>
         </TouchableOpacity>
       </View>
@@ -127,31 +245,151 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
         contentContainerStyle={styles.scrollInner}
         showsVerticalScrollIndicator={false}
       >
-        {/* Card 1: All Records Button */}
-        <TouchableOpacity
-          onPress={() => setCurrentSubScreen('records')}
-          style={styles.menuCard}
-          activeOpacity={0.85}
-        >
-          <View style={styles.menuCardLeft}>
-            <View style={styles.iconBoxYellow}>
-              <Ionicons name="folder-open" size={24} color="#D97706" />
+        {/* Banner 1: Green Live Cricket Score Banner */}
+        <View style={styles.greenHeroCard}>
+          {/* Left Art Illustration */}
+          <HeroCricketArt />
+
+          {/* Right Text Content */}
+          <View style={styles.heroRightBox}>
+            <Text style={styles.heroTitle}>Live Cricket Score</Text>
+            <Text style={styles.heroSubtitle}>
+              Get up to the minute updates on matches from ground
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => onNavigateToTab && onNavigateToTab('home')}
+              style={styles.goToScoreBtn}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.goToScoreText}>Go To Score</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Banner 2: Grey Card - IPL Highlights (Watch Highlights) */}
+        <View style={styles.featureAdContainer}>
+          <View style={styles.adHeaderRow}>
+            <View style={styles.adHeaderAvatar}>
+              <Ionicons name="person" size={18} color="#FFFFFF" />
+              <View style={styles.adBadgePillGreen}>
+                <Text style={styles.adBadgeText}>AD</Text>
+              </View>
             </View>
-            <Text style={styles.menuCardTitle}>All Records</Text>
+            <View style={styles.adHeaderTexts}>
+              <Text style={styles.featureAdTitle}>IPL Highlights</Text>
+              <Text style={styles.featureAdSubtitle} numberOfLines={1}>
+                Catch up on today's match highlights in minutes!
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.greenChevronCircle}>
-            <Ionicons name="chevron-forward-sharp" size={15} color="#FFFFFF" style={{ marginLeft: -1 }} />
-            <Ionicons name="chevron-forward-sharp" size={15} color="#FFFFFF" style={{ marginLeft: -8 }} />
+          {/* Banner Image */}
+          <View style={styles.featureImageWrapper}>
+            <Image
+              source={require('../../assets/welcome_ad_banner.jpg')}
+              style={styles.featureImage}
+              resizeMode="cover"
+            />
+          </View>
+
+          {/* Watch Highlights Button */}
+          <TouchableOpacity
+            onPress={() => onNavigateToTab && onNavigateToTab('news')}
+            style={styles.greenActionBtn}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.greenActionBtnText}>Watch Highlights</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 3: 2-Column Grid Layout (IPL Schedule, Play Game, Play Game, Venues) */}
+        <View style={styles.gridContainer}>
+          {/* Grid Item 1: IPL Schedule */}
+          <TouchableOpacity
+            onPress={onNavigateToSchedule}
+            style={styles.gridCard}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.gridTitle}>IPL Schedule</Text>
+            <Text style={styles.gridSubtitle}>
+              All IPL match in date, time schedules
+            </Text>
+            <View style={styles.gridArtWrapper}>
+              <BatsmanArt />
+            </View>
+          </TouchableOpacity>
+
+          {/* Grid Item 2: Play Game (AD) */}
+          <TouchableOpacity
+            onPress={handlePlayGame}
+            style={styles.gridCard}
+            activeOpacity={0.85}
+          >
+            <View style={styles.gridAdPill}>
+              <Text style={styles.gridAdText}>AD</Text>
+            </View>
+            <Text style={styles.gridTitle}>Play Game</Text>
+            <Text style={styles.gridSubtitle}>Let's the play of game</Text>
+            <View style={styles.gridArtWrapper}>
+              <WicketsGameArt />
+            </View>
+          </TouchableOpacity>
+
+          {/* Grid Item 3: Play Game (AD) */}
+          <TouchableOpacity
+            onPress={handlePlayGame}
+            style={styles.gridCard}
+            activeOpacity={0.85}
+          >
+            <View style={styles.gridAdPill}>
+              <Text style={styles.gridAdText}>AD</Text>
+            </View>
+            <Text style={styles.gridTitle}>Play Game</Text>
+            <Text style={styles.gridSubtitle}>Let's the play of game</Text>
+            <View style={styles.gridArtWrapper}>
+              <WicketsGameArt />
+            </View>
+          </TouchableOpacity>
+
+          {/* Grid Item 4: Venues */}
+          <TouchableOpacity
+            onPress={() => setVenuesModalVisible(true)}
+            style={styles.gridCard}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.gridTitle}>Venues</Text>
+            <Text style={styles.gridSubtitle}>
+              Check all match in location display
+            </Text>
+            <View style={styles.gridArtWrapper}>
+              <StadiumArt />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 4: Full-width Horizontal Card - Point Table */}
+        <TouchableOpacity
+          onPress={() => onNavigateToTab && onNavigateToTab('series', 'table')}
+          style={styles.horizontalCard}
+          activeOpacity={0.85}
+        >
+          <View style={styles.horizontalLeft}>
+            <PodiumArt />
+            <Text style={styles.horizontalTitle}>Point Table</Text>
+          </View>
+
+          <View style={styles.greenChevronSquare}>
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -1 }} />
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -8 }} />
           </View>
         </TouchableOpacity>
 
-        {/* Card 2: Feature AD Container ("IPL News" with image & "Read More") */}
+        {/* Section 5: Grey Card - IPL News (Read More) */}
         <View style={styles.featureAdContainer}>
-          {/* AD Top Info */}
           <View style={styles.adHeaderRow}>
             <View style={styles.adRedBallCircle}>
-              <Ionicons name="baseball" size={20} color="#DC2626" />
+              <Ionicons name="baseball" size={18} color="#DC2626" />
               <View style={styles.adBadgePillGreen}>
                 <Text style={styles.adBadgeText}>AD</Text>
               </View>
@@ -167,7 +405,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
           {/* Banner Image */}
           <View style={styles.featureImageWrapper}>
             <Image
-              source={require('../../assets/welcome_ad_banner.jpg')}
+              source={require('../../assets/welcome_hero_art.jpg')}
               style={styles.featureImage}
               resizeMode="cover"
             />
@@ -175,53 +413,74 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
 
           {/* Read More Button */}
           <TouchableOpacity
-            onPress={onNavigateToSchedule}
-            style={styles.readMoreButton}
+            onPress={() => onNavigateToTab && onNavigateToTab('news')}
+            style={styles.greenActionBtn}
             activeOpacity={0.85}
           >
-            <Text style={styles.readMoreText}>Read More</Text>
+            <Text style={styles.greenActionBtnText}>Read More</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Card 3: Play Game Button */}
+        {/* Section 6: Full-width Horizontal Card - Play Game (AD) */}
         <TouchableOpacity
           onPress={handlePlayGame}
-          style={styles.menuCard}
+          style={styles.horizontalCard}
           activeOpacity={0.85}
         >
-          <View style={styles.menuCardLeft}>
-            <View style={styles.iconBoxPink}>
-              <Ionicons name="baseball" size={24} color="#D97706" />
-            </View>
-            <Text style={styles.menuCardTitle}>Play Game</Text>
+          <View style={styles.horizontalLeft}>
+            <WicketsGameArt />
+            <Text style={[styles.horizontalTitle, { marginLeft: 16 }]}>Play Game</Text>
           </View>
 
-          {/* Green AD Tag inside card */}
-          <View style={styles.cardAdPill}>
-            <Text style={styles.cardAdPillText}>AD</Text>
+          <View style={styles.cardAdTagGreen}>
+            <Text style={styles.cardAdTagText}>AD</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Card 4: Playoff History Button */}
+        {/* Section 7: Full-width Horizontal Card - All Records */}
         <TouchableOpacity
-          onPress={() => setCurrentSubScreen('playoffs')}
-          style={styles.menuCard}
+          onPress={() => setCurrentSubScreen('records')}
+          style={styles.horizontalCard}
           activeOpacity={0.85}
         >
-          <View style={styles.menuCardLeft}>
-            <View style={styles.iconBoxBlue}>
-              <Ionicons name="ribbon" size={24} color="#0284C7" />
-            </View>
-            <Text style={styles.menuCardTitle}>Playoff History</Text>
+          <View style={styles.horizontalLeft}>
+            <FolderArt />
+            <Text style={[styles.horizontalTitle, { marginLeft: 16 }]}>All Records</Text>
           </View>
 
-          <View style={styles.greenChevronCircle}>
-            <Ionicons name="chevron-forward-sharp" size={15} color="#FFFFFF" style={{ marginLeft: -1 }} />
-            <Ionicons name="chevron-forward-sharp" size={15} color="#FFFFFF" style={{ marginLeft: -8 }} />
+          <View style={styles.greenChevronSquare}>
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -1 }} />
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -8 }} />
           </View>
         </TouchableOpacity>
 
-        {/* Card 5: Bottom Action Buttons (Share App & Privacy Policy) */}
+        {/* Section 8: Grey Card - IPL News (Bottom Duplicate as per screenshot 5) */}
+        <View style={styles.featureAdContainer}>
+          <View style={styles.adHeaderRow}>
+            <View style={styles.adRedBallCircle}>
+              <Ionicons name="baseball" size={18} color="#DC2626" />
+              <View style={styles.adBadgePillGreen}>
+                <Text style={styles.adBadgeText}>AD</Text>
+              </View>
+            </View>
+            <View style={styles.adHeaderTexts}>
+              <Text style={styles.featureAdTitle}>IPL News</Text>
+              <Text style={styles.featureAdSubtitle} numberOfLines={1}>
+                Stay updated with the latest IPL news and
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureImageWrapper}>
+            <Image
+              source={require('../../assets/welcome_ad_banner.jpg')}
+              style={styles.featureImage}
+              resizeMode="cover"
+            />
+          </View>
+        </View>
+
+        {/* Section 9: Bottom Row Action Buttons */}
         <View style={styles.bottomButtonsRow}>
           <TouchableOpacity
             onPress={handleShareApp}
@@ -230,7 +489,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
           >
             <Text style={styles.actionPillText}>Share App</Text>
             <View style={styles.actionIconCircle}>
-              <Ionicons name="share-social" size={16} color="#007A3B" />
+              <Ionicons name="share-social" size={15} color="#007A3B" />
             </View>
           </TouchableOpacity>
 
@@ -240,7 +499,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
             activeOpacity={0.85}
           >
             <View style={styles.actionIconCircleLeft}>
-              <Ionicons name="checkmark-circle" size={18} color="#007A3B" />
+              <Ionicons name="shield-checkmark" size={15} color="#007A3B" />
             </View>
             <Text style={styles.actionPillText}>Privacy Policy</Text>
           </TouchableOpacity>
@@ -269,9 +528,283 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule })
           <Text style={styles.installButtonText}>Install</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Venues Modal */}
+      <Modal visible={venuesModalVisible} animationType="slide" transparent={true}>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>IPL Venues 2026</Text>
+              <TouchableOpacity onPress={() => setVenuesModalVisible(false)}>
+                <Ionicons name="close-circle" size={26} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={venuesList}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={modalStyles.venueItem}>
+                  <View style={modalStyles.venueIcon}>
+                    <Ionicons name="location" size={20} color="#007A3B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={modalStyles.venueName}>{item.name}</Text>
+                    <Text style={modalStyles.venueCity}>{item.city} • Capacity: {item.capacity}</Text>
+                  </View>
+                </View>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cricket Game Trivia Modal */}
+      <Modal visible={gameModalVisible} animationType="fade" transparent={true}>
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>Cricket Trivia Quiz</Text>
+              <TouchableOpacity onPress={() => setGameModalVisible(false)}>
+                <Ionicons name="close-circle" size={26} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Ionicons name="game-controller" size={54} color="#007A3B" />
+              <Text style={{ fontSize: 18, fontWeight: '800', marginTop: 12, color: '#0F172A' }}>
+                Play & Win Cricket Quiz!
+              </Text>
+              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 6, paddingHorizontal: 20 }}>
+                Test your IPL cricket knowledge with 10 fun questions and win trophies!
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setGameModalVisible(false);
+                  Alert.alert('Quiz Started', 'Question 1: Who won the first IPL season in 2008?\n\nAnswer: Rajasthan Royals');
+                }}
+                style={[styles.greenActionBtn, { width: '80%', marginTop: 20 }]}
+              >
+                <Text style={styles.greenActionBtnText}>Start Game Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+// --- Artwork Styles ---
+const artStyles = StyleSheet.create({
+  heroContainer: {
+    width: 90,
+    height: 90,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trophyWrap: {
+    position: 'absolute',
+    top: 4,
+    left: 8,
+  },
+  batWrap: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    transform: [{ rotate: '-25deg' }],
+  },
+  stumpsWrap: {
+    position: 'absolute',
+    bottom: 6,
+    left: 2,
+    flexDirection: 'row',
+    gap: 3,
+  },
+  stumpBar: {
+    width: 3.5,
+    height: 32,
+    backgroundColor: '#FEF08A',
+    borderRadius: 2,
+  },
+  ballRed: {
+    position: 'absolute',
+    top: 36,
+    right: 30,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#EF4444',
+  },
+  batsmanContainer: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  batsmanBody: {
+    transform: [{ rotate: '-10deg' }],
+  },
+  ballRedSmall: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+  },
+  wicketsContainer: {
+    width: 44,
+    height: 40,
+    position: 'relative',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  stumpsRow: {
+    flexDirection: 'row',
+    gap: 3,
+    marginBottom: 4,
+  },
+  stumpYellow: {
+    width: 3,
+    height: 24,
+    backgroundColor: '#F59E0B',
+    borderRadius: 1.5,
+  },
+  pinkBallWrap: {
+    position: 'absolute',
+    top: 2,
+    right: 0,
+  },
+  pinkBall: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#EC4899',
+  },
+  grassBase: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#22C55E',
+    borderRadius: 2,
+  },
+  stadiumContainer: {
+    width: 44,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stadiumBowl: {
+    width: 42,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  pitchField: {
+    width: 24,
+    height: 12,
+    backgroundColor: '#86EFAC',
+    borderRadius: 6,
+  },
+  flagRow: {
+    position: 'absolute',
+    top: -8,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  podiumContainer: {
+    width: 38,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  medalWrap: {
+    position: 'absolute',
+    top: 0,
+  },
+  podiumRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  podiumBox: {
+    width: 10,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  podiumNum: {
+    color: '#FFFFFF',
+    fontSize: 7,
+    fontWeight: '900',
+  },
+  folderContainer: {
+    width: 38,
+    height: 34,
+    position: 'relative',
+  },
+  folderTab: {
+    width: 14,
+    height: 4,
+    backgroundColor: '#F59E0B',
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+  },
+  folderBack: {
+    width: 36,
+    height: 28,
+    backgroundColor: '#FBBF24',
+    borderRadius: 4,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  folderPaper: {
+    width: 28,
+    height: 18,
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'center',
+    marginTop: 2,
+    borderRadius: 2,
+  },
+  folderFront: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 18,
+    backgroundColor: '#F59E0B',
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  folderFaceRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  folderEye: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#78350F',
+  },
+  folderSmile: {
+    width: 6,
+    height: 2,
+    backgroundColor: '#78350F',
+    borderRadius: 1,
+    marginTop: 1,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -298,29 +831,39 @@ const styles = StyleSheet.create({
   topRightAdBadge: {
     padding: 4,
   },
-  adBadgeBlueCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#0284C7',
+  adBadgeGreenCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  adRedBall: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  adRedBallCircleHeader: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  adSmallPill: {
+  redBallInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FCA5A5',
+  },
+  adSmallPillGreen: {
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#38BDF8',
+    backgroundColor: '#16A34A',
     paddingHorizontal: 3,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 5,
   },
   adSmallPillText: {
     fontSize: 7,
@@ -405,87 +948,71 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  /* Menu Cards */
-  menuCard: {
+  /* Hero Green Card */
+  greenHeroCard: {
+    backgroundColor: '#008000',
+    borderRadius: 22,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#008000',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    marginBottom: 14,
+    shadowColor: '#008000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  heroRightBox: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    color: '#E6F4EA',
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
     marginBottom: 12,
   },
-  menuCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  goToScoreBtn: {
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
-  iconBoxYellow: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  iconBoxPink: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#FCE7F3',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  iconBoxBlue: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#E0F2FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  menuCardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#000000',
-  },
-  greenChevronCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#007A3B',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardAdPill: {
-    backgroundColor: '#16A34A',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 5,
-  },
-  cardAdPillText: {
-    color: '#FFFFFF',
-    fontSize: 9,
+  goToScoreText: {
+    color: '#008000',
+    fontSize: 13,
     fontWeight: '900',
   },
 
-  /* Feature AD Container (IPL News with Image & Read More) */
+  /* Feature AD Container (Grey Container) */
   featureAdContainer: {
     backgroundColor: '#EFEFEF',
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   adHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  adHeaderAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#475569',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginRight: 10,
   },
   adRedBallCircle: {
     width: 36,
@@ -527,7 +1054,7 @@ const styles = StyleSheet.create({
   featureImageWrapper: {
     width: '100%',
     height: 145,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 10,
   },
@@ -535,18 +1062,116 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  readMoreButton: {
+  greenActionBtn: {
     width: '100%',
-    backgroundColor: '#007A3B',
+    backgroundColor: '#008000',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  readMoreText: {
+  greenActionBtnText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
+  },
+
+  /* 2-Column Grid Cards */
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  gridCard: {
+    width: '48.5%',
+    height: 142,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 12,
+    position: 'relative',
+    justifyContent: 'space-between',
+  },
+  gridAdPill: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    zIndex: 2,
+  },
+  gridAdText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  gridTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#000000',
+    marginBottom: 2,
+  },
+  gridSubtitle: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '500',
+    lineHeight: 14,
+  },
+  gridArtWrapper: {
+    alignSelf: 'flex-end',
+    marginTop: 'auto',
+  },
+
+  /* Horizontal Full Cards (Point Table, Play Game, All Records) */
+  horizontalCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  horizontalLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  horizontalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#000000',
+    marginLeft: 14,
+  },
+  greenChevronSquare: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#008000',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardAdTagGreen: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  cardAdTagText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
   },
 
   /* Bottom Row Buttons */
@@ -557,9 +1182,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   actionPillButton: {
-    width: '48%',
+    width: '48.5%',
     height: 44,
-    backgroundColor: '#007A3B',
+    backgroundColor: '#008000',
     borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
@@ -616,5 +1241,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     paddingVertical: 1,
     borderRadius: 5,
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  content: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  venueItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  venueIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  venueName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  venueCity: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
   },
 });

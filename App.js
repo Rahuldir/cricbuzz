@@ -78,6 +78,7 @@ function MainApp() {
       <LiveCricketScoreScreen
         onBack={() => setCurrentView('tabs')}
         onNavigateToSchedule={() => setCurrentView('schedule')}
+        onNavigateToTab={(tab, subTab) => handleNavigateToTab(tab, subTab)}
       />
     );
   }
