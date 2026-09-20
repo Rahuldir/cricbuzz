@@ -5,9 +5,12 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { SettingsProvider } from './src/context/SettingsContext';
+import { CricketProvider } from './src/context/CricketContext';
 import Header from './src/components/Header';
 import WelcomeQuizModal from './src/components/WelcomeQuizModal';
 import SplashScreen from './src/components/SplashScreen';
+import LiveCricketScoreScreen from './src/screens/LiveCricketScoreScreen';
+import ScheduleScreen from './src/screens/ScheduleScreen';
 import CricbuzzHomeScreen from './src/screens/CricbuzzHomeScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
 import SeriesScreen from './src/screens/SeriesScreen';
@@ -19,6 +22,7 @@ function MainApp() {
   const [quizVisible, setQuizVisible] = useState(true);
   const [showSplash, setShowSplash] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [currentView, setCurrentView] = useState('liveScoreHub'); // 'liveScoreHub' | 'schedule' | 'tabs'
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'matches' | 'series' | 'news' | 'settings'
   const [seriesInitialSubTab, setSeriesInitialSubTab] = useState('table');
 
@@ -35,6 +39,7 @@ function MainApp() {
       setSeriesInitialSubTab(subTab);
     }
     setActiveTab(tabId);
+    setCurrentView('tabs');
   };
 
   const handleQuizClose = () => {
@@ -47,6 +52,7 @@ function MainApp() {
   const handleSplashFinish = () => {
     setShowSplash(false);
     setHasCompletedOnboarding(true);
+    setCurrentView('liveScoreHub');
   };
 
   if (!hasCompletedOnboarding && quizVisible) {
@@ -63,6 +69,23 @@ function MainApp() {
       <SplashScreen
         onFinish={handleSplashFinish}
         onClose={handleSplashFinish}
+      />
+    );
+  }
+
+  if (currentView === 'liveScoreHub') {
+    return (
+      <LiveCricketScoreScreen
+        onBack={() => setCurrentView('tabs')}
+        onNavigateToSchedule={() => setCurrentView('schedule')}
+      />
+    );
+  }
+
+  if (currentView === 'schedule') {
+    return (
+      <ScheduleScreen
+        onBack={() => setCurrentView('liveScoreHub')}
       />
     );
   }
@@ -150,7 +173,9 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <SettingsProvider>
-          <MainApp />
+          <CricketProvider>
+            <MainApp />
+          </CricketProvider>
         </SettingsProvider>
       </ThemeProvider>
     </SafeAreaProvider>

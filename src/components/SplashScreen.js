@@ -90,7 +90,7 @@ export default function SplashScreen({ onFinish, isPreview = false, onClose }) {
           {/* Welcome Text Section */}
           <View style={styles.welcomeTextSection}>
             <Text style={styles.welcomeToText}>Welcome To,</Text>
-            
+
             <View style={styles.liveCricketRow}>
               <Text style={styles.liveCricketTitle}>Live Cricket </Text>
               <View style={styles.tvHdWrapper}>
