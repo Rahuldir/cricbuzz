@@ -174,40 +174,50 @@ export default function PlayoffsScreen() {
                       </View>
                     </View>
 
-                    {/* Teams Matchup */}
-                    <View className="py-3.5 flex-row justify-between items-center">
+                    {/* Teams Matchup with Logos */}
+                    <View className="py-3 flex-row justify-between items-center">
                       <View className="items-center flex-1 pr-1">
+                        <TeamFlag
+                          logo={item.team1Logo}
+                          teamName={item.team1}
+                          countryCode={item.team1Code || 'T1'}
+                          size={32}
+                          style={{ marginBottom: 4 }}
+                        />
                         <Text
                           style={{ color: theme.text }}
-                          className="text-sm font-black text-center"
+                          className="text-xs font-black text-center"
                           numberOfLines={1}
                         >
-                          {item.team1}
+                          {item.team1Code || item.team1}
                         </Text>
                       </View>
 
                       <View
                         style={{
-                          backgroundColor: isFinal ? '#F59E0B20' : theme.inputBg,
-                          borderColor: isFinal ? '#F59E0B50' : theme.cardBorder,
+                          backgroundColor: isFinal ? '#F59E0B' : '#008000',
                         }}
-                        className="w-8 h-8 rounded-full border items-center justify-center mx-2"
+                        className="px-3 py-1 rounded-full items-center justify-center mx-2"
                       >
-                        <Text
-                          style={{ color: isFinal ? '#F59E0B' : theme.textMuted }}
-                          className="text-xs font-black"
-                        >
+                        <Text style={{ color: '#FFFFFF' }} className="text-xs font-black">
                           VS
                         </Text>
                       </View>
 
                       <View className="items-center flex-1 pl-1">
+                        <TeamFlag
+                          logo={item.team2Logo}
+                          teamName={item.team2}
+                          countryCode={item.team2Code || 'T2'}
+                          size={32}
+                          style={{ marginBottom: 4 }}
+                        />
                         <Text
                           style={{ color: theme.text }}
-                          className="text-sm font-black text-center"
+                          className="text-xs font-black text-center"
                           numberOfLines={1}
                         >
-                          {item.team2}
+                          {item.team2Code || item.team2}
                         </Text>
                       </View>
                     </View>
