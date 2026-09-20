@@ -153,8 +153,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
-    elevation: 4,
-    marginBottom: 8,
+    elevation: 6,
+    zIndex: 10,
+    marginBottom: 0,
   },
   adHeaderRow: {
     flexDirection: 'row',
@@ -226,11 +227,11 @@ const styles = StyleSheet.create({
   /* Hero Artwork Styles */
   heroArtWrapper: {
     width: '100%',
-    height: 260,
+    height: 280,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -5,
-    marginBottom: 10,
+    marginTop: -45,
+    marginBottom: 5,
   },
   heroArtImage: {
     width: '100%',
@@ -320,11 +321,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 3,
     overflow: 'hidden',
   },
   batsmanIconImage: {
-    width: '85%',
-    height: '85%',
+    width: '90%',
+    height: '90%',
   },
 });
 

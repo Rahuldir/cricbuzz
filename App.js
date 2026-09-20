@@ -16,10 +16,11 @@ import SettingsScreen from './src/screens/SettingsScreen';
 
 function MainApp() {
   const { theme, isDarkMode } = useTheme();
-  const [showSplash, setShowSplash] = useState(true);
+  const [quizVisible, setQuizVisible] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'matches' | 'series' | 'news' | 'settings'
   const [seriesInitialSubTab, setSeriesInitialSubTab] = useState('table');
-  const [quizVisible, setQuizVisible] = useState(false);
 
   const tabs = [
     { id: 'home', label: 'Home', icon: 'home', iconOutline: 'home-outline' },
@@ -36,17 +37,32 @@ function MainApp() {
     setActiveTab(tabId);
   };
 
+  const handleQuizClose = () => {
+    setQuizVisible(false);
+    if (!hasCompletedOnboarding) {
+      setShowSplash(true);
+    }
+  };
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+    setHasCompletedOnboarding(true);
+  };
+
+  if (!hasCompletedOnboarding && quizVisible) {
+    return (
+      <WelcomeQuizModal
+        visible={true}
+        onClose={handleQuizClose}
+      />
+    );
+  }
+
   if (showSplash) {
     return (
       <SplashScreen
-        onFinish={() => {
-          setShowSplash(false);
-          setQuizVisible(true);
-        }}
-        onClose={() => {
-          setShowSplash(false);
-          setQuizVisible(true);
-        }}
+        onFinish={handleSplashFinish}
+        onClose={handleSplashFinish}
       />
     );
   }
@@ -77,7 +93,7 @@ function MainApp() {
       </View>
 
       {/* Welcome & Fan Quiz Modal (Image 1 & Image 4 exact match) */}
-      <WelcomeQuizModal visible={quizVisible} onClose={() => setQuizVisible(false)} />
+      <WelcomeQuizModal visible={quizVisible} onClose={handleQuizClose} />
 
       {/* Cricbuzz 5-Tab Bottom Navigation Bar with Settings Screen */}
       <View
