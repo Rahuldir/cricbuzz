@@ -6,7 +6,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -17,12 +20,11 @@ import {
 import MatchCenterModal from '../components/MatchCenterModal';
 import { TeamFlag } from '../utils/flagHelper';
 import EmptyStateView from '../components/EmptyStateView';
-import { MatchCardSkeleton } from '../components/ShimmerSkeleton';
 
-export default function MatchesScreen() {
+export default function MatchesScreen({ onBack }) {
   const { theme } = useTheme();
 
-  const [activeSubTab, setActiveSubTab] = useState('live'); // 'live' | 'upcoming' | 'completed' | 'all'
+  const [activeSubTab, setActiveSubTab] = useState('upcoming'); // 'live' | 'recent' | 'upcoming'
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -72,32 +74,62 @@ export default function MatchesScreen() {
   let displayedFixtures = [];
   if (activeSubTab === 'live') displayedFixtures = liveFixtures;
   else if (activeSubTab === 'upcoming') displayedFixtures = upcomingFixtures;
-  else if (activeSubTab === 'completed') displayedFixtures = completedFixtures;
-  else displayedFixtures = [...liveFixtures, ...upcomingFixtures, ...completedFixtures];
+  else if (activeSubTab === 'recent') displayedFixtures = completedFixtures;
 
   return (
-    <View style={{ backgroundColor: theme.bg }} className="flex-1">
-      {/* Top Header Bar (Matching Image 2 & 3) */}
-      <View className="bg-emerald-700 dark:bg-emerald-900 px-4 pt-3 pb-3 flex-row items-center justify-between shadow-md">
-        <TouchableOpacity className="p-1">
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* 1. Header Bar Matching Screenshots 2 & 3 */}
+      <View style={styles.topHeaderBar}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={28} color="#000000" />
         </TouchableOpacity>
 
-        <Text className="text-white font-extrabold text-lg text-center tracking-tight">
-          Live Score
-        </Text>
+        <Text style={styles.headerTitle}>Live Score</Text>
 
-        <View className="w-7 h-7 rounded-full bg-emerald-600 items-center justify-center">
-          <Ionicons name="location" size={15} color="#FFFFFF" />
+        {/* Top Right Circular AD Badge Icon */}
+        <View style={styles.topRightAdBadge}>
+          <View style={styles.adBadgeGreenCircle}>
+            <View style={styles.adRedBallCircleHeader}>
+              <View style={styles.redBallInner} />
+            </View>
+            <View style={styles.adSmallPillGreen}>
+              <Text style={styles.adSmallPillText}>AD</Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Top 3-Pill Segmented Navigation Bar (Exact Match for Image 2 & 3) */}
-      <View className="px-4 pt-3 pb-2">
-        <View className="flex-row bg-slate-200/80 dark:bg-slate-800/80 p-1.5 rounded-2xl items-center shadow-2xs">
+      {/* 2. Top Sub-Header AD Card */}
+      <View style={styles.adBannerCard}>
+        <View style={styles.adIconBox}>
+          <View style={styles.adTrophyCircle}>
+            <Ionicons name="trophy" size={18} color="#D97706" />
+            <View style={styles.adTagPillGreen}>
+              <Text style={styles.adTagText}>AD</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.adTextBox}>
+          <Text style={styles.adTitle} numberOfLines={1}>IPL News</Text>
+          <Text style={styles.adSubtitle} numberOfLines={1}>
+            Stay updated with the latest IPL news and
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+          <Text style={styles.installButtonText}>Install</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3. 3-Tab Segmented Navigation Bar (Live | Recent | Upcoming) */}
+      <View style={styles.tabsContainer}>
+        <View style={styles.tabsRow}>
           {[
             { id: 'live', label: 'Live', hasDot: false },
-            { id: 'completed', label: 'Recent', hasDot: false },
+            { id: 'recent', label: 'Recent', hasDot: false },
             { id: 'upcoming', label: 'Upcoming', hasDot: true },
           ].map((tab) => {
             const isActive = activeSubTab === tab.id;
@@ -105,52 +137,49 @@ export default function MatchesScreen() {
               <TouchableOpacity
                 key={tab.id}
                 onPress={() => setActiveSubTab(tab.id)}
-                style={{
-                  backgroundColor: isActive ? '#007A3B' : 'transparent',
-                }}
-                className="flex-1 py-2.5 rounded-xl items-center justify-center flex-row shadow-xs"
-                activeOpacity={0.8}
+                style={[
+                  styles.tabButton,
+                  isActive && styles.activeTabButton,
+                ]}
+                activeOpacity={0.85}
               >
-                <Text
-                  style={{
-                    color: isActive ? '#FFFFFF' : theme.textSecondary,
-                    fontWeight: isActive ? '800' : '600',
-                  }}
-                  className="text-xs tracking-tight"
-                >
-                  {tab.label}
-                </Text>
-                {tab.hasDot && (
-                  <View className="w-1.5 h-1.5 rounded-full bg-red-500 ml-1 mb-2" />
-                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      isActive && styles.activeTabText,
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                  {tab.hasDot && (
+                    <View style={styles.redNotificationDot} />
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
 
-      {/* Content Area */}
+      {/* 4. Content Area */}
       {loading ? (
-        <ScrollView className="flex-1 px-4 pt-4">
-          <View className="flex-row justify-center items-center py-2 mb-2">
-            <ActivityIndicator size="small" color={theme.accent} style={{ marginRight: 8 }} />
-            <Text style={{ color: theme.accent }} className="text-xs font-bold">
-              FETCHING LIVE MATCHES...
-            </Text>
-          </View>
-          <MatchCardSkeleton />
-          <MatchCardSkeleton />
-          <MatchCardSkeleton />
-        </ScrollView>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#008000" />
+          <Text style={{ marginTop: 12, fontSize: 13, color: '#64748B', fontWeight: '700' }}>
+            Loading Matches...
+          </Text>
+        </View>
       ) : (
         <ScrollView
-          className="flex-1 px-4 pt-3.5"
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollInner}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={theme.accent}
+              tintColor="#008000"
             />
           }
         >
@@ -158,124 +187,69 @@ export default function MatchesScreen() {
             <EmptyStateView
               type={activeSubTab}
               onRefresh={onRefresh}
-              onAction={() => setActiveSubTab(activeSubTab === 'live' ? 'upcoming' : 'live')}
-              actionLabel={activeSubTab === 'live' ? 'Check Upcoming' : 'Check Live'}
             />
           ) : (
-            <View className="space-y-3 pb-8">
+            <View style={{ paddingBottom: 16 }}>
               {displayedFixtures.map((match) => (
                 <TouchableOpacity
-                  key={match.fixtureId}
+                  key={match.fixtureId || match.id}
                   onPress={() => openFixtureDetail(match)}
                   activeOpacity={0.85}
-                  style={{
-                    backgroundColor: theme.card,
-                    borderColor: theme.cardBorder,
-                  }}
-                  className="p-4 rounded-2xl border shadow-sm mb-3.5"
+                  style={styles.matchCard}
                 >
-                  {/* Card top banner */}
-                  <View className="flex-row justify-between items-center pb-2.5 border-b" style={{ borderColor: theme.divider }}>
-                    <Text style={{ color: theme.textSecondary }} className="text-xs font-semibold flex-1 mr-2" numberOfLines={1}>
-                      {match.title || match.series}
+                  {/* Card Header */}
+                  <View style={styles.matchHeader}>
+                    <Text style={styles.matchSeriesTitle} numberOfLines={1}>
+                      {match.title || match.series || 'IPL 2026 T20'}
                     </Text>
-                    <View
-                      style={{
-                        backgroundColor:
-                          match.status === 'Live'
-                            ? theme.liveBadgeBg
-                            : match.status === 'Completed'
-                            ? theme.accentLight
-                            : theme.inputBg,
-                      }}
-                      className="px-2.5 py-0.5 rounded-full flex-row items-center"
-                    >
-                      {match.status === 'Live' && (
-                        <View style={{ backgroundColor: theme.liveBadge }} className="w-1.5 h-1.5 rounded-full mr-1 animate-pulse" />
-                      )}
-                      <Text
-                        style={{
-                          color:
-                            match.status === 'Live'
-                              ? theme.liveBadge
-                              : match.status === 'Completed'
-                              ? theme.accent
-                              : theme.textMuted,
-                        }}
-                        className="text-[10px] font-black uppercase tracking-wider"
-                      >
-                        {match.status}
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>
+                        {match.status || 'Scheduled'}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Teams & Scores */}
-                  <View className="py-3 space-y-2.5">
-                    <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
-                        <TeamFlag
-                          logo={match.team1?.logo}
-                          teamName={match.team1?.name}
-                          countryCode={match.team1?.shortName}
-                          size={26}
-                          style={{ marginRight: 8 }}
-                        />
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
-                          {match.team1?.name}
-                        </Text>
-                      </View>
-                      <Text style={{ color: theme.text }} className="font-black text-sm">
-                        {match.team1?.score}{' '}
-                        {match.team1?.overs && match.team1.overs !== '-' && (
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({match.team1?.overs} ov)
-                          </Text>
-                        )}
+                  {/* Team Matchup */}
+                  <View style={styles.teamsRow}>
+                    <View style={styles.teamCol}>
+                      <TeamFlag
+                        logo={match.team1?.logo}
+                        teamName={match.team1?.name}
+                        countryCode={match.team1?.shortName}
+                        size={28}
+                      />
+                      <Text style={styles.teamNameText} numberOfLines={1}>
+                        {match.team1?.name}
+                      </Text>
+                      <Text style={styles.scoreText}>
+                        {match.team1?.score || '-'}
                       </Text>
                     </View>
 
-                    <View className="flex-row justify-between items-center">
-                      <View className="flex-row items-center space-x-2 flex-1 mr-2">
-                        <TeamFlag
-                          logo={match.team2?.logo}
-                          teamName={match.team2?.name}
-                          countryCode={match.team2?.shortName}
-                          size={26}
-                          style={{ marginRight: 8 }}
-                        />
-                        <Text style={{ color: theme.text }} className="font-extrabold text-sm flex-1" numberOfLines={1}>
-                          {match.team2?.name}
-                        </Text>
-                      </View>
-                      <Text style={{ color: theme.text }} className="font-black text-sm">
-                        {match.team2?.score}{' '}
-                        {match.team2?.overs && match.team2.overs !== '-' && (
-                          <Text style={{ color: theme.textMuted }} className="text-xs font-normal">
-                            ({match.team2?.overs} ov)
-                          </Text>
-                        )}
+                    <View style={styles.vsBadgeCircle}>
+                      <Text style={styles.vsText}>VS</Text>
+                    </View>
+
+                    <View style={styles.teamCol}>
+                      <TeamFlag
+                        logo={match.team2?.logo}
+                        teamName={match.team2?.name}
+                        countryCode={match.team2?.shortName}
+                        size={28}
+                      />
+                      <Text style={styles.teamNameText} numberOfLines={1}>
+                        {match.team2?.name}
+                      </Text>
+                      <Text style={styles.scoreText}>
+                        {match.team2?.score || '-'}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Status Note or Player of match */}
-                  <View className="pt-2.5 border-t flex-row justify-between items-center" style={{ borderColor: theme.divider }}>
-                    <Text
-                      style={{
-                        color:
-                          match.status === 'Live'
-                            ? theme.liveBadge
-                            : match.status === 'Completed'
-                            ? '#2563EB'
-                            : theme.textSecondary,
-                      }}
-                      className="text-xs font-bold flex-1 mr-2"
-                      numberOfLines={1}
-                    >
-                      {match.statusNote || match.playerOfTheMatch || match.matchDate || match.venue}
+                  <View style={styles.matchFooter}>
+                    <Text style={styles.matchVenueText} numberOfLines={1}>
+                      {match.venue || match.matchDate || 'Matches from Ground'}
                     </Text>
-
-                    <Ionicons name="chevron-forward" size={16} color={theme.textMuted} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -284,12 +258,320 @@ export default function MatchesScreen() {
         </ScrollView>
       )}
 
+      {/* 5. Fixed Bottom Sticky AD Banner */}
+      <View style={styles.bottomAdBanner}>
+        <View style={styles.adIconBox}>
+          <View style={styles.adRedBallCircle}>
+            <Ionicons name="baseball" size={20} color="#DC2626" />
+            <View style={styles.adTagPillGreen}>
+              <Text style={styles.adTagText}>AD</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.adTextBox}>
+          <Text style={styles.adTitle} numberOfLines={1}>IPL News</Text>
+          <Text style={styles.adSubtitle} numberOfLines={1}>
+            Stay updated with the latest IPL news and
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+          <Text style={styles.installButtonText}>Install</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Match Center Modal */}
       <MatchCenterModal
         visible={matchCenterVisible}
         fixture={selectedFixture}
         onClose={() => setMatchCenterVisible(false)}
       />
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  topHeaderBar: {
+    height: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#000000',
+    textAlign: 'center',
+  },
+  topRightAdBadge: {
+    padding: 4,
+  },
+  adBadgeGreenCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  adRedBallCircleHeader: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  redBallInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FCA5A5',
+  },
+  adSmallPillGreen: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 5,
+  },
+  adSmallPillText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+
+  /* Top Sub Header Banner */
+  adBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#008000',
+  },
+  adIconBox: {
+    marginRight: 10,
+  },
+  adTrophyCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  adRedBallCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  adTagPillGreen: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 5,
+  },
+  adTagText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  adTextBox: {
+    flex: 1,
+    marginRight: 8,
+  },
+  adTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#000000',
+    marginBottom: 1,
+  },
+  adSubtitle: {
+    fontSize: 11,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  installButton: {
+    backgroundColor: '#008000',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  installButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  /* Sub-Tab Navigation Bar */
+  tabsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#EFEFEF',
+    borderRadius: 22,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  activeTabButton: {
+    backgroundColor: '#008000',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4B5563',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+  },
+  redNotificationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EF4444',
+    marginLeft: 4,
+    marginTop: -6,
+  },
+
+  /* Scroll Area */
+  scrollContent: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  scrollInner: {
+    paddingTop: 4,
+    paddingBottom: 24,
+  },
+
+  /* Match Card */
+  matchCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 12,
+  },
+  matchHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: 6,
+  },
+  matchSeriesTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    flex: 1,
+  },
+  statusBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    color: '#16A34A',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  teamsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  teamCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  teamNameText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 4,
+  },
+  scoreText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#008000',
+    marginTop: 2,
+  },
+  vsBadgeCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#008000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  vsText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  matchFooter: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 6,
+  },
+  matchVenueText: {
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+
+  /* Fixed Bottom Sticky AD Banner */
+  bottomAdBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+});

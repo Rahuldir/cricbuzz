@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -81,7 +81,7 @@ export default function ScheduleScreen({ onBack }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Top Header Bar Matching Screenshots 2 & 5 */}
+      {/* 1. Top Header Bar Matching Screenshot 3 & 4 */}
       <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -91,9 +91,11 @@ export default function ScheduleScreen({ onBack }) {
 
         {/* Top Right Circular AD Badge */}
         <View style={styles.topRightAdBadge}>
-          <View style={styles.adBadgeBlueCircle}>
-            <View style={styles.adRedBall} />
-            <View style={styles.adSmallPill}>
+          <View style={styles.adBadgeGreenCircle}>
+            <View style={styles.adRedBallCircleHeader}>
+              <View style={styles.redBallInner} />
+            </View>
+            <View style={styles.adSmallPillGreen}>
               <Text style={styles.adSmallPillText}>AD</Text>
             </View>
           </View>
@@ -103,7 +105,7 @@ export default function ScheduleScreen({ onBack }) {
       {/* 2. Top Sub-Header AD Card */}
       <View style={styles.adBannerCard}>
         <View style={styles.adIconBox}>
-          <View style={styles.adPinCircle}>
+          <View style={styles.adBallCircle}>
             <Ionicons name="baseball" size={18} color="#DC2626" />
             <View style={styles.adTagPillGreen}>
               <Text style={styles.adTagText}>AD</Text>
@@ -176,9 +178,9 @@ export default function ScheduleScreen({ onBack }) {
       {/* 4. Fixed Bottom Sticky AD Banner */}
       <View style={styles.bottomAdBanner}>
         <View style={styles.adIconBox}>
-          <View style={styles.adBallBlueCircle}>
-            <Ionicons name="baseball" size={20} color="#0284C7" />
-            <View style={styles.adTagPillCyan}>
+          <View style={styles.adBallCircle}>
+            <Ionicons name="baseball" size={20} color="#DC2626" />
+            <View style={styles.adTagPillGreen}>
               <Text style={styles.adTagText}>AD</Text>
             </View>
           </View>
@@ -224,29 +226,39 @@ const styles = StyleSheet.create({
   topRightAdBadge: {
     padding: 4,
   },
-  adBadgeBlueCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#0284C7',
+  adBadgeGreenCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  adRedBall: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  adRedBallCircleHeader: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  adSmallPill: {
+  redBallInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FCA5A5',
+  },
+  adSmallPillGreen: {
     position: 'absolute',
     top: -2,
     right: -2,
-    backgroundColor: '#38BDF8',
+    backgroundColor: '#16A34A',
     paddingHorizontal: 3,
     paddingVertical: 1,
-    borderRadius: 6,
+    borderRadius: 5,
   },
   adSmallPillText: {
     fontSize: 7,
@@ -259,7 +271,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginHorizontal: 16,
@@ -271,7 +283,7 @@ const styles = StyleSheet.create({
   adIconBox: {
     marginRight: 10,
   },
-  adPinCircle: {
+  adBallCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -336,7 +348,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#008000',
     overflow: 'hidden',
     marginBottom: 16,
     shadowColor: '#000000',
@@ -346,7 +358,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   matchCardHeader: {
-    backgroundColor: '#007A3B',
+    backgroundColor: '#008000',
     paddingVertical: 8,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -362,14 +374,14 @@ const styles = StyleSheet.create({
   },
   timePill: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 4,
     borderRadius: 14,
   },
   timePillText: {
-    color: '#007A3B',
+    color: '#008000',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   matchupRow: {
     flexDirection: 'row',
@@ -400,7 +412,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   vsBadge: {
-    backgroundColor: '#007A3B',
+    backgroundColor: '#008000',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 8,
@@ -434,23 +446,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
-  },
-  adBallBlueCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#E0F2FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  adTagPillCyan: {
-    position: 'absolute',
-    top: -2,
-    left: -2,
-    backgroundColor: '#0284C7',
-    paddingHorizontal: 3,
-    paddingVertical: 1,
-    borderRadius: 5,
   },
 });

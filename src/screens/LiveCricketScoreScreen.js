@@ -13,7 +13,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import MatchesHistoryScreen from './MatchesHistoryScreen';
 import PlayoffsScreen from './PlayoffsScreen';
 
@@ -113,6 +113,20 @@ const FolderArt = () => (
   </View>
 );
 
+// 7. Certificate Ribbon Graphic for Playoff History Card
+const PlayoffCertificateArt = () => (
+  <View style={artStyles.certContainer}>
+    <View style={artStyles.certSheet}>
+      <View style={artStyles.certLineLong} />
+      <View style={artStyles.certLineShort} />
+      <View style={artStyles.certLineShort} />
+      <View style={artStyles.certRibbonBadge}>
+        <Ionicons name="ribbon" size={14} color="#F59E0B" />
+      </View>
+    </View>
+  </View>
+);
+
 export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, onNavigateToTab }) {
   const [currentSubScreen, setCurrentSubScreen] = useState(null); // 'records' | 'playoffs'
   const [venuesModalVisible, setVenuesModalVisible] = useState(false);
@@ -187,7 +201,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Header Matching Screenshots 1, 2, 3, 4, 5 */}
+      {/* 1. Header Matching Screenshots */}
       <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -245,12 +259,10 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
         contentContainerStyle={styles.scrollInner}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner 1: Green Live Cricket Score Banner */}
+        {/* Banner 1: Green Live Cricket Score Hero Banner */}
         <View style={styles.greenHeroCard}>
-          {/* Left Art Illustration */}
           <HeroCricketArt />
 
-          {/* Right Text Content */}
           <View style={styles.heroRightBox}>
             <Text style={styles.heroTitle}>Live Cricket Score</Text>
             <Text style={styles.heroSubtitle}>
@@ -284,7 +296,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </View>
           </View>
 
-          {/* Banner Image */}
           <View style={styles.featureImageWrapper}>
             <Image
               source={require('../../assets/welcome_ad_banner.jpg')}
@@ -293,7 +304,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             />
           </View>
 
-          {/* Watch Highlights Button */}
           <TouchableOpacity
             onPress={() => onNavigateToTab && onNavigateToTab('news')}
             style={styles.greenActionBtn}
@@ -305,7 +315,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
 
         {/* Section 3: 2-Column Grid Layout (IPL Schedule, Play Game, Play Game, Venues) */}
         <View style={styles.gridContainer}>
-          {/* Grid Item 1: IPL Schedule */}
           <TouchableOpacity
             onPress={onNavigateToSchedule}
             style={styles.gridCard}
@@ -320,7 +329,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </View>
           </TouchableOpacity>
 
-          {/* Grid Item 2: Play Game (AD) */}
           <TouchableOpacity
             onPress={handlePlayGame}
             style={styles.gridCard}
@@ -336,7 +344,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </View>
           </TouchableOpacity>
 
-          {/* Grid Item 3: Play Game (AD) */}
           <TouchableOpacity
             onPress={handlePlayGame}
             style={styles.gridCard}
@@ -352,7 +359,6 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </View>
           </TouchableOpacity>
 
-          {/* Grid Item 4: Venues */}
           <TouchableOpacity
             onPress={() => setVenuesModalVisible(true)}
             style={styles.gridCard}
@@ -385,59 +391,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
           </View>
         </TouchableOpacity>
 
-        {/* Section 5: Grey Card - IPL News (Read More) */}
-        <View style={styles.featureAdContainer}>
-          <View style={styles.adHeaderRow}>
-            <View style={styles.adRedBallCircle}>
-              <Ionicons name="baseball" size={18} color="#DC2626" />
-              <View style={styles.adBadgePillGreen}>
-                <Text style={styles.adBadgeText}>AD</Text>
-              </View>
-            </View>
-            <View style={styles.adHeaderTexts}>
-              <Text style={styles.featureAdTitle}>IPL News</Text>
-              <Text style={styles.featureAdSubtitle} numberOfLines={1}>
-                Stay updated with the latest IPL news and
-              </Text>
-            </View>
-          </View>
-
-          {/* Banner Image */}
-          <View style={styles.featureImageWrapper}>
-            <Image
-              source={require('../../assets/welcome_hero_art.jpg')}
-              style={styles.featureImage}
-              resizeMode="cover"
-            />
-          </View>
-
-          {/* Read More Button */}
-          <TouchableOpacity
-            onPress={() => onNavigateToTab && onNavigateToTab('news')}
-            style={styles.greenActionBtn}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.greenActionBtnText}>Read More</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Section 6: Full-width Horizontal Card - Play Game (AD) */}
-        <TouchableOpacity
-          onPress={handlePlayGame}
-          style={styles.horizontalCard}
-          activeOpacity={0.85}
-        >
-          <View style={styles.horizontalLeft}>
-            <WicketsGameArt />
-            <Text style={[styles.horizontalTitle, { marginLeft: 16 }]}>Play Game</Text>
-          </View>
-
-          <View style={styles.cardAdTagGreen}>
-            <Text style={styles.cardAdTagText}>AD</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Section 7: Full-width Horizontal Card - All Records */}
+        {/* Section 5: Full-width Horizontal Card - All Records */}
         <TouchableOpacity
           onPress={() => setCurrentSubScreen('records')}
           style={styles.horizontalCard}
@@ -454,7 +408,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
           </View>
         </TouchableOpacity>
 
-        {/* Section 8: Grey Card - IPL News (Bottom Duplicate as per screenshot 5) */}
+        {/* Section 6: Grey Card - IPL News (Read More) */}
         <View style={styles.featureAdContainer}>
           <View style={styles.adHeaderRow}>
             <View style={styles.adRedBallCircle}>
@@ -473,12 +427,53 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
 
           <View style={styles.featureImageWrapper}>
             <Image
-              source={require('../../assets/welcome_ad_banner.jpg')}
+              source={require('../../assets/welcome_hero_art.jpg')}
               style={styles.featureImage}
               resizeMode="cover"
             />
           </View>
+
+          <TouchableOpacity
+            onPress={() => onNavigateToTab && onNavigateToTab('news')}
+            style={styles.greenActionBtn}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.greenActionBtnText}>Read More</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Section 7: Full-width Horizontal Card - Play Game (AD) */}
+        <TouchableOpacity
+          onPress={handlePlayGame}
+          style={styles.horizontalCard}
+          activeOpacity={0.85}
+        >
+          <View style={styles.horizontalLeft}>
+            <WicketsGameArt />
+            <Text style={[styles.horizontalTitle, { marginLeft: 16 }]}>Play Game</Text>
+          </View>
+
+          <View style={styles.cardAdTagGreen}>
+            <Text style={styles.cardAdTagText}>AD</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Section 8: Full-width Horizontal Card - Playoff History */}
+        <TouchableOpacity
+          onPress={() => setCurrentSubScreen('playoffs')}
+          style={styles.horizontalCard}
+          activeOpacity={0.85}
+        >
+          <View style={styles.horizontalLeft}>
+            <PlayoffCertificateArt />
+            <Text style={[styles.horizontalTitle, { marginLeft: 16 }]}>Playoff History</Text>
+          </View>
+
+          <View style={styles.greenChevronSquare}>
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -1 }} />
+            <Ionicons name="chevron-forward-sharp" size={14} color="#FFFFFF" style={{ marginLeft: -8 }} />
+          </View>
+        </TouchableOpacity>
 
         {/* Section 9: Bottom Row Action Buttons */}
         <View style={styles.bottomButtonsRow}>
@@ -804,6 +799,41 @@ const artStyles = StyleSheet.create({
     borderRadius: 1,
     marginTop: 1,
   },
+  certContainer: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  certSheet: {
+    width: 32,
+    height: 34,
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1.5,
+    borderColor: '#38BDF8',
+    borderRadius: 6,
+    padding: 4,
+    position: 'relative',
+  },
+  certLineLong: {
+    width: 20,
+    height: 3,
+    backgroundColor: '#0284C7',
+    borderRadius: 1.5,
+    marginBottom: 3,
+  },
+  certLineShort: {
+    width: 14,
+    height: 3,
+    backgroundColor: '#0284C7',
+    borderRadius: 1.5,
+    marginBottom: 3,
+  },
+  certRibbonBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+  },
 });
 
 const styles = StyleSheet.create({
@@ -1126,7 +1156,7 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
 
-  /* Horizontal Full Cards (Point Table, Play Game, All Records) */
+  /* Horizontal Full Cards (Point Table, Play Game, All Records, Playoff History) */
   horizontalCard: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
