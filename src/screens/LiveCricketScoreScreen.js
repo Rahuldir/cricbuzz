@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,19 @@ import {
   Alert,
   Modal,
   FlatList,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import MatchesHistoryScreen from './MatchesHistoryScreen';
 import PlayoffsScreen from './PlayoffsScreen';
+import {
+  VENUES_DATA,
+  COUNTRY_FILTERS,
+  PITCH_TYPES,
+  CAPACITY_RANGES,
+  SORT_OPTIONS,
+} from '../data/venuesData';
 
 // --- Enhanced Transparent Artwork Graphic Components ---
 
@@ -191,43 +199,84 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
   const [venuesModalVisible, setVenuesModalVisible] = useState(false);
   const [gameModalVisible, setGameModalVisible] = useState(false);
 
-  const venuesList = [
-    {
-      id: '1',
-      name: 'Eden Gardens,Kolkata',
-      opened: '1864',
-      capacity: '80,000',
-      image: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: '2',
-      name: 'Wankhede Stadium,Mumbai',
-      opened: '1933',
-      capacity: '33,108',
-      image: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: '3',
-      name: 'M. A. Chidambaram Stadium,Chennai',
-      opened: '1916',
-      capacity: '33,500',
-      image: 'https://images.unsplash.com/photo-1512719994953-eabf50895df7?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: '4',
-      name: 'M. Chinnaswamy Stadium,Bengaluru',
-      opened: '1969',
-      capacity: '40,000',
-      image: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-      id: '5',
-      name: 'Narendra Modi Stadium,Ahmedabad',
-      opened: '1983',
-      capacity: '132,000',
-      image: 'https://images.unsplash.com/photo-1562077772-3bd90403f7f0?q=80&w=800&auto=format&fit=crop',
-    },
-  ];
+  // Venue Filter & Search State
+  const [venueSearchQuery, setVenueSearchQuery] = useState('');
+  const [venueSelectedCountry, setVenueSelectedCountry] = useState('all');
+  const [venueSelectedPitch, setVenueSelectedPitch] = useState('All Pitches');
+  const [venueSelectedCapacity, setVenueSelectedCapacity] = useState('all');
+  const [venueSortBy, setVenueSortBy] = useState('default');
+  const [selectedVenueDetail, setSelectedVenueDetail] = useState(null);
+  const [showVenueFilterModal, setShowVenueFilterModal] = useState(false);
+  const [imageErrorMap, setImageErrorMap] = useState({});
+
+  const handleImageError = (id) => {
+    setImageErrorMap((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Calculate stadium count per country for badges
+  const countryCounts = useMemo(() => {
+    const counts = { all: VENUES_DATA.length };
+    VENUES_DATA.forEach((v) => {
+      counts[v.country] = (counts[v.country] || 0) + 1;
+    });
+    return counts;
+  }, []);
+
+  // Filter & sort stadium list
+  const filteredVenues = useMemo(() => {
+    return VENUES_DATA.filter((venue) => {
+      // 1. Search Query
+      if (venueSearchQuery.trim()) {
+        const q = venueSearchQuery.toLowerCase().trim();
+        const matchName = venue.name.toLowerCase().includes(q);
+        const matchCity = venue.city.toLowerCase().includes(q);
+        const matchCountry = venue.country.toLowerCase().includes(q);
+        if (!matchName && !matchCity && !matchCountry) return false;
+      }
+      // 2. Country Filter
+      if (
+        venueSelectedCountry !== 'all' &&
+        venue.country.toLowerCase() !== venueSelectedCountry.toLowerCase()
+      ) {
+        return false;
+      }
+      // 3. Pitch Type Filter
+      if (venueSelectedPitch !== 'All Pitches' && venue.pitchType !== venueSelectedPitch) {
+        return false;
+      }
+      // 4. Capacity Filter
+      if (venueSelectedCapacity === 'above_50k' && venue.capacityNum < 50000) return false;
+      if (
+        venueSelectedCapacity === '30k_50k' &&
+        (venue.capacityNum < 30000 || venue.capacityNum > 50000)
+      )
+        return false;
+      if (venueSelectedCapacity === 'under_30k' && venue.capacityNum >= 30000) return false;
+
+      return true;
+    }).sort((a, b) => {
+      if (venueSortBy === 'capacity_desc') return b.capacityNum - a.capacityNum;
+      if (venueSortBy === 'capacity_asc') return a.capacityNum - b.capacityNum;
+      if (venueSortBy === 'name_asc') return a.name.localeCompare(b.name);
+      if (venueSortBy === 'opened_asc') return parseInt(a.opened) - parseInt(b.opened);
+      return 0;
+    });
+  }, [venueSearchQuery, venueSelectedCountry, venueSelectedPitch, venueSelectedCapacity, venueSortBy]);
+
+  const hasActiveVenueFilters =
+    venueSearchQuery.trim() !== '' ||
+    venueSelectedCountry !== 'all' ||
+    venueSelectedPitch !== 'All Pitches' ||
+    venueSelectedCapacity !== 'all' ||
+    venueSortBy !== 'default';
+
+  const resetVenueFilters = () => {
+    setVenueSearchQuery('');
+    setVenueSelectedCountry('all');
+    setVenueSelectedPitch('All Pitches');
+    setVenueSelectedCapacity('all');
+    setVenueSortBy('default');
+  };
 
   const handleShareApp = async () => {
     try {
@@ -627,22 +676,105 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
               <Ionicons name="chevron-back" size={28} color="#000000" />
             </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>Venue</Text>
-
-            {/* Top Right Circular AD Badge */}
-            <View style={styles.topRightAdBadge}>
-              <View style={styles.adBadgeGreenCircle}>
-                <View style={styles.adRedBallCircleHeader}>
-                  <View style={styles.redBallInner} />
-                </View>
-                <View style={styles.adSmallPillGreen}>
-                  <Text style={styles.adSmallPillText}>AD</Text>
-                </View>
-              </View>
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <Text style={styles.headerTitle}>Stadium Venues</Text>
+              <Text style={{ fontSize: 11, color: '#008000', fontWeight: '700' }}>
+                {filteredVenues.length} {filteredVenues.length === 1 ? 'Stadium' : 'Stadiums'} Available
+              </Text>
             </View>
+
+            {/* Filter Options Modal Button */}
+            <TouchableOpacity
+              onPress={() => setShowVenueFilterModal(true)}
+              style={[venueCardStyles.topFilterBtn, hasActiveVenueFilters && venueCardStyles.topFilterBtnActive]}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="options-outline" size={19} color={hasActiveVenueFilters ? '#FFFFFF' : '#0F172A'} />
+              <Text style={[venueCardStyles.topFilterBtnText, hasActiveVenueFilters && { color: '#FFFFFF' }]}>Filters</Text>
+              {hasActiveVenueFilters && <View style={venueCardStyles.filterBadgeDot} />}
+            </TouchableOpacity>
           </View>
 
-          {/* Sub-Header AD Card (Exact match Screenshot 2 & 4) */}
+          {/* Search Bar Input */}
+          <View style={venueCardStyles.searchBarContainer}>
+            <Ionicons name="search-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
+            <TextInput
+              style={venueCardStyles.searchInput}
+              placeholder="Search stadium, city or country..."
+              placeholderTextColor="#94A3B8"
+              value={venueSearchQuery}
+              onChangeText={setVenueSearchQuery}
+            />
+            {venueSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setVenueSearchQuery('')} style={{ padding: 2 }}>
+                <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Country Filter Pill Horizontal Bar */}
+          <View style={venueCardStyles.countryBarWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}>
+              {COUNTRY_FILTERS.map((item) => {
+                const count = item.id === 'all' ? countryCounts.all : countryCounts[item.id] || 0;
+                const isSelected = venueSelectedCountry.toLowerCase() === item.id.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() => setVenueSelectedCountry(item.id)}
+                    style={[venueCardStyles.countryPill, isSelected && venueCardStyles.countryPillSelected]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={{ fontSize: 13, marginRight: 4 }}>{item.flag}</Text>
+                    <Text style={[venueCardStyles.countryPillLabel, isSelected && venueCardStyles.countryPillLabelSelected]}>
+                      {item.label}
+                    </Text>
+                    <View style={[venueCardStyles.countBadge, isSelected && venueCardStyles.countBadgeSelected]}>
+                      <Text style={[venueCardStyles.countBadgeText, isSelected && venueCardStyles.countBadgeTextSelected]}>
+                        {count}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Pitch Type Filter Chips */}
+          <View style={venueCardStyles.subFilterBar}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
+              {PITCH_TYPES.map((pt) => {
+                const isSelected = venueSelectedPitch === pt;
+                return (
+                  <TouchableOpacity
+                    key={pt}
+                    onPress={() => setVenueSelectedPitch(pt)}
+                    style={[venueCardStyles.pitchChip, isSelected && venueCardStyles.pitchChipSelected]}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[venueCardStyles.pitchChipText, isSelected && venueCardStyles.pitchChipTextSelected]}>
+                      {pt}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Active Filter Summary Bar */}
+          {hasActiveVenueFilters && (
+            <View style={venueCardStyles.activeFilterRow}>
+              <Text style={venueCardStyles.activeFilterText}>
+                Filters active ({filteredVenues.length} results)
+              </Text>
+              <TouchableOpacity onPress={resetVenueFilters} style={venueCardStyles.resetBtn}>
+                <Ionicons name="refresh-outline" size={14} color="#DC2626" />
+                <Text style={venueCardStyles.resetBtnText}>Clear All</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Sub-Header AD Card */}
           <View style={styles.adBannerCard}>
             <View style={styles.adIconBox}>
               <View style={styles.adRedBallCircle}>
@@ -665,34 +797,95 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </TouchableOpacity>
           </View>
 
-          {/* Venues Cards Scroll List */}
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-            {venuesList.map((item) => (
-              <View key={item.id} style={venueCardStyles.cardContainer}>
-                {/* Green Stadium Header Banner */}
-                <View style={venueCardStyles.headerBanner}>
-                  <Text style={venueCardStyles.headerBannerText} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                </View>
+          {/* Venues List or Empty State */}
+          {filteredVenues.length === 0 ? (
+            <View style={venueCardStyles.emptyContainer}>
+              <Ionicons name="search" size={48} color="#94A3B8" />
+              <Text style={venueCardStyles.emptyTitle}>No Stadiums Match Your Filter</Text>
+              <Text style={venueCardStyles.emptySubtitle}>Try adjusting your search term, pitch type or country selection.</Text>
+              <TouchableOpacity onPress={resetVenueFilters} style={venueCardStyles.emptyResetBtn}>
+                <Text style={venueCardStyles.emptyResetBtnText}>Reset All Filters</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+              {filteredVenues.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={venueCardStyles.cardContainer}
+                  activeOpacity={0.9}
+                  onPress={() => setSelectedVenueDetail(item)}
+                >
+                  {/* Green Stadium Header Banner */}
+                  <View style={venueCardStyles.headerBanner}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <Text style={{ fontSize: 16, marginRight: 6 }}>{item.flag}</Text>
+                      <Text style={venueCardStyles.headerBannerText} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                    </View>
+                    <View style={venueCardStyles.cityPillHeader}>
+                      <Text style={venueCardStyles.cityPillHeaderText}>{item.city}</Text>
+                    </View>
+                  </View>
 
-                {/* Stadium Image */}
-                <View style={venueCardStyles.imageWrapper}>
-                  <Image source={{ uri: item.image }} style={venueCardStyles.stadiumImage} resizeMode="cover" />
-                </View>
+                  {/* Stadium Image with Badges */}
+                  <View style={venueCardStyles.imageWrapper}>
+                    <Image
+                      source={{
+                        uri: imageErrorMap[item.id]
+                          ? 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=800&auto=format&fit=crop'
+                          : item.image,
+                      }}
+                      style={venueCardStyles.stadiumImage}
+                      resizeMode="cover"
+                      onError={() => handleImageError(item.id)}
+                    />
+                    
+                    {/* Pitch Type Tag Overlay */}
+                    <View style={venueCardStyles.pitchTagOverlay}>
+                      <Ionicons name="flash-outline" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+                      <Text style={venueCardStyles.pitchTagOverlayText}>{item.pitchType}</Text>
+                    </View>
 
-                {/* Opened & Capacity Info Bar */}
-                <View style={venueCardStyles.infoRow}>
-                  <Text style={venueCardStyles.infoLabelText}>
-                    Opened : <Text style={venueCardStyles.infoValText}>{item.opened}</Text>
-                  </Text>
-                  <Text style={venueCardStyles.infoLabelText}>
-                    Capacity : <Text style={venueCardStyles.infoValText}>{item.capacity}</Text>
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+                    {/* Country Tag Overlay */}
+                    <View style={venueCardStyles.countryTagOverlay}>
+                      <Text style={venueCardStyles.countryTagOverlayText}>{item.flag} {item.country}</Text>
+                    </View>
+                  </View>
+
+                  {/* Opened & Capacity Info Bar */}
+                  <View style={venueCardStyles.infoRow}>
+                    <View style={venueCardStyles.infoBox}>
+                      <Text style={venueCardStyles.infoLabelText}>Opened</Text>
+                      <Text style={venueCardStyles.infoValText}>{item.opened}</Text>
+                    </View>
+                    <View style={venueCardStyles.infoDivider} />
+                    <View style={venueCardStyles.infoBox}>
+                      <Text style={venueCardStyles.infoLabelText}>Capacity</Text>
+                      <Text style={venueCardStyles.infoValText}>{item.capacity}</Text>
+                    </View>
+                    <View style={venueCardStyles.infoDivider} />
+                    <View style={venueCardStyles.infoBox}>
+                      <Text style={venueCardStyles.infoLabelText}>Floodlights</Text>
+                      <Text style={venueCardStyles.infoValText}>{item.floodlights ? 'Yes 💡' : 'No'}</Text>
+                    </View>
+                  </View>
+
+                  {/* Footer Teams & Detail CTA Bar */}
+                  <View style={venueCardStyles.cardFooterRow}>
+                    <Text style={venueCardStyles.footerTeamsText} numberOfLines={1}>
+                      🏟️ {item.homeTeams}
+                    </Text>
+                    <View style={venueCardStyles.detailsBtn}>
+                      <Text style={venueCardStyles.detailsBtnText}>Details</Text>
+                      <Ionicons name="chevron-forward" size={13} color="#008000" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
           {/* Bottom AD Banner */}
           <View style={styles.bottomAdBanner}>
@@ -717,6 +910,189 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
             </TouchableOpacity>
           </View>
         </SafeAreaView>
+      </Modal>
+
+      {/* Additional Filters Modal (Capacity & Sort Options) */}
+      <Modal visible={showVenueFilterModal} animationType="fade" transparent={true}>
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { maxHeight: '80%' }]}>
+            <View style={modalStyles.header}>
+              <Text style={modalStyles.title}>Filter & Sort Stadiums</Text>
+              <TouchableOpacity onPress={() => setShowVenueFilterModal(false)}>
+                <Ionicons name="close-circle" size={26} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginVertical: 12 }}>
+              {/* Capacity Filter Section */}
+              <Text style={venueCardStyles.filterSectionTitle}>Seating Capacity</Text>
+              <View style={venueCardStyles.filterOptionsGrid}>
+                {CAPACITY_RANGES.map((cap) => {
+                  const isSel = venueSelectedCapacity === cap.id;
+                  return (
+                    <TouchableOpacity
+                      key={cap.id}
+                      onPress={() => setVenueSelectedCapacity(cap.id)}
+                      style={[venueCardStyles.filterGridOption, isSel && venueCardStyles.filterGridOptionSelected]}
+                    >
+                      <Ionicons
+                        name={isSel ? 'radio-button-on' : 'radio-button-off'}
+                        size={16}
+                        color={isSel ? '#008000' : '#64748B'}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={[venueCardStyles.filterGridOptionText, isSel && { color: '#008000', fontWeight: '700' }]}>
+                        {cap.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Sorting Section */}
+              <Text style={[venueCardStyles.filterSectionTitle, { marginTop: 16 }]}>Sort By</Text>
+              <View style={venueCardStyles.filterOptionsGrid}>
+                {SORT_OPTIONS.map((opt) => {
+                  const isSel = venueSortBy === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => setVenueSortBy(opt.id)}
+                      style={[venueCardStyles.filterGridOption, isSel && venueCardStyles.filterGridOptionSelected]}
+                    >
+                      <Ionicons
+                        name={isSel ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={16}
+                        color={isSel ? '#008000' : '#64748B'}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text style={[venueCardStyles.filterGridOptionText, isSel && { color: '#008000', fontWeight: '700' }]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+              <TouchableOpacity
+                onPress={resetVenueFilters}
+                style={[modalStyles.cancelBtn, { flex: 1 }]}
+              >
+                <Text style={modalStyles.cancelBtnText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowVenueFilterModal(false)}
+                style={[modalStyles.playBtn, { flex: 1, backgroundColor: '#008000' }]}
+              >
+                <Text style={modalStyles.playBtnText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Stadium Detail Popup Sheet / Modal */}
+      <Modal visible={!!selectedVenueDetail} animationType="slide" transparent={true} onRequestClose={() => setSelectedVenueDetail(null)}>
+        <View style={modalStyles.overlay}>
+          <View style={[modalStyles.content, { maxHeight: '90%', padding: 0, overflow: 'hidden' }]}>
+            {selectedVenueDetail && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Detail Header Image */}
+                <View style={{ height: 200, width: '100%', position: 'relative' }}>
+                  <Image
+                    source={{
+                      uri: imageErrorMap[selectedVenueDetail.id]
+                        ? 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=800&auto=format&fit=crop'
+                        : selectedVenueDetail.image,
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                    onError={() => handleImageError(selectedVenueDetail.id)}
+                  />
+                  <View style={{ position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 4 }}>
+                    <TouchableOpacity onPress={() => setSelectedVenueDetail(null)}>
+                      <Ionicons name="close" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ position: 'absolute', bottom: 12, left: 16, backgroundColor: '#008000', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                      {selectedVenueDetail.flag} {selectedVenueDetail.country}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Detail Content Body */}
+                <View style={{ padding: 18 }}>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: '#0F172A' }}>
+                    {selectedVenueDetail.name}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: '#64748B', marginTop: 2, fontWeight: '600' }}>
+                    📍 {selectedVenueDetail.city}, {selectedVenueDetail.country}
+                  </Text>
+
+                  <Text style={{ fontSize: 13, color: '#334155', lineHeight: 20, marginTop: 12 }}>
+                    {selectedVenueDetail.description}
+                  </Text>
+
+                  {/* Grid Stats */}
+                  <View style={venueCardStyles.detailStatsBox}>
+                    <View style={venueCardStyles.detailStatItem}>
+                      <Text style={venueCardStyles.detailStatLabel}>ESTABLISHED</Text>
+                      <Text style={venueCardStyles.detailStatVal}>{selectedVenueDetail.opened}</Text>
+                    </View>
+                    <View style={venueCardStyles.detailStatItem}>
+                      <Text style={venueCardStyles.detailStatLabel}>CAPACITY</Text>
+                      <Text style={venueCardStyles.detailStatVal}>{selectedVenueDetail.capacity}</Text>
+                    </View>
+                    <View style={venueCardStyles.detailStatItem}>
+                      <Text style={venueCardStyles.detailStatLabel}>PITCH TYPE</Text>
+                      <Text style={[venueCardStyles.detailStatVal, { color: '#008000' }]}>
+                        {selectedVenueDetail.pitchType}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Additional Information Rows */}
+                  <View style={venueCardStyles.detailInfoCard}>
+                    <View style={venueCardStyles.detailRow}>
+                      <Ionicons name="people-outline" size={18} color="#008000" style={{ marginRight: 8 }} />
+                      <Text style={venueCardStyles.detailRowLabel}>Home Teams:</Text>
+                      <Text style={venueCardStyles.detailRowValue}>{selectedVenueDetail.homeTeams}</Text>
+                    </View>
+
+                    <View style={venueCardStyles.detailRow}>
+                      <Ionicons name="compass-outline" size={18} color="#008000" style={{ marginRight: 8 }} />
+                      <Text style={venueCardStyles.detailRowLabel}>Bowling Ends:</Text>
+                      <Text style={venueCardStyles.detailRowValue}>{selectedVenueDetail.ends}</Text>
+                    </View>
+
+                    <View style={venueCardStyles.detailRow}>
+                      <Ionicons name="trophy-outline" size={18} color="#008000" style={{ marginRight: 8 }} />
+                      <Text style={venueCardStyles.detailRowLabel}>Highest Total:</Text>
+                      <Text style={venueCardStyles.detailRowValue}>{selectedVenueDetail.highestTotal}</Text>
+                    </View>
+
+                    <View style={venueCardStyles.detailRow}>
+                      <Ionicons name="star-outline" size={18} color="#008000" style={{ marginRight: 8 }} />
+                      <Text style={venueCardStyles.detailRowLabel}>Iconic Moment:</Text>
+                      <Text style={venueCardStyles.detailRowValue}>{selectedVenueDetail.iconicMatch}</Text>
+                    </View>
+                  </View>
+
+                  {/* Close CTA Button */}
+                  <TouchableOpacity
+                    onPress={() => setSelectedVenueDetail(null)}
+                    style={[modalStyles.playBtn, { backgroundColor: '#008000', marginTop: 16 }]}
+                  >
+                    <Text style={modalStyles.playBtnText}>Close Details</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
       </Modal>
 
       {/* Cricket Game Trivia Modal */}
@@ -1718,57 +2094,399 @@ const modalStyles = StyleSheet.create({
 const venueCardStyles = StyleSheet.create({
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1.5,
     borderColor: '#008000',
     marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 3,
   },
   headerBanner: {
     backgroundColor: '#008000',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
   headerBannerText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
-    textAlign: 'center',
+  },
+  cityPillHeader: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  cityPillHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   imageWrapper: {
     width: '100%',
     height: 180,
-    padding: 8,
-    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    backgroundColor: '#F1F5F9',
   },
   stadiumImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 14,
+  },
+  pitchTagOverlay: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  pitchTagOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  countryTagOverlay: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 128, 0, 0.9)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  countryTagOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  infoBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  infoDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#CBD5E1',
+  },
+  infoLabelText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  infoValText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  cardFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  footerTeamsText: {
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '600',
+    flex: 1,
+  },
+  detailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  detailsBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#008000',
+    marginRight: 2,
+  },
+
+  /* Search & Filter Header Components */
+  topFilterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    position: 'relative',
+  },
+  topFilterBtnActive: {
+    backgroundColor: '#008000',
+    borderColor: '#008000',
+  },
+  topFilterBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginLeft: 4,
+  },
+  filterBadgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    marginHorizontal: 14,
+    marginTop: 8,
+    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F172A',
+    padding: 0,
+  },
+  countryBarWrapper: {
+    marginBottom: 4,
+  },
+  countryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  countryPillSelected: {
+    backgroundColor: '#008000',
+    borderColor: '#008000',
+    shadowColor: '#008000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  countryPillLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    marginRight: 6,
+  },
+  countryPillLabelSelected: {
+    color: '#FFFFFF',
+  },
+  countBadge: {
+    backgroundColor: '#E2E8F0',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  countBadgeSelected: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  countBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#334155',
+  },
+  countBadgeTextSelected: {
+    color: '#FFFFFF',
+  },
+  subFilterBar: {
+    marginBottom: 6,
+  },
+  pitchChip: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    marginRight: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  pitchChipSelected: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  pitchChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  pitchChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  activeFilterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 6,
+  },
+  activeFilterText: {
+    fontSize: 12,
+    color: '#008000',
+    fontWeight: '700',
+  },
+  resetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resetBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#DC2626',
+    marginLeft: 3,
+  },
+
+  /* Empty State */
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  emptyResetBtn: {
+    backgroundColor: '#008000',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 14,
+  },
+  emptyResetBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  /* Filter Modal Options */
+  filterSectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  filterOptionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterGridOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  filterGridOptionSelected: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#008000',
+  },
+  filterGridOptionText: {
+    fontSize: 12,
+    color: '#475569',
+  },
+
+  /* Venue Detail Sheet Styles */
+  detailStatsBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    marginTop: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  infoLabelText: {
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '500',
+  detailStatItem: {
+    alignItems: 'center',
   },
-  infoValText: {
-    fontSize: 16,
+  detailStatLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.5,
+  },
+  detailStatVal: {
+    fontSize: 14,
     fontWeight: '900',
-    color: '#000000',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  detailInfoCard: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  detailRowLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#334155',
+    width: 100,
+  },
+  detailRowValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F172A',
+    flex: 1,
   },
 });
