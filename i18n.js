@@ -1,5 +1,5 @@
 /* ============================================================
-   CRICBUZZ WEB - Internationalization (EN + HI)
+   CRICBUZZ WEB - Internationalization
    ============================================================ */
 
 const I18N = (function () {
@@ -92,13 +92,9 @@ const I18N = (function () {
   });
 
   return {
-    t: t,
-    setLang: setLang,
-    getLang: getLang,
-    applyToDOM: applyToDOM,
-    languages: Object.keys(TRANSLATIONS)
+    t: t, setLang: setLang, getLang: getLang,
+    applyToDOM: applyToDOM, languages: Object.keys(TRANSLATIONS)
   };
-
 })();
 
 window.t = function (k) { return I18N.t(k); };
