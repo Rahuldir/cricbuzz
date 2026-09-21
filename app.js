@@ -614,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* Auto-refresh every 90 seconds */
   setInterval(function () {
     if (usingLiveApi) {
-      CricAPI.fetchMatches().then(function (m) {
+   BigBallsAPI.fetchMatches().then(function (m) {
         MATCHES = m;
         refreshAll();
       }).catch(function () {});
