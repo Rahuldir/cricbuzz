@@ -203,12 +203,15 @@
 <script src="app.js"></script>
   <script src="livestreams.js"></script>
 
-<!-- Streaming UI Controller -->
+<!-- ============================================================
+     STREAMING UI + BROADCAST + LANGUAGE CONTROLLER
+     ============================================================ -->
 <script>
 (function () {
   'use strict';
   var STORAGE_KEY = 'cricbuzz_streams_v1';
 
+  /* ---- Load/save user-added streams ---- */
   function loadStreams() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -221,6 +224,7 @@
 
   window.__cricbuzzStreams = loadStreams();
 
+  /* ---- User-added streams list (from "+ Add Stream" button) ---- */
   window.refreshStreamsList = function () {
     var streams = window.__cricbuzzStreams || [];
     var el = document.getElementById('streamList');
@@ -251,12 +255,10 @@
       var title = mid;
       var subtitle = '';
       if (m) {
-        var A = window.TEAMS && window.TEAMS[m.teamA.code];
-        var B = window.TEAMS && window.TEAMS[m.teamB.code];
-        if (A && B) {
-          title = A.abbr + ' vs ' + B.abbr;
-          subtitle = m.series || '';
-        }
+        var A = (window.TEAMS && window.TEAMS[m.teamA.code]) || m.teamA;
+        var B = (window.TEAMS && window.TEAMS[m.teamB.code]) || m.teamB;
+        title = (A.abbr || A.code) + ' vs ' + (B.abbr || B.code);
+        subtitle = m.series || '';
       }
       var isLive = m && m.status === 'live';
 
@@ -283,6 +285,7 @@
     el.innerHTML = html;
   };
 
+  /* ---- Available match IDs table ---- */
   window.refreshMatchIdsList = function () {
     var el = document.getElementById('matchIdsList');
     if (!el) return;
@@ -293,9 +296,9 @@
     }
     var html = '<table class="id-table"><thead><tr><th>ID</th><th>Match</th><th></th></tr></thead><tbody>';
     matches.slice(0, 20).forEach(function (m) {
-      var A = window.TEAMS && window.TEAMS[m.teamA.code];
-      var B = window.TEAMS && window.TEAMS[m.teamB.code];
-      var label = (A ? A.abbr : m.teamA.code) + ' vs ' + (B ? B.abbr : m.teamB.code);
+      var A = (window.TEAMS && window.TEAMS[m.teamA.code]) || m.teamA;
+      var B = (window.TEAMS && window.TEAMS[m.teamB.code]) || m.teamB;
+      var label = (A.abbr || A.code) + ' vs ' + (B.abbr || B.code);
       var statusClass = m.status === 'live' ? 'live' : (m.status === 'result' ? 'result' : 'upcoming');
       html += '<tr>';
       html += '<td><code class="id-code">' + m.id + '</code></td>';
@@ -314,11 +317,12 @@
   };
 
   window.openAddStream = function () {
-    document.getElementById('streamMatchId').value = '';
-    document.getElementById('streamPlatform').value = '';
-    document.getElementById('streamUrl').value = '';
-    document.getElementById('streamEmbed').checked = false;
-    document.getElementById('streamModal').classList.add('open');
+    var m = document.getElementById('streamMatchId'); if (m) m.value = '';
+    var p = document.getElementById('streamPlatform'); if (p) p.value = '';
+    var u = document.getElementById('streamUrl');      if (u) u.value = '';
+    var e = document.getElementById('streamEmbed');    if (e) e.checked = false;
+    var modal = document.getElementById('streamModal');
+    if (modal) modal.classList.add('open');
   };
 
   window.closeModal = function (id) {
@@ -327,10 +331,10 @@
   };
 
   window.saveStream = function () {
-    var matchId = (document.getElementById('streamMatchId').value || '').trim();
+    var matchId  = (document.getElementById('streamMatchId').value || '').trim();
     var platform = (document.getElementById('streamPlatform').value || '').trim();
-    var url = (document.getElementById('streamUrl').value || '').trim();
-    var embed = !!document.getElementById('streamEmbed').checked;
+    var url      = (document.getElementById('streamUrl').value || '').trim();
+    var embed    = !!document.getElementById('streamEmbed').checked;
 
     if (!matchId) { alert('Please enter a Match ID'); return; }
     if (!platform) { alert('Please enter a Platform name'); return; }
@@ -373,15 +377,16 @@
     }
   };
 
-  /* Broadcast mode */
+  /* ---- Broadcast mode toggle ---- */
   window.toggleBroadcast = function () {
     document.body.classList.toggle('broadcast-mode');
     var btn = document.getElementById('broadcastBtn');
     if (btn) btn.classList.toggle('on', document.body.classList.contains('broadcast-mode'));
   };
 
-  /* Language cycling */
+  /* ---- Language cycle ---- */
   window.cycleLanguage = function () {
+    if (typeof I18N === 'undefined') return;
     var langs = I18N.languages;
     var cur = I18N.getLang();
     var idx = langs.indexOf(cur);
@@ -391,36 +396,68 @@
     if (btn) btn.textContent = next.toUpperCase();
   };
 
+  /* ==========================================================
+     BOOT — runs when DOM is ready
+     ========================================================== */
   document.addEventListener('DOMContentLoaded', function () {
-    /* Update lang button initial state */
-    var btn = document.getElementById('langBtn');
-    if (btn) btn.textContent = I18N.getLang().toUpperCase();
 
+    /* Language button initial label */
+    var langBtn = document.getElementById('langBtn');
+    if (langBtn && typeof I18N !== 'undefined') langBtn.textContent = I18N.getLang().toUpperCase();
+
+    /* Tab click handler — refresh lists when Live TV opens */
     document.querySelectorAll('.tab, .bnav').forEach(function (el) {
       el.addEventListener('click', function () {
-                if (el.dataset.tab === 'live') {
+        if (el.dataset.tab === 'live') {
           setTimeout(function () {
             refreshStreamsList();
             refreshMatchIdsList();
-            if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
-          }, 60);
+            /* Load m3u playlist streams */
+            if (typeof LiveStreams !== 'undefined') {
+              LiveStreams.renderInto('liveStreamsList');
+            }
+          }, 80);
         }
       });
     });
-    setTimeout(function () { refreshStreamsList(); refreshMatchIdsList(); }, 500);
+
+    /* Initial render of lists */
+    setTimeout(function () {
+      refreshStreamsList();
+      refreshMatchIdsList();
+    }, 500);
+
+    /* Auto-refresh match IDs every 3s while on Live TV */
     setInterval(function () {
       var livePane = document.getElementById('pane-live');
-      if (livePane && livePane.classList.contains('active')) refreshMatchIdsList();
+      if (livePane && livePane.classList.contains('active')) {
+        refreshMatchIdsList();
+      }
     }, 3000);
 
-    /* Register service worker */
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(function (reg) {
-        console.log('[PWA] SW registered', reg.scope);
-      }).catch(function (err) {
-        console.warn('[PWA] SW registration failed:', err);
+    /* Close stream modal on backdrop click */
+    var sm = document.getElementById('streamModal');
+    if (sm) {
+      sm.addEventListener('click', function (e) {
+        if (e.target.id === 'streamModal') closeModal('streamModal');
       });
     }
+
+    /* Register service worker for PWA */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(function (reg) { console.log('[PWA] SW registered', reg.scope); })
+        .catch(function (err) { console.warn('[PWA] SW failed:', err); });
+    }
+
+    /* Pre-load m3u playlist if user lands directly on Live TV */
+    setTimeout(function () {
+      if (typeof LiveStreams !== 'undefined') {
+        LiveStreams.renderInto('liveStreamsList');
+      }
+    }, 800);
+
+    console.log('[Cricbuzz] Streaming UI booted');
   });
 
   /* Re-render on language change */
