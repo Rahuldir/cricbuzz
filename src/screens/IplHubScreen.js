@@ -533,8 +533,8 @@ export default function IplHubScreen() {
                       </View>
                       <Image
                         source={{ uri: img.imageUrl }}
-                        style={{ width: '100%', height: 165 }}
-                        resizeMode="cover"
+                        style={{ width: '100%', height: 180, backgroundColor: '#FFFFFF' }}
+                        resizeMode="stretch"
                       />
                     </TouchableOpacity>
                   ))}
