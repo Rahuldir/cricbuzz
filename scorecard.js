@@ -17,45 +17,58 @@
     WI:  { name: 'West Indies', abbr: 'WI', bg: '#7b0041' },
     SL:  { name: 'Sri Lanka', abbr: 'SL', bg: '#00539c' },
     BAN: { name: 'Bangladesh', abbr: 'BAN', bg: '#006a4e' },
-    AFG: { name: 'Afghanistan', abbr: 'AFG', bg: '#0066cc' },
-    MI:  { name: 'Mumbai Indians', abbr: 'MI', bg: '#004ba0' },
-    CSK: { name: 'Chennai Super Kings', abbr: 'CSK', bg: '#f9cd05' },
-    RCB: { name: 'Royal Challengers', abbr: 'RCB', bg: '#d11a2a' },
-    KKR: { name: 'Kolkata Knight Riders', abbr: 'KKR', bg: '#3a225d' }
+    AFG: { name: 'Afghanistan', abbr: 'AFG', bg: '#0066cc' }
   };
 
-  function team(code) {
-    return TEAMS[code] || { name: code, abbr: code, bg: '#444' };
+  function teamInfo(t) {
+    if (!t) return { code: '???', name: 'Unknown', bg: '#444' };
+    const code = t.code || '???';
+    const known = TEAMS[code];
+    const name = t.name || (known && known.name) || code;
+    let bg = known && known.bg;
+    if (!bg) {
+      let hash = 0;
+      for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+      const h = Math.abs(hash) % 360;
+      bg = 'hsl(' + h + ', 55%, 40%)';
+    }
+    return { code: code, name: name, bg: bg };
   }
 
-  function isLight(hex) {
-    const h = hex.replace('#', '');
-    const r = parseInt(h.substr(0, 2), 16);
-    const g = parseInt(h.substr(2, 2), 16);
-    const b = parseInt(h.substr(4, 2), 16);
-    return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
+  function isLight(color) {
+    if (!color) return false;
+    const hslM = color.match(/hsl\([\d.]+\s*,\s*[\d.]+%\s*,\s*([\d.]+)%/);
+    if (hslM) return parseFloat(hslM[1]) > 65;
+    if (color.charAt(0) === '#') {
+      const h = color.substring(1);
+      if (h.length === 6) {
+        const r = parseInt(h.substr(0, 2), 16);
+        const g = parseInt(h.substr(2, 2), 16);
+        const b = parseInt(h.substr(4, 2), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
+      }
+    }
+    return false;
   }
 
-  function badge(code, size) {
-    const t = team(code);
+  function badge(t, size) {
+    const info = teamInfo(t);
     const dim = size === 'lg' ? '48px' : '28px';
-    const fs = size === 'lg' ? '16px' : '11px';
+    const fs = size === 'lg' ? '14px' : '11px';
     return '<span style="display:inline-flex;align-items:center;justify-content:center;'
          + 'width:' + dim + ';height:' + dim + ';border-radius:50%;'
-         + 'background:' + t.bg + ';color:' + (isLight(t.bg) ? '#000' : '#fff') + ';'
-         + 'font-size:' + fs + ';font-weight:900;flex-shrink:0;">' + t.abbr + '</span>';
+         + 'background:' + info.bg + ';color:' + (isLight(info.bg) ? '#000' : '#fff') + ';'
+         + 'font-size:' + fs + ';font-weight:900;flex-shrink:0;">' + info.code + '</span>';
   }
 
-  /* ---- Get match ID from URL ---- */
   function getMatchId() {
     const params = new URLSearchParams(window.location.search);
     return params.get('id');
   }
 
-  /* ---- Render basic scorecard ---- */
   function renderScorecard(m) {
-    const A = team(m.teamA.code);
-    const B = team(m.teamB.code);
+    const A = teamInfo(m.teamA);
+    const B = teamInfo(m.teamB);
 
     const scoreStr = function (t) {
       return t.overs ? (t.runs + '/' + t.wkts + ' (' + t.overs + ')') : 'Yet to bat';
@@ -74,37 +87,30 @@
     }
 
     $('#scorecardContent').innerHTML =
-      /* Match header */
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">'
         + '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">' + m.series + '</div>'
         + '<div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;">' + m.venue + ' - ' + m.format + '</div>'
         + statusHtml
-
-        /* Two teams big */
         + '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">'
           + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'
-            + badge(m.teamA.code, 'lg')
+            + badge(m.teamA, 'lg')
             + '<div style="font-size:14px;font-weight:900;text-align:center;">' + A.name + '</div>'
             + '<div style="font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;">' + (m.teamA.runs || 0) + '/' + (m.teamA.wkts || 0) + '</div>'
             + '<div style="font-size:11px;color:var(--muted);font-weight:700;">' + (m.teamA.overs ? m.teamA.overs + ' ov' : '-') + '</div>'
           + '</div>'
           + '<div style="font-size:12px;font-weight:900;color:var(--muted);letter-spacing:2px;">VS</div>'
           + '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">'
-            + badge(m.teamB.code, 'lg')
+            + badge(m.teamB, 'lg')
             + '<div style="font-size:14px;font-weight:900;text-align:center;">' + B.name + '</div>'
             + '<div style="font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;">' + (m.teamB.overs ? (m.teamB.runs || 0) + '/' + (m.teamB.wkts || 0) : '-') + '</div>'
             + '<div style="font-size:11px;color:var(--muted);font-weight:700;">' + (m.teamB.overs ? m.teamB.overs + ' ov' : 'Yet to bat') + '</div>'
           + '</div>'
         + '</div>'
       + '</div>'
-
-      /* Run Rate Chart */
       + '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">'
         + '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Run Rate - Live Analytics</div>'
         + renderRunChart(m)
       + '</div>'
-
-      /* Match Info */
       + '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">'
         + '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Match Info</div>'
         + '<div class="kv-grid">'
@@ -114,28 +120,20 @@
           + '<div class="kv"><div class="kv-label">Status</div><div class="kv-value">' + m.statusText + '</div></div>'
         + '</div>'
       + '</div>'
-
-      /* Note about scorecard data */
       + '<div style="text-align:center;padding:20px;background:var(--card);border:1px dashed var(--border);border-radius:14px;">'
         + '<div style="font-size:13px;font-weight:800;margin-bottom:6px;">Full Batting & Bowling Details</div>'
         + '<div style="font-size:11.5px;color:var(--muted);font-weight:700;line-height:1.5;">'
-          + 'Detailed scorecard (per-batsman runs, strike rates, bowler figures) requires the BigBalls scorecard endpoint. This page currently shows match summary and run-rate analytics.'
+          + 'Detailed scorecard (per-batsman runs, strike rates, bowler figures) requires the BigBalls scorecard endpoint.'
         + '</div>'
       + '</div>';
   }
 
-  /* ---- Render run rate bar chart ---- */
   function renderRunChart(m) {
-    /* Generate fake per-over data based on total runs */
-    /* (Real per-over data would come from scorecard endpoint) */
     const A = m.teamA;
-    const B = m.teamB;
-
     const overs = Math.max(1, Math.ceil(parseFloat(A.overs) || 5));
     const totalRuns = A.runs || 0;
     const avgPerOver = totalRuns / overs;
 
-    /* Generate a plausible per-over distribution */
     const perOver = [];
     let remaining = totalRuns;
     for (let i = 0; i < overs; i++) {
@@ -151,9 +149,7 @@
     if (remaining > 0) perOver[perOver.length - 1] = Math.max(0, perOver[perOver.length - 1] + remaining);
 
     const maxRuns = Math.max.apply(null, perOver) || 10;
-    const W = 100;
     const chartHeight = 160;
-    const barWidth = 100 / perOver.length;
 
     let barsHtml = '';
     perOver.forEach(function (runs, idx) {
@@ -175,7 +171,6 @@
       + '</div>';
   }
 
-  /* ---- Boot ---- */
   function boot() {
     const id = getMatchId();
     if (!id) {
@@ -185,7 +180,6 @@
       return;
     }
 
-    /* Fetch matches and find this one */
     if (typeof BigBallsAPI === 'undefined' || !BigBallsAPI.fetchMatches) {
       $('#scorecardLoading').style.display = 'none';
       $('#scorecardError').style.display = 'block';
