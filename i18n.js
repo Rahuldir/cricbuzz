@@ -7,38 +7,32 @@ const I18N = (function () {
 
   const TRANSLATIONS = {
     en: {
-      /* Nav */
+      searchPlaceholder: 'Search players, matches, series...',
       matches: 'Matches', liveTV: 'Live TV', series: 'Series',
       teams: 'Teams', rankings: 'Rankings', news: 'News',
-      /* Sections */
       liveNow: 'Live Now', upcoming: 'Upcoming', recentResults: 'Recent Results',
       seeAll: 'See all', ongoingSeries: 'Ongoing Series', upcomingSeries: 'Upcoming Series',
       topStories: 'Top Stories', internationalTeams: 'International Teams',
       availableMatches: 'Available Matches (IDs)',
-      /* Status */
       live: 'LIVE', result: 'RESULT', yetToBat: 'Yet to bat',
       overs: 'overs', matchesCount: 'matches',
-      /* Batting/Bowling */
       batting: 'Batting', bowling: 'Bowling', allround: 'All-rounder',
       rating: 'Rating', points: 'Points',
-      /* Streaming */
       addStream: 'Add Stream', watchLive: 'Watch Live',
       streamUrl: 'Stream URL', platformName: 'Platform Name',
       matchId: 'Match ID', save: 'Save Stream', cancel: 'Cancel',
       delete: 'Remove', noStreams: 'No streams added yet',
-      /* Scorecard */
       scorecard: 'Scorecard', commentary: 'Commentary',
       info: 'Info', partnership: 'Partnership', fallOfWickets: 'Fall of Wickets',
       bowler: 'Bowler', batsman: 'Batsman',
       runs: 'Runs', balls: 'Balls', fours: '4s', sixes: '6s',
       sr: 'SR', eco: 'Eco', wkts: 'Wkts', maidens: 'Mdns',
-      /* Match */
       venue: 'Venue', startsIn: 'Starts in',
       backToMatches: 'Back to Matches',
-      /* Broadcast */
       broadcastMode: 'Broadcast', exitBroadcast: 'Exit Broadcast'
     },
     hi: {
+      searchPlaceholder: 'खिलाड़ी, मैच, सीरीज़ खोजें...',
       matches: 'मैच', liveTV: 'लाइव टीवी', series: 'सीरीज़',
       teams: 'टीमें', rankings: 'रैंकिंग', news: 'समाचार',
       liveNow: 'अभी लाइव', upcoming: 'आगामी', recentResults: 'हाल के नतीजे',
@@ -76,13 +70,11 @@ const I18N = (function () {
     currentLang = lang;
     localStorage.setItem('cb_lang', lang);
     applyToDOM();
-    /* Notify app.js so it can re-render */
     window.dispatchEvent(new CustomEvent('cb:lang-change', { detail: lang }));
   }
 
   function getLang() { return currentLang; }
 
-  /* Auto-translate elements with data-i18n attribute */
   function applyToDOM() {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       const key = el.getAttribute('data-i18n');
@@ -92,11 +84,9 @@ const I18N = (function () {
       const key = el.getAttribute('data-i18n-placeholder');
       el.setAttribute('placeholder', t(key));
     });
-    /* Update html lang attribute */
     document.documentElement.setAttribute('lang', currentLang);
   }
 
-  /* Auto-apply on DOM ready */
   document.addEventListener('DOMContentLoaded', function () {
     setTimeout(applyToDOM, 100);
   });
@@ -111,5 +101,4 @@ const I18N = (function () {
 
 })();
 
-/* Global shortcut */
 window.t = function (k) { return I18N.t(k); };
