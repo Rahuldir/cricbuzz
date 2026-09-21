@@ -517,15 +517,24 @@ export default function IplHubScreen() {
                       activeOpacity={0.9}
                       onPress={() => setSelectedImage(img.imageUrl)}
                     >
-                      <View style={{ backgroundColor: theme.accent }} className="px-4 py-2 flex-row justify-between items-center">
-                        <Text style={{ color: '#FFFFFF' }} className="text-lg font-black tracking-wide">
-                          {img.year}
-                        </Text>
+                      <View style={{ backgroundColor: theme.accent }} className="px-3.5 py-2 flex-row justify-between items-center">
+                        <View className="flex-row items-center">
+                          <Ionicons name="trophy" size={14} color="#FFD700" style={{ marginRight: 5 }} />
+                          <Text style={{ color: '#FFFFFF' }} className="text-xs font-black tracking-wide">
+                            TATA IPL {img.year} PLAYOFFS
+                          </Text>
+                        </View>
+                        <View className="bg-white px-2 py-0.5 rounded-md flex-row items-center">
+                          <Ionicons name="expand-outline" size={10} color={theme.accent} style={{ marginRight: 3 }} />
+                          <Text style={{ color: theme.accent }} className="text-[10px] font-black">
+                            Tap to Zoom
+                          </Text>
+                        </View>
                       </View>
                       <Image
                         source={{ uri: img.imageUrl }}
-                        style={{ width: '100%', height: 210, backgroundColor: '#FFFFFF' }}
-                        resizeMode="stretch"
+                        style={{ width: '100%', height: 165 }}
+                        resizeMode="cover"
                       />
                     </TouchableOpacity>
                   ))}

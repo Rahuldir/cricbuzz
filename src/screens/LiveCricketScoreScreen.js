@@ -311,7 +311,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
           <Text style={styles.headerTitle}>All Records</Text>
           <View style={{ width: 36 }} />
         </View>
-        <MatchesHistoryScreen onOpenNewMatch={() => {}} />
+        <MatchesHistoryScreen onOpenNewMatch={() => { }} />
       </SafeAreaView>
     );
   }
@@ -841,7 +841,7 @@ export default function LiveCricketScoreScreen({ onBack, onNavigateToSchedule, o
                       resizeMode="cover"
                       onError={() => handleImageError(item.id)}
                     />
-                    
+
                     {/* Pitch Type Tag Overlay */}
                     <View style={venueCardStyles.pitchTagOverlay}>
                       <Ionicons name="flash-outline" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />

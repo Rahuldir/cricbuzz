@@ -53,26 +53,28 @@ export default function PlayoffsScreen({ onBack }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Header Matching Screenshots */}
-      <View style={styles.topHeaderBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={28} color="#000000" />
-        </TouchableOpacity>
+      {/* 1. Header (Only render top bar if onBack is provided, preventing 2x PlayOff History title) */}
+      {onBack ? (
+        <View style={styles.topHeaderBar}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={28} color="#000000" />
+          </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>PlayOff History</Text>
+          <Text style={styles.headerTitle}>Playoff History</Text>
 
-        {/* Top Right Circular AD Badge */}
-        <View style={styles.topRightAdBadge}>
-          <View style={styles.adBadgeGreenCircle}>
-            <View style={styles.adRedBallCircleHeader}>
-              <View style={styles.redBallInner} />
-            </View>
-            <View style={styles.adSmallPillGreen}>
-              <Text style={styles.adSmallPillText}>AD</Text>
+          {/* Top Right Circular AD Badge */}
+          <View style={styles.topRightAdBadge}>
+            <View style={styles.adBadgeGreenCircle}>
+              <View style={styles.adRedBallCircleHeader}>
+                <View style={styles.redBallInner} />
+              </View>
+              <View style={styles.adSmallPillGreen}>
+                <Text style={styles.adSmallPillText}>AD</Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      ) : null}
 
       {/* 2. Top Sub-Header AD Card */}
       <View style={styles.adBannerCard}>
@@ -126,10 +128,17 @@ export default function PlayoffsScreen({ onBack }) {
             >
               {/* Green Year Header Banner */}
               <View style={styles.yearHeaderBanner}>
-                <Text style={styles.yearHeaderText}>{item.year}</Text>
+                <View style={styles.yearHeaderLeft}>
+                  <Ionicons name="trophy" size={14} color="#FFD700" style={{ marginRight: 6 }} />
+                  <Text style={styles.yearHeaderText}>TATA IPL {item.year} PLAYOFFS</Text>
+                </View>
+                <View style={styles.tapBadge}>
+                  <Ionicons name="expand-outline" size={11} color="#008000" style={{ marginRight: 3 }} />
+                  <Text style={styles.tapBadgeText}>Tap to Zoom</Text>
+                </View>
               </View>
 
-              {/* Edge-to-Edge Playoff Image covering full card area */}
+              {/* Full Width 100% Edge-to-Edge Image without any cropping */}
               <Image
                 source={{ uri: item.imageUrl }}
                 style={styles.playoffImage}
@@ -338,31 +347,51 @@ const styles = StyleSheet.create({
   },
   yearCardContainer: {
     backgroundColor: '#008000',
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: '#008000',
-    marginBottom: 18,
+    marginBottom: 16,
     overflow: 'hidden',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   yearHeaderBanner: {
     backgroundColor: '#008000',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  yearHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   yearHeaderText: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 14,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+  },
+  tapBadge: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tapBadgeText: {
+    color: '#008000',
+    fontSize: 10,
+    fontWeight: '900',
   },
   playoffImage: {
     width: '100%',
-    height: 210,
+    height: 180,
     backgroundColor: '#FFFFFF',
   },
   modalBackdrop: {
