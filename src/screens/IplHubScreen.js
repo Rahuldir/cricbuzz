@@ -311,63 +311,89 @@ export default function IplHubScreen() {
                 schedule.map((item, idx) => (
                   <View
                     key={idx}
-                    style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
-                    className="p-4 rounded-2xl border shadow-sm mb-3"
+                    style={{ backgroundColor: theme.card, borderColor: theme.accent, borderWidth: 1.5 }}
+                    className="rounded-2xl shadow-sm mb-3 overflow-hidden"
                   >
-                    <View className="flex-row justify-between items-center pb-2 border-b" style={{ borderColor: theme.divider }}>
-                      <View
-                        style={{ backgroundColor: theme.accentLight }}
-                        className="px-2 py-0.5 rounded-full"
-                      >
-                        <Text style={{ color: theme.accent }} className="text-[10px] font-black">
-                          Match {item.matchNo}
+                    {/* 1. Header Bar: Top Left Venue / Top Right Time */}
+                    <View
+                      style={{ backgroundColor: theme.accent }}
+                      className="px-3 py-1.5 flex-row justify-between items-center"
+                    >
+                      <View className="flex-row items-center flex-1 mr-2">
+                        <Ionicons name="location-sharp" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
+                        <Text style={{ color: '#FFFFFF' }} className="text-xs font-extrabold flex-1" numberOfLines={1}>
+                          {item.venue || `Match ${item.matchNo}`}
                         </Text>
                       </View>
-                      <Text style={{ color: theme.textSecondary }} className="text-xs font-semibold">
-                        {item.date} • {item.time}
-                      </Text>
+                      <View className="bg-white px-2.5 py-0.5 rounded-full flex-row items-center">
+                        <Ionicons name="time-outline" size={11} color={theme.accent} style={{ marginRight: 3 }} />
+                        <Text style={{ color: theme.accent }} className="text-[11px] font-black">
+                          {item.time}
+                        </Text>
+                      </View>
                     </View>
 
-                    <View className="py-3 flex-row justify-between items-center">
-                      <View className="flex-row items-center justify-center flex-1 space-x-1.5 mr-1">
+                    {/* 2. Team Matchup Row with Center Cloud VS Badge */}
+                    <View className="py-2.5 px-3 flex-row justify-around items-center">
+                      <View className="items-center w-20">
                         <TeamFlag
                           logo={item.team1Logo}
                           teamName={item.team1}
                           countryCode={item.team1}
-                          size={24}
-                          style={{ marginRight: 6 }}
+                          size={32}
+                          style={{ marginBottom: 4 }}
                         />
-                        <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center" numberOfLines={1}>
+                        <Text style={{ color: theme.text }} className="text-xs font-black text-center" numberOfLines={1}>
                           {item.team1}
                         </Text>
                       </View>
-                      <View
-                        style={{ backgroundColor: theme.inputBg }}
-                        className="px-2.5 py-1 rounded-full mx-1"
-                      >
-                        <Text style={{ color: theme.textMuted }} className="text-[10px] font-black">
-                          VS
-                        </Text>
+
+                      {/* Cloud VS Badge */}
+                      <View className="items-center justify-center w-16 h-11 relative">
+                        <Ionicons name="cloud" size={44} color={theme.accent} style={{ position: 'absolute', opacity: 0.22, top: -4 }} />
+                        <Ionicons name="cloud" size={34} color={theme.accent} style={{ position: 'absolute', opacity: 0.35, top: 2, left: -6 }} />
+                        <Ionicons name="cloud" size={30} color={theme.accent} style={{ position: 'absolute', opacity: 0.28, top: 4, right: -6 }} />
+                        <View
+                          style={{ backgroundColor: theme.accent, borderColor: '#DCFCE7', borderWidth: 1.5 }}
+                          className="px-3 py-1 rounded-full shadow-md z-10"
+                        >
+                          <Text style={{ color: '#FFFFFF' }} className="text-xs font-black tracking-wider">
+                            VS
+                          </Text>
+                        </View>
                       </View>
-                      <View className="flex-row items-center justify-center flex-1 space-x-1.5 ml-1">
-                        <Text style={{ color: theme.text }} className="text-sm font-extrabold text-center" numberOfLines={1}>
-                          {item.team2}
-                        </Text>
+
+                      <View className="items-center w-20">
                         <TeamFlag
                           logo={item.team2Logo}
                           teamName={item.team2}
                           countryCode={item.team2}
-                          size={24}
-                          style={{ marginLeft: 6 }}
+                          size={32}
+                          style={{ marginBottom: 4 }}
                         />
+                        <Text style={{ color: theme.text }} className="text-xs font-black text-center" numberOfLines={1}>
+                          {item.team2}
+                        </Text>
                       </View>
                     </View>
 
-                    <View className="pt-2 border-t flex-row items-center" style={{ borderColor: theme.divider }}>
-                      <Ionicons name="location-outline" size={14} color={theme.textMuted} style={{ marginRight: 4 }} />
-                      <Text style={{ color: theme.textMuted }} className="text-xs flex-1" numberOfLines={1}>
-                        {item.venue}
-                      </Text>
+                    {/* 3. Bottom Date Bar: Bottom Left Date / Bottom Right Match Details */}
+                    <View
+                      style={{ backgroundColor: theme.inputBg }}
+                      className="mx-2.5 mb-2.5 px-3 py-1.5 rounded-xl flex-row justify-between items-center"
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name="calendar" size={13} color={theme.accent} style={{ marginRight: 5 }} />
+                        <Text style={{ color: theme.text }} className="text-xs font-bold">
+                          {item.date}
+                        </Text>
+                      </View>
+                      <View className="bg-white px-2 py-0.5 rounded-lg border flex-row items-center" style={{ borderColor: theme.accent }}>
+                        <Text style={{ color: theme.accent }} className="text-[10px] font-extrabold mr-0.5">
+                          Match {item.matchNo}
+                        </Text>
+                        <Ionicons name="chevron-forward" size={10} color={theme.accent} />
+                      </View>
                     </View>
                   </View>
                 ))

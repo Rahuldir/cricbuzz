@@ -720,53 +720,68 @@ export default function ScheduleScreen({ onBack }) {
         {SCHEDULE_DATA.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={styles.matchCard}
+            style={styles.matchCardCompact}
             activeOpacity={0.85}
             onPress={() => {
               setSelectedMatch(item);
-              setActiveSubTab('upcoming'); // Show upcoming match preview by default
+              setActiveSubTab('upcoming');
             }}
           >
-            {/* Green Header Bar */}
-            <View style={styles.matchCardHeader}>
-              <Text style={styles.stadiumNameText} numberOfLines={1}>
-                {item.venue}
-              </Text>
-              <View style={styles.timePill}>
-                <Text style={styles.timePillText}>{item.time}</Text>
+            {/* 1. Green Header Bar (Top Left: Venue / Top Right: Time) */}
+            <View style={styles.matchCardHeaderCompact}>
+              <View style={styles.headerLeftRowCompact}>
+                <Ionicons name="location-sharp" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                <Text style={styles.stadiumNameTextCompact} numberOfLines={1}>
+                  {item.venue}
+                </Text>
+              </View>
+              <View style={styles.timePillCompact}>
+                <Ionicons name="time-outline" size={12} color="#008000" style={{ marginRight: 3 }} />
+                <Text style={styles.timePillTextCompact}>{item.time}</Text>
               </View>
             </View>
 
-            {/* Team Matchup Content */}
-            <View style={styles.matchupRow}>
-              {/* Team 1 */}
-              <View style={styles.teamCol}>
-                <View style={styles.logoWrapper}>
-                  <Image source={item.team1.logo} style={styles.logoImage} resizeMode="contain" />
+            {/* 2. Team Matchup Row (Center: Multi-Layered Cloud-Style VS Graphic Badge) */}
+            <View style={styles.matchupRowCompact}>
+              {/* Team 1 (Left) */}
+              <View style={styles.teamColCompact}>
+                <View style={styles.logoWrapperCompact}>
+                  <Image source={item.team1.logo} style={styles.logoImageCompact} resizeMode="contain" />
                 </View>
-                <Text style={styles.teamCodeText}>{item.team1.code}</Text>
+                <Text style={styles.teamCodeTextCompact}>{item.team1.code}</Text>
               </View>
 
-              {/* VS Badge */}
-              <View style={styles.vsBadge}>
-                <Text style={styles.vsBadgeText}>VS</Text>
+              {/* Center Cloud-Style VS Icon Badge */}
+              <View style={styles.cloudVsBox}>
+                <View style={styles.cloudVsShape}>
+                  <Ionicons name="cloud" size={48} color="#008000" style={styles.cloudBackdropMain} />
+                  <Ionicons name="cloud" size={38} color="#16A34A" style={styles.cloudBackdropLeft} />
+                  <Ionicons name="cloud" size={34} color="#22C55E" style={styles.cloudBackdropRight} />
+                  <Ionicons name="cloud-outline" size={52} color="#DCFCE7" style={styles.cloudOutlineGlow} />
+                  <View style={styles.cloudVsPill}>
+                    <Text style={styles.cloudVsText}>VS</Text>
+                  </View>
+                </View>
               </View>
 
-              {/* Team 2 */}
-              <View style={styles.teamCol}>
-                <View style={styles.logoWrapper}>
-                  <Image source={item.team2.logo} style={styles.logoImage} resizeMode="contain" />
+              {/* Team 2 (Right) */}
+              <View style={styles.teamColCompact}>
+                <View style={styles.logoWrapperCompact}>
+                  <Image source={item.team2.logo} style={styles.logoImageCompact} resizeMode="contain" />
                 </View>
-                <Text style={styles.teamCodeText}>{item.team2.code}</Text>
+                <Text style={styles.teamCodeTextCompact}>{item.team2.code}</Text>
               </View>
             </View>
 
-            {/* Bottom Date Pill Container */}
-            <View style={styles.datePillBoxWithHint}>
-              <Text style={styles.datePillText}>{item.date}</Text>
-              <View style={styles.tapDetailsHintRow}>
-                <Text style={styles.tapDetailsHintText}>Tap for Details</Text>
-                <Ionicons name="chevron-forward" size={14} color="#008000" />
+            {/* 3. Bottom Date Bar (Bottom Left: Date / Bottom Right: Details hint) */}
+            <View style={styles.datePillBoxCompact}>
+              <View style={styles.dateLeftRowCompact}>
+                <Ionicons name="calendar" size={13} color="#008000" style={{ marginRight: 5 }} />
+                <Text style={styles.datePillTextCompact}>{item.date}</Text>
+              </View>
+              <View style={styles.tapDetailsHintRowCompact}>
+                <Text style={styles.tapDetailsHintTextCompact}>Match Details</Text>
+                <Ionicons name="chevron-forward" size={12} color="#008000" />
               </View>
             </View>
           </TouchableOpacity>
@@ -1572,6 +1587,376 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     color: '#1E293B',
+  },
+
+  /* NEW HIGH-AESTHETIC IPL SCHEDULE CARD STYLES */
+  matchCardNew: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1.8,
+    borderColor: '#008000',
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardHeaderNew: {
+    backgroundColor: '#007A3B',
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  matchNoBadgeNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchNoTextNew: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  timeBadgeNew: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeBadgeTextNew: {
+    color: '#007A3B',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  venueRowNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DCFCE7',
+  },
+  venueTextNew: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#166534',
+    flex: 1,
+  },
+  matchupBodyNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  teamColNew: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 100,
+  },
+  logoContainerNew: {
+    width: 76,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  logoImgNew: {
+    width: '100%',
+    height: '100%',
+  },
+  teamCodeNew: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  teamNameNew: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  vsBadgeWrapperNew: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vsCircleOuterNew: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#008000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#DCFCE7',
+    shadowColor: '#008000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  vsTextNew: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  winRatioBarMini: {
+    marginTop: 6,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  winRatioTextMini: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#008000',
+  },
+  highlightsStripNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 10,
+  },
+  highlightPillNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  highlightTextNew: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  highlightDotDivider: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
+    marginHorizontal: 10,
+  },
+  cardFooterNew: {
+    backgroundColor: '#EFEFEF',
+    borderRadius: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+  },
+  dateGroupNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateTextNew: {
+    color: '#0F172A',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  detailsBtnPillNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    borderColor: '#008000',
+    shadowColor: '#008000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  detailsBtnTextNew: {
+    color: '#008000',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  /* COMPACT CLOUD-STYLE VS MATCH CARD STYLES */
+  matchCardCompact: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    overflow: 'hidden',
+    marginBottom: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  matchCardHeaderCompact: {
+    backgroundColor: '#008000',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeftRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  stadiumNameTextCompact: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '800',
+    flex: 1,
+  },
+  timePillCompact: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timePillTextCompact: {
+    color: '#008000',
+    fontSize: 11.5,
+    fontWeight: '900',
+  },
+  matchupRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  teamColCompact: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 85,
+  },
+  logoWrapperCompact: {
+    width: 60,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
+  },
+  logoImageCompact: {
+    width: '100%',
+    height: '100%',
+  },
+  teamCodeTextCompact: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  cloudVsBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 80,
+    height: 52,
+  },
+  cloudVsShape: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: 72,
+    height: 46,
+  },
+  cloudBackdropMain: {
+    position: 'absolute',
+    opacity: 0.22,
+    top: -4,
+  },
+  cloudBackdropLeft: {
+    position: 'absolute',
+    opacity: 0.35,
+    top: 2,
+    left: -8,
+  },
+  cloudBackdropRight: {
+    position: 'absolute',
+    opacity: 0.30,
+    top: 4,
+    right: -8,
+  },
+  cloudOutlineGlow: {
+    position: 'absolute',
+    opacity: 0.45,
+    top: -5,
+  },
+  cloudVsPill: {
+    backgroundColor: '#008000',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#DCFCE7',
+    shadowColor: '#008000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 4,
+    zIndex: 10,
+  },
+  cloudVsText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  datePillBoxCompact: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 10,
+    marginBottom: 9,
+    flexDirection: 'row',
+  },
+  dateLeftRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  datePillTextCompact: {
+    color: '#1E293B',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  tapDetailsHintRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#16A34A',
+  },
+  tapDetailsHintTextCompact: {
+    color: '#16A34A',
+    fontSize: 10.5,
+    fontWeight: '800',
+    marginRight: 2,
   },
 });
 

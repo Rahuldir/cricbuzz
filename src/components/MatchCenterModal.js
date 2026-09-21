@@ -13,7 +13,7 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
   const [selectedInningTab, setSelectedInningTab] = useState(1);
 
   // Teams & Squad Tab State
-  const [selectedTeamTab, setSelectedTeamTab] = useState('team1'); // 'team1' | 'team2'
+  const [selectedTeamTab, setSelectedTeamTab] = useState('team1');
   const [loadingTeam, setLoadingTeam] = useState(false);
   const [teamDetail, setTeamDetail] = useState(null);
   const [teamForm, setTeamForm] = useState([]);
@@ -197,20 +197,18 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                 return (
                   <View
                     key={bIdx}
-                    className={`w-7 h-7 rounded-full items-center justify-center mr-1 shadow-xs ${
-                      isW
-                        ? 'bg-red-500'
-                        : isSix
+                    className={`w-7 h-7 rounded-full items-center justify-center mr-1 shadow-xs ${isW
+                      ? 'bg-red-500'
+                      : isSix
                         ? 'bg-emerald-500'
                         : isFour
-                        ? 'bg-blue-500'
-                        : 'bg-slate-200 dark:bg-slate-700'
-                    }`}
+                          ? 'bg-blue-500'
+                          : 'bg-slate-200 dark:bg-slate-700'
+                      }`}
                   >
                     <Text
-                      className={`text-xs font-black ${
-                        isW || isSix || isFour ? 'text-white' : 'text-slate-800 dark:text-slate-100'
-                      }`}
+                      className={`text-xs font-black ${isW || isSix || isFour ? 'text-white' : 'text-slate-800 dark:text-slate-100'
+                        }`}
                     >
                       {ball}
                     </Text>
@@ -733,9 +731,8 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                                 {teamDetail.stats.form_string.split('').map((char, fIdx) => (
                                   <View
                                     key={fIdx}
-                                    className={`w-5 h-5 rounded-full items-center justify-center mr-0.5 ${
-                                      char === 'W' ? 'bg-emerald-500' : char === 'L' ? 'bg-red-500' : 'bg-amber-500'
-                                    }`}
+                                    className={`w-5 h-5 rounded-full items-center justify-center mr-0.5 ${char === 'W' ? 'bg-emerald-500' : char === 'L' ? 'bg-red-500' : 'bg-amber-500'
+                                      }`}
                                   >
                                     <Text className="text-white text-[9px] font-black">{char}</Text>
                                   </View>
@@ -775,14 +772,12 @@ export default function MatchCenterModal({ visible, fixture, onClose }) {
                                 {fm.home_score} - {fm.away_score}
                               </Text>
                               <View
-                                className={`px-1.5 py-0.2 rounded mt-0.5 ${
-                                  fm.result === 'W' ? 'bg-emerald-500/20' : 'bg-red-500/20'
-                                }`}
+                                className={`px-1.5 py-0.2 rounded mt-0.5 ${fm.result === 'W' ? 'bg-emerald-500/20' : 'bg-red-500/20'
+                                  }`}
                               >
                                 <Text
-                                  className={`text-[9px] font-black ${
-                                    fm.result === 'W' ? 'text-emerald-500' : 'text-red-500'
-                                  }`}
+                                  className={`text-[9px] font-black ${fm.result === 'W' ? 'text-emerald-500' : 'text-red-500'
+                                    }`}
                                 >
                                   {fm.result === 'W' ? 'WON' : 'LOST'}
                                 </Text>
