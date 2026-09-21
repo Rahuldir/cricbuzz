@@ -1,9 +1,9 @@
 /* ============================================================
-   CRICBUZZ WEB - Mock Data + App Logic + Real API + Streaming
+   CRICBUZZ WEB - Mock Data + App Logic + Real API
    ASCII-safe build. No hidden Unicode.
    ============================================================ */
 
-/* ---- MOCK DATA (fallback when API unavailable) ------------- */
+/* ---- MOCK DATA (fallback) ---------------------------------- */
 const TEAMS = {
   IND: { name: 'India',                 abbr: 'IND', color: '#0a4cff', bg: '#0a4cff' },
   AUS: { name: 'Australia',             abbr: 'AUS', color: '#ffcc00', bg: '#ffcc00' },
@@ -15,6 +15,10 @@ const TEAMS = {
   SL:  { name: 'Sri Lanka',             abbr: 'SL',  color: '#00539c', bg: '#00539c' },
   BAN: { name: 'Bangladesh',            abbr: 'BAN', color: '#006a4e', bg: '#006a4e' },
   AFG: { name: 'Afghanistan',           abbr: 'AFG', color: '#0066cc', bg: '#0066cc' },
+  ZIM: { name: 'Zimbabwe',              abbr: 'ZIM', color: '#d40000', bg: '#d40000' },
+  IRE: { name: 'Ireland',               abbr: 'IRE', color: '#169b62', bg: '#169b62' },
+  SCO: { name: 'Scotland',              abbr: 'SCO', color: '#0065bd', bg: '#0065bd' },
+  NED: { name: 'Netherlands',           abbr: 'NED', color: '#f36c21', bg: '#f36c21' },
   MI:  { name: 'Mumbai Indians',        abbr: 'MI',  color: '#004ba0', bg: '#004ba0' },
   CSK: { name: 'Chennai Super Kings',   abbr: 'CSK', color: '#f9cd05', bg: '#f9cd05' },
   RCB: { name: 'Royal Challengers',     abbr: 'RCB', color: '#d11a2a', bg: '#d11a2a' },
@@ -27,7 +31,6 @@ const TEAMS = {
   LSG: { name: 'Lucknow Super Giants',  abbr: 'LSG', color: '#0057e2', bg: '#0057e2' }
 };
 
-/* ---- MOCK MATCHES (used if API fails) ---------------------- */
 const MOCK_MATCHES = [
   {
     id: 'mock-m1',
@@ -71,51 +74,24 @@ const MOCK_MATCHES = [
   }
 ];
 
-/* ============================================================
-   LIVE STREAMING CONFIG
-   Add your streaming links here. Each entry:
-     matchId    - id of the match (from API or mock)
-     platform   - display name
-     url        - stream URL (direct video or embed URL)
-     embed      - true = iframe in modal, false = open in new tab
-   ============================================================ */
-const STREAMS = [
-  /* EXAMPLE — replace with your real links */
-  {
-    matchId: 'mock-m1',
-    platform: 'Star Sports / Hotstar',
-    url: 'https://www.hotstar.com/sports/cricket',
-    embed: false
-  },
-  {
-    matchId: 'mock-m1',
-    platform: 'Sky Sports Cricket',
-    url: 'https://www.skysports.com/cricket',
-    embed: false
-  },
-  {
-    matchId: 'mock-m2',
-    platform: 'JioCinema',
-    url: 'https://www.jiocinema.com/sports',
-    embed: false
-  },
-  {
-    matchId: 'mock-m3',
-    platform: 'SonyLIV',
-    url: 'https://www.sonyliv.com/sports',
-    embed: false
-  }
-];
-
 /* ---- RUNTIME STATE ---------------------------------------- */
-let MATCHES = [];       /* filled by API or mock */
+let MATCHES = [];
 let usingLiveApi = false;
 
-const $  = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
+const $  = function (sel) { return document.querySelector(sel); };
+const $$ = function (sel) { return document.querySelectorAll(sel); };
 
+/* ---- HELPERS ---------------------------------------------- */
 function team(code) {
   return TEAMS[code] || { name: code, abbr: code, color: '#444444', bg: '#444444' };
+}
+
+function isLight(hex) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substr(0, 2), 16);
+  const g = parseInt(h.substr(2, 2), 16);
+  const b = parseInt(h.substr(4, 2), 16);
+  return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
 }
 
 function badge(code, size) {
@@ -129,24 +105,15 @@ function badge(code, size) {
        + t.abbr + '</span>';
 }
 
-function isLight(hex) {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substr(0, 2), 16);
-  const g = parseInt(h.substr(2, 2), 16);
-  const b = parseInt(h.substr(4, 2), 16);
-  return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
+/* Safe wrapper for i18n — falls back to English if i18n not loaded */
+function tr(key, fallback) {
+  if (typeof I18N !== 'undefined' && I18N.t) {
+    return I18N.t(key);
+  }
+  return fallback || key;
 }
 
-/* ---- Get streams for a match ------------------------------ */
-function getStreamsFor(matchId) {
-  return STREAMS.filter(function (s) { return s.matchId === matchId; });
-}
-
-/* ============================================================
-   RENDERING
-   ============================================================ */
-
-/* ---- FEATURED MATCH --------------------------------------- */
+/* ---- RENDER: FEATURED MATCH ------------------------------- */
 function renderFeatured() {
   const m = MATCHES.find(function (x) { return x.status === 'live'; });
   const el = $('#featuredMatch');
@@ -187,7 +154,7 @@ function renderFeatured() {
   el.onclick = function () { openMatch(m.id); };
 }
 
-/* ---- LIVE MATCHES ----------------------------------------- */
+/* ---- RENDER: LIVE ----------------------------------------- */
 function renderLive() {
   const live = MATCHES.filter(function (m) { return m.status === 'live'; });
   const el = $('#liveMatches');
@@ -203,10 +170,6 @@ function renderLive() {
     const B = team(m.teamB.code);
     const aScore = m.teamA.runs + '/' + m.teamA.wkts;
     const bScore = m.teamB.overs ? (m.teamB.runs + '/' + m.teamB.wkts) : '-';
-    const streams = getStreamsFor(m.id);
-    const watchBtn = streams.length > 0
-      ? '<div class="match-card-watch">WATCH LIVE</div>'
-      : '';
 
     return '<div class="match-card" onclick="openMatch(\'' + m.id + '\')">'
       + '<div class="match-card-live">LIVE</div>'
@@ -222,17 +185,19 @@ function renderLive() {
         + '<span class="mc-team-score">' + bScore + '</span>'
       + '</div>'
       + '<div class="match-card-status">' + m.statusText + '</div>'
-      + watchBtn
     + '</div>';
   }).join('');
 }
 
-/* ---- UPCOMING --------------------------------------------- */
+/* ---- RENDER: UPCOMING ------------------------------------- */
 function renderUpcoming() {
   const up = MATCHES.filter(function (m) { return m.status === 'upcoming'; });
   const el = $('#upcomingMatches');
   if (!el) return;
-  if (up.length === 0) { el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No upcoming matches</div>'; return; }
+  if (up.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No upcoming matches</div>';
+    return;
+  }
 
   el.innerHTML = up.map(function (m) {
     const A = team(m.teamA.code);
@@ -250,17 +215,21 @@ function renderUpcoming() {
   }).join('');
 }
 
-/* ---- RECENT RESULTS --------------------------------------- */
+/* ---- RENDER: RECENT RESULTS ------------------------------- */
 function renderRecent() {
   const res = MATCHES.filter(function (m) { return m.status === 'result'; });
   const el = $('#recentMatches');
   if (!el) return;
-  if (res.length === 0) { el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No results yet</div>'; return; }
+  if (res.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No results yet</div>';
+    return;
+  }
 
   el.innerHTML = res.map(function (m) {
     const A = team(m.teamA.code);
     const B = team(m.teamB.code);
-    const bWon = (m.result || m.statusText || '').toLowerCase().indexOf(B.name.toLowerCase()) >= 0;
+    const resultText = m.result || m.statusText || '';
+    const bWon = resultText.toLowerCase().indexOf(B.name.toLowerCase()) >= 0;
     const aClass = bWon ? 'loss' : 'win';
     const bClass = bWon ? 'win' : 'loss';
     const aScore = m.teamA.runs + '/' + m.teamA.wkts;
@@ -281,77 +250,12 @@ function renderRecent() {
           + '<span class="mr-team-score ' + bClass + '">' + bScore + '</span>'
         + '</div>'
       + '</div>'
-      + '<div class="match-row-result">' + (m.result || m.statusText) + '</div>'
+      + '<div class="match-row-result">' + resultText + '</div>'
     + '</div>';
   }).join('');
 }
 
-/* ---- LIVE STREAMING TAB ----------------------------------- */
-function renderStreamingTab() {
-  const el = $('#streamList');
-  if (!el) return;
-
-  /* Group streams by match */
-  const byMatch = {};
-  STREAMS.forEach(function (s) {
-    if (!byMatch[s.matchId]) byMatch[s.matchId] = [];
-    byMatch[s.matchId].push(s);
-  });
-
-  const matchIds = Object.keys(byMatch);
-  if (matchIds.length === 0) {
-    el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No streams configured yet.<br>Add links to the STREAMS array in app.js</div>';
-    return;
-  }
-
-  el.innerHTML = matchIds.map(function (mid) {
-    const m = MATCHES.find(function (x) { return x.id === mid; });
-    if (!m) return '';
-    const A = team(m.teamA.code);
-    const B = team(m.teamB.code);
-    const streams = byMatch[mid];
-
-    const streamButtons = streams.map(function (s, i) {
-      return '<button class="stream-btn" onclick="playStream(\'' + mid + '\',' + i + ')">'
-        + '&#9654; ' + s.platform
-        + '</button>';
-    }).join('');
-
-    return '<div class="stream-card">'
-      + '<div class="stream-match-head">'
-        + badge(m.teamA.code)
-        + '<div class="stream-match-title">'
-          + '<div style="font-weight:800;font-size:13px;">' + A.abbr + ' vs ' + B.abbr + '</div>'
-          + '<div style="font-size:11px;color:var(--muted);">' + m.series + '</div>'
-        + '</div>'
-        + (m.status === 'live' ? '<span class="live-pill">LIVE</span>' : '')
-      + '</div>'
-      + '<div class="stream-buttons">' + streamButtons + '</div>'
-    + '</div>';
-  }).join('');
-}
-
-/* ---- PLAY STREAM ------------------------------------------ */
-function playStream(matchId, streamIdx) {
-  const streams = getStreamsFor(matchId);
-  const s = streams[streamIdx];
-  if (!s) return;
-
-  if (s.embed) {
-    /* Show in modal iframe */
-    $('#modalBody').innerHTML =
-      '<div style="font-size:14px;font-weight:800;margin-bottom:12px;">' + s.platform + '</div>'
-      + '<div class="stream-frame-wrap">'
-        + '<iframe src="' + s.url + '" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>'
-      + '</div>';
-    $('#matchModal').classList.add('open');
-  } else {
-    /* Open in new tab */
-    window.open(s.url, '_blank', 'noopener,noreferrer');
-  }
-}
-
-/* ---- SERIES / TEAMS / RANKINGS / NEWS (unchanged) -------- */
+/* ---- RENDER: SERIES --------------------------------------- */
 function renderSeries() {
   const SERIES = [
     { name: 'ICC World Cup 2026', host: 'India', matches: 48, ongoing: true, teams: ['IND','AUS','ENG','PAK','SA','NZ'] },
@@ -378,10 +282,13 @@ function renderSeries() {
     }).join('');
   }
 
-  const o = $('#ongoingSeries'); if (o) o.innerHTML = renderList(SERIES.filter(function (s) { return s.ongoing; }));
-  const u = $('#upcomingSeries'); if (u) u.innerHTML = renderList(SERIES.filter(function (s) { return !s.ongoing; }));
+  const o = $('#ongoingSeries');
+  if (o) o.innerHTML = renderList(SERIES.filter(function (s) { return s.ongoing; }));
+  const u = $('#upcomingSeries');
+  if (u) u.innerHTML = renderList(SERIES.filter(function (s) { return !s.ongoing; }));
 }
 
+/* ---- RENDER: TEAMS ---------------------------------------- */
 function renderTeams() {
   const el = $('#teamsGrid');
   if (!el) return;
@@ -395,6 +302,7 @@ function renderTeams() {
   }).join('');
 }
 
+/* ---- RENDER: RANKINGS ------------------------------------- */
 function renderRankings(cat) {
   const RANKINGS = {
     batting: [
@@ -444,6 +352,7 @@ function renderRankings(cat) {
   if (el) el.innerHTML = html;
 }
 
+/* ---- RENDER: NEWS ----------------------------------------- */
 function renderNews() {
   const NEWS = [
     { tag: 'WC',  title: 'India storm into semifinals with dominant win over Australia', meta: '2 hours ago - World Cup', excerpt: 'Kohlis masterclass and Bumrahs four-wicket haul seal a memorable victory at Wankhede.' },
@@ -466,56 +375,10 @@ function renderNews() {
   }).join('');
 }
 
-/* ---- MATCH MODAL (with streaming buttons) ----------------- */
+/* ---- OPEN MATCH — Navigates to scorecard page ------------- */
 function openMatch(id) {
-  const m = MATCHES.find(function (x) { return x.id === id; });
-  if (!m) return;
-  const A = team(m.teamA.code);
-  const B = team(m.teamB.code);
-
-  const scoreStr = function (t) {
-    return t.overs ? (t.runs + '/' + t.wkts + ' (' + t.overs + ')') : 'Yet to bat';
-  };
-
-  let statusHtml = '';
-  if (m.status === 'live') {
-    statusHtml = '<div style="color:var(--orange);font-weight:800;font-size:13px;margin-bottom:16px;">LIVE - ' + m.statusText + '</div>';
-  } else if (m.status === 'result') {
-    statusHtml = '<div style="color:var(--accent);font-weight:800;font-size:13px;margin-bottom:16px;">RESULT - ' + (m.result || m.statusText) + '</div>';
-  } else {
-    statusHtml = '<div style="color:var(--cyan);font-weight:800;font-size:13px;margin-bottom:16px;">Starts in ' + (m.startsIn || 'TBD') + '</div>';
-  }
-
-  /* Streaming buttons */
-  const streams = getStreamsFor(m.id);
-  let streamHtml = '';
-  if (streams.length > 0) {
-    streamHtml = '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">'
-      + '<div style="font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Watch Live On</div>'
-      + '<div style="display:flex;flex-direction:column;gap:8px;">'
-      + streams.map(function (s, i) {
-          return '<button class="stream-btn" onclick="playStream(\'' + m.id + '\',' + i + ')">&#9654; ' + s.platform + '</button>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  $('#modalBody').innerHTML =
-    '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">' + m.series + '</div>'
-    + '<div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:20px;">' + m.venue + ' - ' + m.format + '</div>'
-    + '<div style="background:var(--card-2);border-radius:12px;padding:18px;margin-bottom:16px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'
-        + '<div style="display:flex;align-items:center;gap:10px;">' + badge(m.teamA.code) + '<span style="font-size:15px;font-weight:800;">' + A.name + '</span></div>'
-        + '<span style="font-size:18px;font-weight:900;">' + scoreStr(m.teamA) + '</span>'
-      + '</div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-        + '<div style="display:flex;align-items:center;gap:10px;">' + badge(m.teamB.code) + '<span style="font-size:15px;font-weight:800;">' + B.name + '</span></div>'
-        + '<span style="font-size:18px;font-weight:900;">' + scoreStr(m.teamB) + '</span>'
-      + '</div>'
-    + '</div>'
-    + statusHtml
-    + streamHtml;
-
-  $('#matchModal').classList.add('open');
+  if (!id) return;
+  window.location.href = 'scorecard.html?id=' + encodeURIComponent(id);
 }
 
 /* ---- TAB SWITCHING ---------------------------------------- */
@@ -528,41 +391,46 @@ function switchTab(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ---- LOAD MATCHES (API or fallback) ----------------------- */
+/* ---- LOAD MATCHES (BigBalls API or fallback) -------------- */
 function loadMatches() {
-  /* Show loading state */
   const el = $('#liveMatches');
-  if (el) el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">Loading live matches...</div>';
+  if (el) el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">Loading matches...</div>';
 
-if (typeof BigBallsAPI !== 'undefined' && BigBallsAPI.hasApiKey()) {
+  if (typeof BigBallsAPI !== 'undefined' && BigBallsAPI.hasApiKey()) {
     BigBallsAPI.fetchMatches()
       .then(function (matches) {
         if (matches.length === 0) throw new Error('API returned 0 matches');
         MATCHES = matches;
         usingLiveApi = true;
-        console.log('[Cricbuzz] Loaded', matches.length, 'real matches from CricAPI');
+        window.MATCHES = MATCHES;
+        console.log('[Cricbuzz] Loaded ' + matches.length + ' matches from BigBalls');
         refreshAll();
       })
       .catch(function (err) {
         console.warn('[Cricbuzz] API failed, using mock data:', err.message);
         MATCHES = MOCK_MATCHES.slice();
         usingLiveApi = false;
+        window.MATCHES = MATCHES;
         refreshAll();
       });
   } else {
-    console.info('[Cricbuzz] No API key set - using mock data');
+    console.info('[Cricbuzz] No API available - using mock data');
     MATCHES = MOCK_MATCHES.slice();
     usingLiveApi = false;
+    window.MATCHES = MATCHES;
     refreshAll();
   }
 }
 
+/* ---- REFRESH ALL ------------------------------------------ */
 function refreshAll() {
+  window.MATCHES = MATCHES;
   renderFeatured();
   renderLive();
   renderUpcoming();
   renderRecent();
-  renderStreamingTab();
+  if (typeof window.refreshStreamsList === 'function') window.refreshStreamsList();
+  if (typeof window.refreshMatchIdsList === 'function') window.refreshMatchIdsList();
 }
 
 /* ---- BOOT ------------------------------------------------- */
@@ -608,14 +476,15 @@ document.addEventListener('DOMContentLoaded', function () {
   renderRankings('batting');
   renderNews();
 
-  /* Live matches (API or mock) */
+  /* Live matches */
   loadMatches();
 
   /* Auto-refresh every 90 seconds */
   setInterval(function () {
-    if (usingLiveApi) {
-   BigBallsAPI.fetchMatches().then(function (m) {
+    if (usingLiveApi && typeof BigBallsAPI !== 'undefined') {
+      BigBallsAPI.fetchMatches().then(function (m) {
         MATCHES = m;
+        window.MATCHES = m;
         refreshAll();
       }).catch(function () {});
     }
@@ -623,3 +492,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   console.log('[Cricbuzz] App booted successfully');
 });
+
+/* ---- EXPOSE GLOBALS (for streaming UI + i18n) ------------- */
+window.MATCHES = MATCHES;
+window.TEAMS = TEAMS;
+window.refreshAll = refreshAll;
+window.openMatch = openMatch;
