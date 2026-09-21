@@ -1,43 +1,43 @@
-# 🏏 Cricbuzz Clone
+# 🏏 Cricbuzz Web
 
-A modern web app that brings live cricket scores, match updates, and player stats — inspired by Cricbuzz.
+A modern, mobile-first Cricbuzz clone — live scores, series, teams, rankings & news.
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![HTML](https://img.shields.io/badge/HTML-5-orange)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow)
-![CSS](https://img.shields.io/badge/CSS-3-blue)
 
----
+## 🌐 Live Demo
+
+🔗 **[cricbuzz-web.vercel.app](https://cricbuzz-web.vercel.app)**
 
 ## ✨ Features
 
-- 🔴 **Live Match Scores** — Real-time score updates
-- 📅 **Match Schedule** — Upcoming and past matches
-- 🏆 **Series & Tournaments** — Browse all active series
-- 👤 **Player Profiles** — Career stats & bio
-- 📊 **Scorecards** — Detailed batting/bowling stats
-- 🎥 **Highlights** — Match summaries and clips
-- 📰 **Cricket News** — Latest headlines
-- 📱 **Responsive Design** — Works on mobile, tablet, desktop
-
----
-
-## 🚀 Live Demo
-
-🔗 **[View Live App](#)** *(replace with your deployed URL)*
-
----
+- 🔴 Live match scores with auto-updating featured match
+- 📅 Upcoming matches with countdown
+- ✅ Recent results with winner highlighting
+- 🏆 Series browser (ongoing + upcoming)
+- 👥 Team grid with flags
+- 📊 ICC Rankings (Batting, Bowling, All-rounder, Teams)
+- 📰 Top cricket news
+- 🌙 Dark / Light theme toggle
+- 📱 Fully responsive (mobile + desktop)
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | HTML5, CSS3, JavaScript (ES6) |
-| Styling | Custom CSS / Tailwind |
-| Data | REST API / Mock JSON |
-| Hosting | GitHub Pages / Vercel / Netlify |
+- **Plain HTML/CSS/JS** — no build step, no framework, no npm
+- Deploys instantly to Vercel, Netlify, GitHub Pages, Cloudflare Pages
 
----
+## 🚀 Deploy
 
-## 📂 Project Structure
+### Vercel (recommended)
+
+1. Push these 4 files to GitHub
+2. Go to [vercel.com/new](https://vercel.com/new)
+3. Import your repo
+4. Framework Preset: **Other**
+5. Click **Deploy** — done in ~15 seconds
+
+### Local testing
+
+Just open `index.html` in your browser. No server needed.
+
+## 📂 Structure
