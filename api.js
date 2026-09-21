@@ -8,7 +8,7 @@ const CricAPI = (function () {
 
   /* ⚠️ PUT YOUR API KEY HERE ⚠️
      Get it free at: https://cricapi.com/register */
-  const API_KEY = 'YOUR_CRICAPI_KEY_HERE';
+  const API_KEY = 'cfe894f5-4811-4459-b72f-e260e21a313a';
 
   const BASE = 'https://api.cricapi.com/v1';
   const CACHE_MS = 60 * 1000; /* cache for 60s to save API calls */
