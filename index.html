@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e1a">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cricbuzz Web - Live Cricket Scores</title>
@@ -72,6 +73,7 @@
   </section>
 
   <section class="pane" id="pane-live">
+
     <div class="section">
       <div class="section-head">
         <h2 data-i18n="liveTV">Live TV</h2>
@@ -81,7 +83,9 @@
         Add your own streaming links. Click a match to watch. Links saved in your browser.
       </div>
       <div id="streamList"></div>
-          <div class="section">
+    </div>
+
+    <div class="section">
       <div class="section-head">
         <h2>🏏 Live Streams (strmd.link)</h2>
         <button class="add-stream-btn" onclick="LiveStreams.renderInto('liveStreamsList')">↻ Refresh</button>
@@ -91,7 +95,6 @@
       </div>
       <div id="liveStreamsList"></div>
     </div>
-    </div>
 
     <div class="section">
       <div class="section-head">
@@ -100,6 +103,7 @@
       <div class="info-banner">Use these match IDs when adding a stream.</div>
       <div class="panel" id="matchIdsList"></div>
     </div>
+
   </section>
 
   <section class="pane" id="pane-series">
@@ -168,7 +172,7 @@
 
     <div class="form-group">
       <label>Match ID</label>
-      <input type="text" id="streamMatchId" class="form-control" placeholder="e.g. match-12345">
+      <input type="text" id="streamMatchId" class="form-control" placeholder="e.g. 1e51be21-...">
       <div class="form-hint">Copy from "Available Matches" list below.</div>
     </div>
 
@@ -197,21 +201,17 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="api.js"></script>
 <script src="i18n.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<script src="livestreams.js"></script>
 <script src="app.js"></script>
-  <script src="livestreams.js"></script>
 
-<!-- ============================================================
-     STREAMING UI + BROADCAST + LANGUAGE CONTROLLER
-     ============================================================ -->
 <script>
 (function () {
   'use strict';
   var STORAGE_KEY = 'cricbuzz_streams_v1';
 
-  /* ---- Load/save user-added streams ---- */
   function loadStreams() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -224,7 +224,6 @@
 
   window.__cricbuzzStreams = loadStreams();
 
-  /* ---- User-added streams list (from "+ Add Stream" button) ---- */
   window.refreshStreamsList = function () {
     var streams = window.__cricbuzzStreams || [];
     var el = document.getElementById('streamList');
@@ -285,7 +284,6 @@
     el.innerHTML = html;
   };
 
-  /* ---- Available match IDs table ---- */
   window.refreshMatchIdsList = function () {
     var el = document.getElementById('matchIdsList');
     if (!el) return;
@@ -377,14 +375,12 @@
     }
   };
 
-  /* ---- Broadcast mode toggle ---- */
   window.toggleBroadcast = function () {
     document.body.classList.toggle('broadcast-mode');
     var btn = document.getElementById('broadcastBtn');
     if (btn) btn.classList.toggle('on', document.body.classList.contains('broadcast-mode'));
   };
 
-  /* ---- Language cycle ---- */
   window.cycleLanguage = function () {
     if (typeof I18N === 'undefined') return;
     var langs = I18N.languages;
@@ -396,23 +392,17 @@
     if (btn) btn.textContent = next.toUpperCase();
   };
 
-  /* ==========================================================
-     BOOT — runs when DOM is ready
-     ========================================================== */
   document.addEventListener('DOMContentLoaded', function () {
 
-    /* Language button initial label */
     var langBtn = document.getElementById('langBtn');
     if (langBtn && typeof I18N !== 'undefined') langBtn.textContent = I18N.getLang().toUpperCase();
 
-    /* Tab click handler — refresh lists when Live TV opens */
     document.querySelectorAll('.tab, .bnav').forEach(function (el) {
       el.addEventListener('click', function () {
         if (el.dataset.tab === 'live') {
           setTimeout(function () {
             refreshStreamsList();
             refreshMatchIdsList();
-            /* Load m3u playlist streams */
             if (typeof LiveStreams !== 'undefined') {
               LiveStreams.renderInto('liveStreamsList');
             }
@@ -421,13 +411,11 @@
       });
     });
 
-    /* Initial render of lists */
     setTimeout(function () {
       refreshStreamsList();
       refreshMatchIdsList();
     }, 500);
 
-    /* Auto-refresh match IDs every 3s while on Live TV */
     setInterval(function () {
       var livePane = document.getElementById('pane-live');
       if (livePane && livePane.classList.contains('active')) {
@@ -435,7 +423,6 @@
       }
     }, 3000);
 
-    /* Close stream modal on backdrop click */
     var sm = document.getElementById('streamModal');
     if (sm) {
       sm.addEventListener('click', function (e) {
@@ -443,14 +430,12 @@
       });
     }
 
-    /* Register service worker for PWA */
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then(function (reg) { console.log('[PWA] SW registered', reg.scope); })
         .catch(function (err) { console.warn('[PWA] SW failed:', err); });
     }
 
-    /* Pre-load m3u playlist if user lands directly on Live TV */
     setTimeout(function () {
       if (typeof LiveStreams !== 'undefined') {
         LiveStreams.renderInto('liveStreamsList');
@@ -460,7 +445,6 @@
     console.log('[Cricbuzz] Streaming UI booted');
   });
 
-  /* Re-render on language change */
   window.addEventListener('cb:lang-change', function () {
     if (typeof window.refreshAll === 'function') window.refreshAll();
   });
