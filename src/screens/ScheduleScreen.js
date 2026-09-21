@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,12 @@ import {
   Image,
   StyleSheet,
   StatusBar,
+  Share,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import EmptyStateView from '../components/EmptyStateView';
 
 // Local transparent PNG team logos matching exact screenshot
 const LOCAL_TEAM_LOGOS = {
@@ -28,60 +31,524 @@ const LOCAL_TEAM_LOGOS = {
 const SCHEDULE_DATA = [
   {
     id: 1,
+    matchNo: 'Match 1 of 74 • IPL 2026',
     venue: 'M. Chinnaswamy Stadium, Bengaluru',
     time: '7:30 PM',
     team1: { code: 'RCB', name: 'Royal Challengers Bengaluru', logo: LOCAL_TEAM_LOGOS.RCB },
     team2: { code: 'SRH', name: 'Sunrisers Hyderabad', logo: LOCAL_TEAM_LOGOS.SRH },
     date: '28-Mar-26,Saturday',
+    pitchReport: 'Batting-friendly pitch with short boundaries & high bounce. Dew expected in 2nd innings.',
+    weather: '27°C, Clear Sky, Humidity 54%',
+    toss: 'Toss at 7:00 PM IST',
+    headToHead: { total: 24, team1Wins: 11, team2Wins: 12, noResult: 1 },
+    winPrediction: { team1: 52, team2: 48 },
+    squad1: ['Virat Kohli (C)', 'Faf du Plessis', 'Rajat Patidar', 'Glenn Maxwell', 'Dinesh Karthik (WK)', 'Mohammed Siraj', 'Yash Dayal', 'Cameron Green'],
+    squad2: ['Pat Cummins (C)', 'Travis Head', 'Abhishek Sharma', 'Heinrich Klaasen (WK)', 'Nitish Kumar Reddy', 'Bhuvaneshwar Kumar', 'T. Natarajan', 'Aiden Markram'],
+    recentHeadToHead: [
+      { date: '15 Apr 2024', result: 'SRH won by 25 runs', score: 'SRH 287/3 (20) vs RCB 262/7 (20)' },
+      { date: '25 Apr 2024', result: 'RCB won by 35 runs', score: 'RCB 206/7 (20) vs SRH 171/8 (20)' },
+      { date: '21 May 2023', result: 'RCB won by 8 wickets', score: 'SRH 186/5 (20) vs RCB 187/2 (19.4)' },
+    ],
   },
   {
     id: 2,
+    matchNo: 'Match 2 of 74 • IPL 2026',
     venue: 'Wankhede Stadium, Mumbai',
     time: '7:30 PM',
     team1: { code: 'MI', name: 'Mumbai Indians', logo: LOCAL_TEAM_LOGOS.MI },
     team2: { code: 'KKR', name: 'Kolkata Knight Riders', logo: LOCAL_TEAM_LOGOS.KKR },
     date: '29-Mar-26,Sunday',
+    pitchReport: 'Red soil pitch with true pace & bounce. Excellent for stroke play.',
+    weather: '29°C, Humid, Humidity 68%',
+    toss: 'Toss at 7:00 PM IST',
+    headToHead: { total: 33, team1Wins: 23, team2Wins: 10, noResult: 0 },
+    winPrediction: { team1: 55, team2: 45 },
+    squad1: ['Hardik Pandya (C)', 'Rohit Sharma', 'Suryakumar Yadav', 'Ishan Kishan (WK)', 'Jasprit Bumrah', 'Tilak Varma', 'Tim David', 'Gerald Coetzee'],
+    squad2: ['Shreyas Iyer (C)', 'Sunil Narine', 'Phil Salt (WK)', 'Rinku Singh', 'Andre Russell', 'Mitchell Starc', 'Varun Chakaravarthy', 'Harshit Rana'],
+    recentHeadToHead: [
+      { date: '03 May 2024', result: 'KKR won by 24 runs', score: 'KKR 169/10 (19.5) vs MI 145/10 (18.5)' },
+      { date: '11 May 2024', result: 'KKR won by 18 runs', score: 'KKR 157/7 (16) vs MI 139/8 (16)' },
+      { date: '16 Apr 2023', result: 'MI won by 5 wickets', score: 'KKR 185/6 (20) vs MI 186/5 (17.4)' },
+    ],
   },
   {
     id: 3,
+    matchNo: 'Match 3 of 74 • IPL 2026',
     venue: 'Barsapara Stadium, Guwahati',
     time: '7:30 PM',
     team1: { code: 'RR', name: 'Rajasthan Royals', logo: LOCAL_TEAM_LOGOS.RR },
     team2: { code: 'CSK', name: 'Chennai Super Kings', logo: LOCAL_TEAM_LOGOS.CSK },
     date: '07-Apr-26,Tuesday',
+    pitchReport: 'Fresh track with good seam movement early on. Spinners come into play in middle overs.',
+    weather: '24°C, Pleasant, Humidity 60%',
+    toss: 'Toss at 7:00 PM IST',
+    headToHead: { total: 29, team1Wins: 14, team2Wins: 15, noResult: 0 },
+    winPrediction: { team1: 50, team2: 50 },
+    squad1: ['Sanju Samson (C & WK)', 'Yashasvi Jaiswal', 'Jos Buttler', 'Riyan Parag', 'Yuzvendra Chahal', 'Trent Boult', 'Avesh Khan', 'Ravichandran Ashwin'],
+    squad2: ['Ruturaj Gaikwad (C)', 'MS Dhoni (WK)', 'Ravindra Jadeja', 'Shivam Dube', 'Matheesha Pathirana', 'Rachin Ravindra', 'Daryl Mitchell', 'Deepak Chahar'],
+    recentHeadToHead: [
+      { date: '12 May 2024', result: 'CSK won by 5 wickets', score: 'RR 141/5 (20) vs CSK 145/5 (18.2)' },
+      { date: '27 Apr 2023', result: 'RR won by 32 runs', score: 'RR 202/5 (20) vs CSK 170/6 (20)' },
+      { date: '12 Apr 2023', result: 'RR won by 3 runs', score: 'RR 175/8 (20) vs CSK 172/6 (20)' },
+    ],
   },
   {
     id: 4,
+    matchNo: 'Match 4 of 74 • IPL 2026',
     venue: 'Arun Jaitley Stadium, New Delhi',
     time: '7:30 PM',
     team1: { code: 'DC', name: 'Delhi Capitals', logo: LOCAL_TEAM_LOGOS.DC },
     team2: { code: 'GT', name: 'Gujarat Titans', logo: LOCAL_TEAM_LOGOS.GT },
     date: '08-Apr-26,Wednesday',
+    pitchReport: 'Short boundaries with high scoring history. Fast outfield.',
+    weather: '28°C, Clear, Humidity 45%',
+    toss: 'Toss at 7:00 PM IST',
+    headToHead: { total: 5, team1Wins: 3, team2Wins: 2, noResult: 0 },
+    winPrediction: { team1: 51, team2: 49 },
+    squad1: ['Rishabh Pant (C & WK)', 'Axar Patel', 'Kuldeep Yadav', 'Jake Fraser-McGurk', 'Tristan Stubbs', 'Mukesh Kumar', 'Khaleel Ahmed', 'Abishek Porel'],
+    squad2: ['Shubman Gill (C)', 'Rashid Khan', 'Sai Sudharsan', 'David Miller', 'Rahul Tewatia', 'Mohit Sharma', 'Noor Ahmad', 'Wriddhiman Saha (WK)'],
+    recentHeadToHead: [
+      { date: '24 Apr 2024', result: 'DC won by 4 runs', score: 'DC 224/4 (20) vs GT 220/8 (20)' },
+      { date: '17 Apr 2024', result: 'DC won by 6 wickets', score: 'GT 89/10 (17.3) vs DC 92/4 (8.5)' },
+      { date: '02 May 2023', result: 'DC won by 5 runs', score: 'DC 130/8 (20) vs GT 125/6 (20)' },
+    ],
   },
   {
     id: 5,
+    matchNo: 'Match 5 of 74 • IPL 2026',
     venue: 'Eden Gardens, Kolkata',
     time: '7:30 PM',
     team1: { code: 'KKR', name: 'Kolkata Knight Riders', logo: LOCAL_TEAM_LOGOS.KKR },
     team2: { code: 'LSG', name: 'Lucknow Super Giants', logo: LOCAL_TEAM_LOGOS.LSG },
     date: '09-Apr-26,Thursday',
+    pitchReport: 'Classic Kolkata deck with spin assistance as game progresses.',
+    weather: '28°C, Humid, Humidity 72%',
+    toss: 'Toss at 7:00 PM IST',
+    headToHead: { total: 5, team1Wins: 2, team2Wins: 3, noResult: 0 },
+    winPrediction: { team1: 54, team2: 46 },
+    squad1: ['Shreyas Iyer (C)', 'Sunil Narine', 'Phil Salt (WK)', 'Rinku Singh', 'Andre Russell', 'Varun Chakaravarthy', 'Harshit Rana', 'Ramandeep Singh'],
+    squad2: ['KL Rahul (C & WK)', 'Marcus Stoinis', 'Nicholas Pooran', 'Ravi Bishnoi', 'Mayank Yadav', 'Krunal Pandya', 'Ayush Badoni', 'Mohsin Khan'],
+    recentHeadToHead: [
+      { date: '05 May 2024', result: 'KKR won by 98 runs', score: 'KKR 235/6 (20) vs LSG 137/10 (16.1)' },
+      { date: '14 Apr 2024', result: 'KKR won by 8 wickets', score: 'LSG 161/7 (20) vs KKR 162/2 (15.4)' },
+      { date: '20 May 2023', result: 'LSG won by 1 run', score: 'LSG 176/8 (20) vs KKR 175/7 (20)' },
+    ],
   },
   {
     id: 6,
+    matchNo: 'Match 6 of 74 • IPL 2026',
     venue: 'Barsapara Stadium, Guwahati',
     time: '3:30 PM',
     team1: { code: 'RR', name: 'Rajasthan Royals', logo: LOCAL_TEAM_LOGOS.RR },
     team2: { code: 'PBKS', name: 'Punjab Kings', logo: LOCAL_TEAM_LOGOS.PBKS },
     date: '12-Apr-26,Sunday',
+    pitchReport: 'Day match with dry surface favoring spinners.',
+    weather: '31°C, Sunny, Humidity 48%',
+    toss: 'Toss at 3:00 PM IST',
+    headToHead: { total: 27, team1Wins: 16, team2Wins: 11, noResult: 0 },
+    winPrediction: { team1: 53, team2: 47 },
+    squad1: ['Sanju Samson (C & WK)', 'Yashasvi Jaiswal', 'Jos Buttler', 'Riyan Parag', 'Yuzvendra Chahal', 'Trent Boult', 'Sandeep Sharma', 'Dhruv Jurel'],
+    squad2: ['Shikhar Dhawan (C)', 'Shashank Singh', 'Ashutosh Sharma', 'Sam Curran', 'Arshdeep Singh', 'Kagiso Rabada', 'Jitesh Sharma (WK)', 'Liam Livingstone'],
+    recentHeadToHead: [
+      { date: '15 May 2024', result: 'PBKS won by 5 wickets', score: 'RR 144/9 (20) vs PBKS 145/5 (18.5)' },
+      { date: '13 Apr 2024', result: 'RR won by 3 wickets', score: 'PBKS 147/8 (20) vs RR 152/7 (19.5)' },
+      { date: '19 May 2023', result: 'RR won by 4 wickets', score: 'PBKS 187/5 (20) vs RR 189/6 (19.4)' },
+    ],
   },
 ];
 
 export default function ScheduleScreen({ onBack }) {
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [activeSubTab, setActiveSubTab] = useState('live'); // 'live' | 'recent' | 'upcoming'
+  const [selectedSquadTeam, setSelectedSquadTeam] = useState('team1'); // 'team1' | 'team2'
+  const [reminderSet, setReminderSet] = useState(false);
+
+  const handleShareMatch = async (match) => {
+    try {
+      await Share.share({
+        message: `🏏 IPL 2026 Match Preview!\n${match.team1.name} vs ${match.team2.name}\n📅 Date: ${match.date}\n⏰ Time: ${match.time}\n🏟️ Venue: ${match.venue}\nStay updated on Live Score!`,
+      });
+    } catch (error) {
+      console.warn('Share error:', error);
+    }
+  };
+
+  const handleToggleReminder = () => {
+    setReminderSet(!reminderSet);
+    Alert.alert(
+      reminderSet ? 'Reminder Removed' : 'Reminder Set! 🔔',
+      reminderSet
+        ? 'Match reminder has been turned off.'
+        : `You will be notified 15 minutes before ${selectedMatch?.team1?.code} vs ${selectedMatch?.team2?.code} starts!`
+    );
+  };
+
+  // Render Match Details View matching Screenshot 3 & 4 exact design
+  if (selectedMatch) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+        {/* 1. Header Bar matching Screenshot 3 ("Live Score") */}
+        <View style={styles.topHeaderBar}>
+          <TouchableOpacity
+            onPress={() => setSelectedMatch(null)}
+            style={styles.backButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={28} color="#000000" />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>Live Score</Text>
+
+          {/* Top Right Circular AD Badge */}
+          <View style={styles.topRightAdBadge}>
+            <View style={styles.adBadgeGreenCircle}>
+              <View style={styles.adRedBallCircleHeader}>
+                <View style={styles.redBallInner} />
+              </View>
+              <View style={styles.adSmallPillGreen}>
+                <Text style={styles.adSmallPillText}>AD</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* 2. Top Sub-Header AD Card */}
+        <View style={styles.adBannerCard}>
+          <View style={styles.adIconBox}>
+            <View style={styles.adBallCircle}>
+              <Ionicons name="baseball" size={18} color="#DC2626" />
+              <View style={styles.adTagPillGreen}>
+                <Text style={styles.adTagText}>AD</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.adTextBox}>
+            <Text style={styles.adTitle} numberOfLines={1}>IPL Live Matches</Text>
+            <Text style={styles.adSubtitle} numberOfLines={1}>
+              Watch live Cricket matches on your phone. Don't
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+            <Text style={styles.installButtonText}>Install</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 3. 3-Tab Segmented Nav Bar (Live | Recent | Upcoming*) matching Screenshot 3 */}
+        <View style={styles.tabsContainer}>
+          <View style={styles.tabsRow}>
+            {[
+              { id: 'live', label: 'Live', hasDot: false },
+              { id: 'recent', label: 'Recent', hasDot: false },
+              { id: 'upcoming', label: 'Upcoming', hasDot: true },
+            ].map((tab) => {
+              const isActive = activeSubTab === tab.id;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  onPress={() => setActiveSubTab(tab.id)}
+                  style={[
+                    styles.tabButton,
+                    isActive && styles.activeTabButton,
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isActive && styles.activeTabText,
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
+                    {tab.hasDot && (
+                      <View style={styles.redNotificationDot} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* 4. Tab Content Area */}
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollInner}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* TAB 1: LIVE TAB -> Empty State View matching Screenshot 3 1:1 */}
+          {activeSubTab === 'live' && (
+            <EmptyStateView type="live" />
+          )}
+
+          {/* TAB 2: UPCOMING TAB -> Detailed Match Info Card */}
+          {activeSubTab === 'upcoming' && (
+            <View style={{ paddingBottom: 16 }}>
+              {/* Match Header Badge */}
+              <View style={styles.matchCardDetailHeader}>
+                <Text style={styles.stadiumNameText} numberOfLines={1}>
+                  {selectedMatch.venue}
+                </Text>
+                <View style={styles.timePill}>
+                  <Text style={styles.timePillText}>{selectedMatch.time}</Text>
+                </View>
+              </View>
+
+              {/* Main Teams Matchup Card */}
+              <View style={styles.matchupBox}>
+                <Text style={styles.matchNoTag}>{selectedMatch.matchNo}</Text>
+
+                <View style={styles.matchupRow}>
+                  {/* Team 1 */}
+                  <View style={styles.teamCol}>
+                    <View style={styles.logoWrapper}>
+                      <Image source={selectedMatch.team1.logo} style={styles.logoImage} resizeMode="contain" />
+                    </View>
+                    <Text style={styles.teamCodeText}>{selectedMatch.team1.code}</Text>
+                    <Text style={styles.teamFullName} numberOfLines={1}>{selectedMatch.team1.name}</Text>
+                  </View>
+
+                  {/* VS Badge */}
+                  <View style={styles.vsBadgeLarge}>
+                    <Text style={styles.vsBadgeTextLarge}>VS</Text>
+                  </View>
+
+                  {/* Team 2 */}
+                  <View style={styles.teamCol}>
+                    <View style={styles.logoWrapper}>
+                      <Image source={selectedMatch.team2.logo} style={styles.logoImage} resizeMode="contain" />
+                    </View>
+                    <Text style={styles.teamCodeText}>{selectedMatch.team2.code}</Text>
+                    <Text style={styles.teamFullName} numberOfLines={1}>{selectedMatch.team2.name}</Text>
+                  </View>
+                </View>
+
+                {/* Date Banner */}
+                <View style={styles.datePillBox}>
+                  <Ionicons name="calendar-outline" size={16} color="#008000" style={{ marginRight: 6 }} />
+                  <Text style={styles.datePillText}>{selectedMatch.date}</Text>
+                </View>
+
+                {/* Win Predictor Percentage Bar */}
+                <View style={styles.predictorBox}>
+                  <View style={styles.predictorHeaderRow}>
+                    <Text style={styles.predictorTitle}>Win Predictor</Text>
+                    <Text style={styles.predictorRatioText}>
+                      {selectedMatch.team1.code} {selectedMatch.winPrediction.team1}% - {selectedMatch.winPrediction.team2}% {selectedMatch.team2.code}
+                    </Text>
+                  </View>
+                  <View style={styles.barContainer}>
+                    <View style={[styles.barFillLeft, { flex: selectedMatch.winPrediction.team1 }]} />
+                    <View style={[styles.barFillRight, { flex: selectedMatch.winPrediction.team2 }]} />
+                  </View>
+                </View>
+              </View>
+
+              {/* Match Information Grid */}
+              <View style={styles.detailSectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="information-circle" size={20} color="#008000" />
+                  <Text style={styles.sectionTitleText}>Match Info & Conditions</Text>
+                </View>
+
+                <View style={styles.infoGridRow}>
+                  <View style={styles.infoGridBox}>
+                    <Ionicons name="sunny-outline" size={18} color="#D97706" />
+                    <Text style={styles.infoLabel}>Weather</Text>
+                    <Text style={styles.infoValue}>{selectedMatch.weather}</Text>
+                  </View>
+                  <View style={styles.infoGridBox}>
+                    <Ionicons name="time-outline" size={18} color="#2563EB" />
+                    <Text style={styles.infoLabel}>Toss Info</Text>
+                    <Text style={styles.infoValue}>{selectedMatch.toss}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.pitchReportBox}>
+                  <Text style={styles.pitchReportLabel}>🏟️ Pitch & Conditions:</Text>
+                  <Text style={styles.pitchReportText}>{selectedMatch.pitchReport}</Text>
+                </View>
+              </View>
+
+              {/* Head to Head Statistics */}
+              <View style={styles.detailSectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="stats-chart" size={20} color="#008000" />
+                  <Text style={styles.sectionTitleText}>Head to Head Stats</Text>
+                </View>
+
+                <View style={styles.h2hRow}>
+                  <View style={styles.h2hStatBox}>
+                    <Text style={styles.h2hNumber}>{selectedMatch.headToHead.total}</Text>
+                    <Text style={styles.h2hLabel}>Total Played</Text>
+                  </View>
+                  <View style={[styles.h2hStatBox, { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#E2E8F0' }]}>
+                    <Text style={[styles.h2hNumber, { color: '#008000' }]}>{selectedMatch.headToHead.team1Wins}</Text>
+                    <Text style={styles.h2hLabel}>{selectedMatch.team1.code} Wins</Text>
+                  </View>
+                  <View style={styles.h2hStatBox}>
+                    <Text style={[styles.h2hNumber, { color: '#DC2626' }]}>{selectedMatch.headToHead.team2Wins}</Text>
+                    <Text style={styles.h2hLabel}>{selectedMatch.team2.code} Wins</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Probable Playing XI / Squad */}
+              <View style={styles.detailSectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="people" size={20} color="#008000" />
+                  <Text style={styles.sectionTitleText}>Probable Playing XI</Text>
+                </View>
+
+                {/* Team Toggle Pills */}
+                <View style={styles.squadToggleRow}>
+                  <TouchableOpacity
+                    onPress={() => setSelectedSquadTeam('team1')}
+                    style={[
+                      styles.squadTabPill,
+                      selectedSquadTeam === 'team1' && styles.squadTabPillActive,
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.squadTabPillText,
+                        selectedSquadTeam === 'team1' && styles.squadTabPillTextActive,
+                      ]}
+                    >
+                      {selectedMatch.team1.code}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setSelectedSquadTeam('team2')}
+                    style={[
+                      styles.squadTabPill,
+                      selectedSquadTeam === 'team2' && styles.squadTabPillActive,
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.squadTabPillText,
+                        selectedSquadTeam === 'team2' && styles.squadTabPillTextActive,
+                      ]}
+                    >
+                      {selectedMatch.team2.code}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Squad List */}
+                <View style={styles.squadListGrid}>
+                  {(selectedSquadTeam === 'team1' ? selectedMatch.squad1 : selectedMatch.squad2).map((player, idx) => (
+                    <View key={idx} style={styles.playerItemRow}>
+                      <View style={styles.playerDot} />
+                      <Text style={styles.playerNameText}>{player}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* Quick Action Buttons */}
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  onPress={handleToggleReminder}
+                  style={[
+                    styles.actionBtn,
+                    reminderSet ? styles.actionBtnActive : styles.actionBtnOutline,
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons
+                    name={reminderSet ? 'notifications' : 'notifications-outline'}
+                    size={18}
+                    color={reminderSet ? '#FFFFFF' : '#008000'}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.actionBtnText,
+                      reminderSet ? styles.actionBtnTextActive : styles.actionBtnTextOutline,
+                    ]}
+                  >
+                    {reminderSet ? 'Reminder Set' : 'Set Reminder'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleShareMatch(selectedMatch)}
+                  style={[styles.actionBtn, styles.actionBtnGreen]}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="share-social-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={[styles.actionBtnText, styles.actionBtnTextActive]}>
+                    Share Match
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* TAB 3: RECENT TAB -> Previous Encounters */}
+          {activeSubTab === 'recent' && (
+            <View style={{ paddingBottom: 16 }}>
+              <Text style={styles.recentSectionHeader}>
+                Recent Encounters ({selectedMatch.team1.code} vs {selectedMatch.team2.code})
+              </Text>
+
+              {selectedMatch.recentHeadToHead.map((item, index) => (
+                <View key={index} style={styles.recentMatchCard}>
+                  <View style={styles.recentHeaderRow}>
+                    <Text style={styles.recentDateText}>{item.date}</Text>
+                    <View style={styles.recentResultPill}>
+                      <Text style={styles.recentResultPillText}>{item.result}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.recentScoreText}>{item.score}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        {/* 5. Fixed Bottom Sticky AD Banner */}
+        <View style={styles.bottomAdBanner}>
+          <View style={styles.adIconBox}>
+            <View style={styles.adBallCircle}>
+              <Ionicons name="baseball" size={20} color="#DC2626" />
+              <View style={styles.adTagPillGreen}>
+                <Text style={styles.adTagText}>AD</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.adTextBox}>
+            <Text style={styles.adTitle} numberOfLines={1}>IPL Live Matches</Text>
+            <Text style={styles.adSubtitle} numberOfLines={1}>
+              Watch live Cricket matches on your phone. Don't
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.installButton} activeOpacity={0.85}>
+            <Text style={styles.installButtonText}>Install</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Default IPL Schedule Cards List View
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Top Header Bar Matching Screenshot 3 & 4 */}
+      {/* 1. Top Header Bar */}
       <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -132,7 +599,15 @@ export default function ScheduleScreen({ onBack }) {
         showsVerticalScrollIndicator={false}
       >
         {SCHEDULE_DATA.map((item) => (
-          <View key={item.id} style={styles.matchCard}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.matchCard}
+            activeOpacity={0.85}
+            onPress={() => {
+              setSelectedMatch(item);
+              setActiveSubTab('live'); // Default to Live tab to show exact screenshot
+            }}
+          >
             {/* Green Header Bar */}
             <View style={styles.matchCardHeader}>
               <Text style={styles.stadiumNameText} numberOfLines={1}>
@@ -168,10 +643,14 @@ export default function ScheduleScreen({ onBack }) {
             </View>
 
             {/* Bottom Date Pill Container */}
-            <View style={styles.datePillBox}>
+            <View style={styles.datePillBoxWithHint}>
               <Text style={styles.datePillText}>{item.date}</Text>
+              <View style={styles.tapDetailsHintRow}>
+                <Text style={styles.tapDetailsHintText}>Tap for Details</Text>
+                <Ionicons name="chevron-forward" size={14} color="#008000" />
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 
@@ -333,6 +812,45 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
+  /* Sub-Tab Navigation Bar matching Screenshot 3 */
+  tabsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#EFEFEF',
+    borderRadius: 22,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  activeTabButton: {
+    backgroundColor: '#008000',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4B5563',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+  },
+  redNotificationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EF4444',
+    marginLeft: 4,
+    marginTop: -6,
+  },
+
   /* Scrollable Match Cards List */
   scrollContent: {
     flex: 1,
@@ -411,6 +929,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#000000',
   },
+  teamFullName: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 2,
+  },
   vsBadge: {
     backgroundColor: '#008000',
     paddingHorizontal: 14,
@@ -422,6 +947,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
   },
+  vsBadgeLarge: {
+    backgroundColor: '#008000',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  vsBadgeTextLarge: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
   datePillBox: {
     backgroundColor: '#EFEFEF',
     borderRadius: 14,
@@ -430,11 +966,321 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 14,
     marginBottom: 12,
+    flexDirection: 'row',
+  },
+  datePillBoxWithHint: {
+    backgroundColor: '#EFEFEF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 14,
+    marginBottom: 12,
+    flexDirection: 'row',
   },
   datePillText: {
     color: '#000000',
     fontSize: 14,
     fontWeight: '700',
+  },
+  tapDetailsHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#008000',
+  },
+  tapDetailsHintText: {
+    color: '#008000',
+    fontSize: 11,
+    fontWeight: '800',
+    marginRight: 2,
+  },
+
+  /* Selected Match Detail Styles */
+  matchCardDetailHeader: {
+    backgroundColor: '#008000',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  matchupBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    padding: 14,
+    marginBottom: 16,
+  },
+  matchNoTag: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#008000',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+
+  /* Predictor Bar */
+  predictorBox: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  predictorHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  predictorTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  predictorRatioText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#008000',
+  },
+  barContainer: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  barFillLeft: {
+    backgroundColor: '#008000',
+  },
+  barFillRight: {
+    backgroundColor: '#DC2626',
+  },
+
+  /* Detail Section Cards */
+  detailSectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 16,
+    marginBottom: 14,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitleText: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginLeft: 8,
+  },
+  infoGridRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  infoGridBox: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  infoLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 4,
+  },
+  infoValue: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  pitchReportBox: {
+    backgroundColor: '#F0FDF4',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  pitchReportLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#166534',
+    marginBottom: 2,
+  },
+  pitchReportText: {
+    fontSize: 12,
+    color: '#15803D',
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+
+  /* Head to Head Stats */
+  h2hRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  h2hStatBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  h2hNumber: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  h2hLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 2,
+  },
+
+  /* Squad Toggle */
+  squadToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: '#EFEFEF',
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 12,
+  },
+  squadTabPill: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  squadTabPillActive: {
+    backgroundColor: '#008000',
+  },
+  squadTabPillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#4B5563',
+  },
+  squadTabPillTextActive: {
+    color: '#FFFFFF',
+  },
+  squadListGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  playerItemRow: {
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingRight: 4,
+  },
+  playerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#008000',
+    marginRight: 6,
+  },
+  playerNameText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+
+  /* Action Buttons */
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  actionBtnOutline: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#008000',
+  },
+  actionBtnActive: {
+    backgroundColor: '#008000',
+  },
+  actionBtnGreen: {
+    backgroundColor: '#008000',
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  actionBtnTextOutline: {
+    color: '#008000',
+  },
+  actionBtnTextActive: {
+    color: '#FFFFFF',
+  },
+
+  /* Recent Encounters */
+  recentSectionHeader: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  recentMatchCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    marginBottom: 10,
+  },
+  recentHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  recentDateText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  recentResultPill: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  recentResultPillText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#16A34A',
+  },
+  recentScoreText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
   },
 
   /* Fixed Bottom Sticky AD Banner */
@@ -448,3 +1294,4 @@ const styles = StyleSheet.create({
     borderTopColor: '#E2E8F0',
   },
 });
+
