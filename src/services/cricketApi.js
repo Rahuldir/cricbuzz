@@ -505,91 +505,104 @@ export async function getIplSchedule() {
  * 10. GET PLAYOFFS DATA FROM REAL API
  */
 export async function getIplPlayoff() {
-  const json = await fetchFromBbs('/v1/cricket/matches');
-  let playoffs = [];
+  let playoffImages = [];
+  try {
+    const res = await fetch('https://dsquaretech.com/v1/cricket/iplPlayoff', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
 
-  if (json && Array.isArray(json.data)) {
-    playoffs = json.data
-      .filter((m) => m.round && m.round.toLowerCase().includes('playoff'))
-      .map((m) => ({
-        stage: m.round || 'Playoff Stage',
-        team1: m.home?.name || 'Team 1',
-        team1Code: m.home?.short_name || 'T1',
-        team1Logo: m.home?.logo_url || require('../../assets/team_logos/MI.png'),
-        team2: m.away?.name || 'Team 2',
-        team2Code: m.away?.short_name || 'T2',
-        team2Logo: m.away?.logo_url || require('../../assets/team_logos/CSK.png'),
-        date: m.kickoff_utc ? new Date(m.kickoff_utc).toLocaleDateString('en-IN') : 'TBD',
-        time: '7:30 PM',
-        venue: m.league || 'Narendra Modi Stadium, Ahmedabad',
-        status: m.status || 'Scheduled',
-        note: m.status === 'finished' ? 'Match Completed' : 'Playoffs Match',
-      }));
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.status && json.data && Array.isArray(json.data.playoffImages)) {
+        playoffImages = json.data.playoffImages.map((img) => {
+          const match = img.imageUrl.match(/season_(\d{4})/);
+          const year = match ? match[1] : `${2010 + img.id}`;
+          return {
+            id: img.id,
+            year: year,
+            imageUrl: img.imageUrl,
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[getIplPlayoff] DSquareTech API fetch error:', err.message);
   }
 
-  // Fallback complete Playoff stages if API playoffs list is empty
-  if (playoffs.length === 0) {
-    playoffs = [
-      {
-        stage: 'Qualifier 1',
-        team1: 'Kolkata Knight Riders',
-        team1Code: 'KKR',
-        team1Logo: require('../../assets/team_logos/KKR.png'),
-        team2: 'Sunrisers Hyderabad',
-        team2Code: 'SRH',
-        team2Logo: require('../../assets/team_logos/SRH.png'),
-        date: '21-May-24,Tuesday',
-        time: '7:30 PM',
-        venue: 'Narendra Modi Stadium, Ahmedabad',
-        status: 'Completed',
-        note: 'KKR won by 8 wickets',
-      },
-      {
-        stage: 'Eliminator',
-        team1: 'Rajasthan Royals',
-        team1Code: 'RR',
-        team1Logo: require('../../assets/team_logos/RR.png'),
-        team2: 'Royal Challengers Bengaluru',
-        team2Code: 'RCB',
-        team2Logo: require('../../assets/team_logos/RCB.png'),
-        date: '22-May-24,Wednesday',
-        time: '7:30 PM',
-        venue: 'Narendra Modi Stadium, Ahmedabad',
-        status: 'Completed',
-        note: 'RR won by 4 wickets',
-      },
-      {
-        stage: 'Qualifier 2',
-        team1: 'Sunrisers Hyderabad',
-        team1Code: 'SRH',
-        team1Logo: require('../../assets/team_logos/SRH.png'),
-        team2: 'Rajasthan Royals',
-        team2Code: 'RR',
-        team2Logo: require('../../assets/team_logos/RR.png'),
-        date: '24-May-24,Friday',
-        time: '7:30 PM',
-        venue: 'MA Chidambaram Stadium, Chennai',
-        status: 'Completed',
-        note: 'SRH won by 36 runs',
-      },
-      {
-        stage: 'Grand Final',
-        team1: 'Kolkata Knight Riders',
-        team1Code: 'KKR',
-        team1Logo: require('../../assets/team_logos/KKR.png'),
-        team2: 'Sunrisers Hyderabad',
-        team2Code: 'SRH',
-        team2Logo: require('../../assets/team_logos/SRH.png'),
-        date: '26-May-24,Sunday',
-        time: '7:30 PM',
-        venue: 'MA Chidambaram Stadium, Chennai',
-        status: 'Completed',
-        note: 'KKR won by 8 wickets - IPL Champions!',
-      },
-    ];
+  // Fallback Playoff Images list if network is offline
+  if (playoffImages.length === 0) {
+    const years = ['2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+    playoffImages = years.map((yr, idx) => ({
+      id: idx + 1,
+      year: yr,
+      imageUrl: `https://dumbc.co.in/cricketapp/data/PlayOffImages/season_${yr}.png`,
+    }));
   }
 
-  return { playoffs, playoffImages: [] };
+  const playoffs = [
+    {
+      stage: 'Qualifier 1',
+      team1: 'Kolkata Knight Riders',
+      team1Code: 'KKR',
+      team1Logo: require('../../assets/team_logos/KKR.png'),
+      team2: 'Sunrisers Hyderabad',
+      team2Code: 'SRH',
+      team2Logo: require('../../assets/team_logos/SRH.png'),
+      date: '21-May-24,Tuesday',
+      time: '7:30 PM',
+      venue: 'Narendra Modi Stadium, Ahmedabad',
+      status: 'Completed',
+      note: 'KKR won by 8 wickets',
+    },
+    {
+      stage: 'Eliminator',
+      team1: 'Rajasthan Royals',
+      team1Code: 'RR',
+      team1Logo: require('../../assets/team_logos/RR.png'),
+      team2: 'Royal Challengers Bengaluru',
+      team2Code: 'RCB',
+      team2Logo: require('../../assets/team_logos/RCB.png'),
+      date: '22-May-24,Wednesday',
+      time: '7:30 PM',
+      venue: 'Narendra Modi Stadium, Ahmedabad',
+      status: 'Completed',
+      note: 'RR won by 4 wickets',
+    },
+    {
+      stage: 'Qualifier 2',
+      team1: 'Sunrisers Hyderabad',
+      team1Code: 'SRH',
+      team1Logo: require('../../assets/team_logos/SRH.png'),
+      team2: 'Rajasthan Royals',
+      team2Code: 'RR',
+      team2Logo: require('../../assets/team_logos/RR.png'),
+      date: '24-May-24,Friday',
+      time: '7:30 PM',
+      venue: 'MA Chidambaram Stadium, Chennai',
+      status: 'Completed',
+      note: 'SRH won by 36 runs',
+    },
+    {
+      stage: 'Grand Final',
+      team1: 'Kolkata Knight Riders',
+      team1Code: 'KKR',
+      team1Logo: require('../../assets/team_logos/KKR.png'),
+      team2: 'Sunrisers Hyderabad',
+      team2Code: 'SRH',
+      team2Logo: require('../../assets/team_logos/SRH.png'),
+      date: '26-May-24,Sunday',
+      time: '7:30 PM',
+      venue: 'MA Chidambaram Stadium, Chennai',
+      status: 'Completed',
+      note: 'KKR won by 8 wickets - IPL Champions!',
+    },
+  ];
+
+  return { playoffs, playoffImages };
 }
 
 /**

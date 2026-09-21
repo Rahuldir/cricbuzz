@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Image,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -28,6 +30,8 @@ export default function IplHubScreen() {
   const [pointsTable, setPointsTable] = useState([]);
   const [schedule, setSchedule] = useState([]);
   const [playoffs, setPlayoffs] = useState([]);
+  const [playoffImages, setPlayoffImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [selectedYear, setSelectedYear] = useState('2024');
   const [allYears, setAllYears] = useState(['2024', '2023', '2022', '2021', '2020']);
 
@@ -50,6 +54,10 @@ export default function IplHubScreen() {
       }
       setSchedule(schedRes.schedule || []);
       setPlayoffs(playRes.playoffs || []);
+      if (playRes.playoffImages && playRes.playoffImages.length > 0) {
+        const sorted = [...playRes.playoffImages].sort((a, b) => parseInt(b.year) - parseInt(a.year));
+        setPlayoffImages(sorted);
+      }
     } catch (err) {
       console.warn('IPL data fetch error:', err);
     } finally {
@@ -494,10 +502,64 @@ export default function IplHubScreen() {
                   );
                 })
               )}
+
+              {/* All Seasons Playoff History Images */}
+              {playoffImages && playoffImages.length > 0 && (
+                <View className="mt-4 pt-4 border-t" style={{ borderColor: theme.divider }}>
+                  <Text style={{ color: theme.text }} className="font-extrabold text-sm mb-3 tracking-wide">
+                    ALL SEASONS PLAYOFF HISTORY
+                  </Text>
+                  {playoffImages.map((img) => (
+                    <TouchableOpacity
+                      key={img.id || img.year}
+                      style={{ backgroundColor: theme.accent, borderColor: theme.accent, borderWidth: 1.5 }}
+                      className="rounded-2xl shadow-sm mb-4 overflow-hidden"
+                      activeOpacity={0.9}
+                      onPress={() => setSelectedImage(img.imageUrl)}
+                    >
+                      <View style={{ backgroundColor: theme.accent }} className="px-4 py-2 flex-row justify-between items-center">
+                        <Text style={{ color: '#FFFFFF' }} className="text-lg font-black tracking-wide">
+                          {img.year}
+                        </Text>
+                      </View>
+                      <Image
+                        source={{ uri: img.imageUrl }}
+                        style={{ width: '100%', height: 210, backgroundColor: '#FFFFFF' }}
+                        resizeMode="stretch"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           )}
         </ScrollView>
       )}
+
+      {/* Fullscreen Modal for Playoff Image */}
+      <Modal
+        visible={!!selectedImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedImage(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.92)', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 40, right: 20, zIndex: 20, padding: 6 }}
+            onPress={() => setSelectedImage(null)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="close-circle" size={36} color="#FFFFFF" />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={{ width: '100%', height: '80%' }}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }

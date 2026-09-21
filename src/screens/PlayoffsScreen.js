@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Image,
+  Modal,
   StyleSheet,
   StatusBar,
 } from 'react-native';
@@ -13,50 +15,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { getIplPlayoff } from '../services/cricketApi';
-import { TeamFlag } from '../utils/flagHelper';
-
-const PLAYOFF_YEARS = [
-  {
-    year: '2011',
-    q1: { t1: 'Royal Challengers Bangalore', c1: 'RCB', t2: 'Chennai Super Kings', c2: 'CSK', date: 'Qualifier 1, May 24', venue: 'Wankhede Stadium, Mumbai', winner: 'CSK' },
-    elim: { t1: 'Kolkata Knight Riders', c1: 'KKR', t2: 'Mumbai Indians', c2: 'MI', date: 'Eliminator, May 25', venue: 'Wankhede Stadium, Mumbai', winner: 'MI' },
-    q2: { t1: 'Royal Challengers Bangalore', c1: 'RCB', t2: 'Mumbai Indians', c2: 'MI', date: 'Qualifier 2, May 27', venue: 'MA Chidambaram Stadium, Chennai', winner: 'RCB' },
-    final: { t1: 'Chennai Super Kings', c1: 'CSK', t2: 'Royal Challengers Bangalore', c2: 'RCB', date: 'Final, May 28', venue: 'MA Chidambaram Stadium, Chennai', winner: 'CSK' },
-  },
-  {
-    year: '2012',
-    q1: { t1: 'Delhi Daredevils', c1: 'DD', t2: 'Kolkata Knight Riders', c2: 'KKR', date: 'Qualifier 1, May 22', venue: 'Subrata Roy Sahara Stadium, Pune', winner: 'KKR' },
-    elim: { t1: 'Mumbai Indians', c1: 'MI', t2: 'Chennai Super Kings', c2: 'CSK', date: 'Eliminator, May 23', venue: 'M. Chinnaswamy Stadium, Bengaluru', winner: 'CSK' },
-    q2: { t1: 'Delhi Daredevils', c1: 'DD', t2: 'Chennai Super Kings', c2: 'CSK', date: 'Qualifier 2, May 25', venue: 'MA Chidambaram Stadium, Chennai', winner: 'CSK' },
-    final: { t1: 'Kolkata Knight Riders', c1: 'KKR', t2: 'Chennai Super Kings', c2: 'CSK', date: 'Final, May 27', venue: 'MA Chidambaram Stadium, Chennai', winner: 'KKR' },
-  },
-  {
-    year: '2013',
-    q1: { t1: 'Chennai Super Kings', c1: 'CSK', t2: 'Mumbai Indians', c2: 'MI', date: 'Qualifier 1, May 21', venue: 'Feroz Shah Kotla, Delhi', winner: 'CSK' },
-    elim: { t1: 'Rajasthan Royals', c1: 'RR', t2: 'Sunrisers Hyderabad', c2: 'SRH', date: 'Eliminator, May 22', venue: 'Feroz Shah Kotla, Delhi', winner: 'RR' },
-    q2: { t1: 'Mumbai Indians', c1: 'MI', t2: 'Rajasthan Royals', c2: 'RR', date: 'Qualifier 2, May 24', venue: 'Eden Gardens, Kolkata', winner: 'MI' },
-    final: { t1: 'Chennai Super Kings', c1: 'CSK', t2: 'Mumbai Indians', c2: 'MI', date: 'Final, May 26', venue: 'Eden Gardens, Kolkata', winner: 'MI' },
-  },
-  {
-    year: '2014',
-    q1: { t1: 'Kings XI Punjab', c1: 'KXIP', t2: 'Kolkata Knight Riders', c2: 'KKR', date: 'Qualifier 1, May 28', venue: 'Eden Gardens, Kolkata', winner: 'KKR' },
-    elim: { t1: 'Chennai Super Kings', c1: 'CSK', t2: 'Mumbai Indians', c2: 'MI', date: 'Eliminator, May 28', venue: 'Brabourne Stadium, Mumbai', winner: 'CSK' },
-    q2: { t1: 'Kings XI Punjab', c1: 'KXIP', t2: 'Chennai Super Kings', c2: 'CSK', date: 'Qualifier 2, May 30', venue: 'Wankhede Stadium, Mumbai', winner: 'KXIP' },
-    final: { t1: 'Kolkata Knight Riders', c1: 'KKR', t2: 'Kings XI Punjab', c2: 'KXIP', date: 'Final, Jun 01', venue: 'M. Chinnaswamy Stadium, Bengaluru', winner: 'KKR' },
-  },
-];
 
 export default function PlayoffsScreen({ onBack }) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [playoffs, setPlayoffs] = useState([]);
+  const [playoffImages, setPlayoffImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const loadPlayoffs = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
       const res = await getIplPlayoff();
-      setPlayoffs(res.playoffs || []);
+      if (res.playoffImages && res.playoffImages.length > 0) {
+        // Sort descending by year (2024 to 2011)
+        const sorted = [...res.playoffImages].sort((a, b) => parseInt(b.year) - parseInt(a.year));
+        setPlayoffImages(sorted);
+      }
     } catch (err) {
       console.warn('Playoffs fetch err:', err.message);
     } finally {
@@ -78,7 +53,7 @@ export default function PlayoffsScreen({ onBack }) {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* 1. Header Matching Screenshots 3 & 4 */}
+      {/* 1. Header Matching Screenshots */}
       <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color="#000000" />
@@ -99,7 +74,7 @@ export default function PlayoffsScreen({ onBack }) {
         </View>
       </View>
 
-      {/* 2. Top Sub-Header AD Card (Exact match Screenshot 3 & 4) */}
+      {/* 2. Top Sub-Header AD Card */}
       <View style={styles.adBannerCard}>
         <View style={styles.adIconBox}>
           <View style={styles.adBallBlueCircle}>
@@ -122,96 +97,75 @@ export default function PlayoffsScreen({ onBack }) {
         </TouchableOpacity>
       </View>
 
-      {/* 3. PlayOff History Year Cards List */}
-      <ScrollView
-        style={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#008000"
-            colors={['#008000', '#10B981']}
-          />
-        }
+      {/* 3. PlayOff History Year Cards List from API */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#008000" />
+          <Text style={styles.loadingText}>Fetching IPL Playoff History...</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#008000"
+              colors={['#008000', '#10B981']}
+            />
+          }
+        >
+          {playoffImages.map((item) => (
+            <TouchableOpacity
+              key={item.id || item.year}
+              style={styles.yearCardContainer}
+              activeOpacity={0.9}
+              onPress={() => setSelectedImage(item.imageUrl)}
+            >
+              {/* Green Year Header Banner */}
+              <View style={styles.yearHeaderBanner}>
+                <Text style={styles.yearHeaderText}>{item.year}</Text>
+              </View>
+
+              {/* Edge-to-Edge Playoff Image covering full card area */}
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={styles.playoffImage}
+                resizeMode="stretch"
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* 4. Fullscreen Modal for Playoff Image */}
+      <Modal
+        visible={!!selectedImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedImage(null)}
       >
-        {PLAYOFF_YEARS.map((item) => (
-          <View key={item.year} style={styles.yearCardContainer}>
-            {/* Green Year Header Banner */}
-            <View style={styles.yearHeaderBanner}>
-              <Text style={styles.yearHeaderText}>{item.year}</Text>
-            </View>
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={() => setSelectedImage(null)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="close-circle" size={36} color="#FFFFFF" />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
 
-            {/* Playoff Tree Bracket Content */}
-            <View style={styles.bracketBox}>
-              {/* Qualifier 1 & Eliminator Box (Left Column) */}
-              <View style={styles.bracketColumn}>
-                {/* Q1 Item */}
-                <View style={styles.matchPillBox}>
-                  <View style={styles.teamPillRed}>
-                    <Text style={styles.teamPillText}>{item.q1.t1}</Text>
-                  </View>
-                  <View style={styles.stageDatePill}>
-                    <Text style={styles.stageDateText}>{item.q1.date}</Text>
-                  </View>
-                  <View style={styles.teamPillBlue}>
-                    <Text style={styles.teamPillText}>{item.q1.t2}</Text>
-                  </View>
-                </View>
-
-                {/* Eliminator Item */}
-                <View style={[styles.matchPillBox, { marginTop: 14 }]}>
-                  <View style={styles.teamPillBlue}>
-                    <Text style={styles.teamPillText}>{item.elim.t1}</Text>
-                  </View>
-                  <View style={styles.stageDatePill}>
-                    <Text style={styles.stageDateText}>{item.elim.date}</Text>
-                  </View>
-                  <View style={styles.teamPillYellow}>
-                    <Text style={styles.teamPillText}>{item.elim.t2}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Qualifier 2 Box (Middle Column) */}
-              <View style={styles.bracketColumnMiddle}>
-                <View style={styles.matchPillBox}>
-                  <View style={styles.teamPillRed}>
-                    <Text style={styles.teamPillText}>{item.q2.t1}</Text>
-                  </View>
-                  <View style={styles.stageDatePill}>
-                    <Text style={styles.stageDateText}>{item.q2.date}</Text>
-                  </View>
-                  <View style={styles.teamPillYellow}>
-                    <Text style={styles.teamPillText}>{item.q2.t2}</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Final Box & Trophy (Right Column) */}
-              <View style={styles.bracketColumnRight}>
-                <View style={styles.trophyIconWrap}>
-                  <Ionicons name="trophy" size={28} color="#FFD700" />
-                </View>
-                <View style={styles.matchPillBox}>
-                  <View style={styles.teamPillYellow}>
-                    <Text style={styles.teamPillText}>{item.final.t1}</Text>
-                  </View>
-                  <View style={styles.stageDatePill}>
-                    <Text style={styles.stageDateText}>{item.final.date}</Text>
-                  </View>
-                  <View style={styles.teamPillRed}>
-                    <Text style={styles.teamPillText}>{item.final.t2}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* 4. Bottom Ad Banner */}
+      {/* 5. Bottom Ad Banner */}
       <View style={styles.bottomAdBanner}>
         <View style={styles.adIconBox}>
           <View style={styles.adBallRedCircle}>
@@ -370,87 +324,64 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#008000',
+  },
   yearCardContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#008000',
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: '#008000',
-    marginBottom: 16,
+    marginBottom: 18,
     overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   yearHeaderBanner: {
     backgroundColor: '#008000',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   yearHeaderText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '900',
+    letterSpacing: 0.5,
   },
-  bracketBox: {
-    backgroundColor: '#0F172A',
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bracketColumn: {
-    flex: 1,
-    marginRight: 4,
-  },
-  bracketColumnMiddle: {
-    flex: 1,
-    marginHorizontal: 2,
-  },
-  bracketColumnRight: {
-    flex: 1,
-    marginLeft: 4,
-    alignItems: 'center',
-  },
-  trophyIconWrap: {
-    marginBottom: 4,
-  },
-  matchPillBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 8,
-    padding: 3,
-  },
-  teamPillRed: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-  },
-  teamPillBlue: {
-    backgroundColor: '#0284C7',
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-  },
-  teamPillYellow: {
-    backgroundColor: '#D97706',
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-  },
-  teamPillText: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  stageDatePill: {
+  playoffImage: {
+    width: '100%',
+    height: 210,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 2,
-    marginVertical: 2,
-    borderRadius: 4,
   },
-  stageDateText: {
-    color: '#0F172A',
-    fontSize: 7,
-    fontWeight: '800',
-    textAlign: 'center',
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 20,
+    padding: 6,
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '80%',
   },
   bottomAdBanner: {
     flexDirection: 'row',
