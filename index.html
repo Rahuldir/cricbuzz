@@ -46,7 +46,6 @@
 
   <section class="pane active" id="pane-matches">
     <div class="featured" id="featuredMatch"></div>
-
     <div class="section">
       <div class="section-head">
         <h2 data-i18n="liveNow">Live Now</h2>
@@ -54,7 +53,6 @@
       </div>
       <div class="cards-scroll" id="liveMatches"></div>
     </div>
-
     <div class="section">
       <div class="section-head">
         <h2 data-i18n="upcoming">Upcoming</h2>
@@ -62,7 +60,6 @@
       </div>
       <div class="match-list" id="upcomingMatches"></div>
     </div>
-
     <div class="section">
       <div class="section-head">
         <h2 data-i18n="recentResults">Recent Results</h2>
@@ -228,26 +225,17 @@
     var streams = window.__cricbuzzStreams || [];
     var el = document.getElementById('streamList');
     if (!el) return;
-
     if (streams.length === 0) {
-      el.innerHTML =
-        '<div class="empty-state">' +
-        '<div class="empty-icon">TV</div>' +
-        '<div class="empty-title">No streams added yet</div>' +
-        '<div class="empty-text">Click "+ Add Stream" above to add your first live stream link.</div>' +
-        '</div>';
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">TV</div><div class="empty-title">No streams added yet</div><div class="empty-text">Click "+ Add Stream" above to add your first live stream link.</div></div>';
       return;
     }
-
     var byMatch = {};
     streams.forEach(function (s, idx) {
       if (!byMatch[s.matchId]) byMatch[s.matchId] = [];
       byMatch[s.matchId].push({ stream: s, idx: idx });
     });
-
     var matches = window.MATCHES || [];
     var html = '';
-
     Object.keys(byMatch).forEach(function (mid) {
       var m = matches.find(function (x) { return x.id === mid; });
       var group = byMatch[mid];
@@ -260,7 +248,6 @@
         subtitle = m.series || '';
       }
       var isLive = m && m.status === 'live';
-
       html += '<div class="stream-card">';
       html += '<div class="stream-head">';
       html += '<div class="stream-head-info">';
@@ -272,15 +259,12 @@
       html += '<div class="stream-buttons">';
       group.forEach(function (g) {
         html += '<div class="stream-btn-row">';
-        html += '<button class="stream-btn" onclick="playStreamByIndex(' + g.idx + ')">';
-        html += '<span class="play-icon">PLAY</span> ' + g.stream.platform;
-        html += '</button>';
+        html += '<button class="stream-btn" onclick="playStreamByIndex(' + g.idx + ')"><span class="play-icon">PLAY</span> ' + g.stream.platform + '</button>';
         html += '<button class="stream-del" onclick="deleteStream(' + g.idx + ')" title="Remove">X</button>';
         html += '</div>';
       });
       html += '</div></div>';
     });
-
     el.innerHTML = html;
   };
 
@@ -333,12 +317,10 @@
     var platform = (document.getElementById('streamPlatform').value || '').trim();
     var url      = (document.getElementById('streamUrl').value || '').trim();
     var embed    = !!document.getElementById('streamEmbed').checked;
-
     if (!matchId) { alert('Please enter a Match ID'); return; }
     if (!platform) { alert('Please enter a Platform name'); return; }
     if (!url) { alert('Please enter a Stream URL'); return; }
     if (!/^https?:\/\//i.test(url)) { alert('URL must start with http:// or https://'); return; }
-
     var streams = loadStreams();
     streams.push({ matchId: matchId, platform: platform, url: url, embed: embed });
     saveStreams(streams);
@@ -360,15 +342,9 @@
     var streams = window.__cricbuzzStreams || [];
     var s = streams[idx];
     if (!s) return;
-
     if (s.embed) {
       var body = document.getElementById('modalBody');
-      body.innerHTML =
-        '<div style="font-size:14px;font-weight:800;margin-bottom:12px;">' + s.platform + '</div>' +
-        '<div class="stream-frame-wrap">' +
-        '<iframe src="' + s.url + '" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;">If stream does not load, some platforms block embedding. Try opening in a new tab.</div>';
+      body.innerHTML = '<div style="font-size:14px;font-weight:800;margin-bottom:12px;">' + s.platform + '</div><div class="stream-frame-wrap"><iframe src="' + s.url + '" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe></div>';
       document.getElementById('matchModal').classList.add('open');
     } else {
       window.open(s.url, '_blank', 'noopener,noreferrer');
@@ -393,7 +369,6 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
-
     var langBtn = document.getElementById('langBtn');
     if (langBtn && typeof I18N !== 'undefined') langBtn.textContent = I18N.getLang().toUpperCase();
 
@@ -403,9 +378,7 @@
           setTimeout(function () {
             refreshStreamsList();
             refreshMatchIdsList();
-            if (typeof LiveStreams !== 'undefined') {
-              LiveStreams.renderInto('liveStreamsList');
-            }
+            if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
           }, 80);
         }
       });
@@ -418,17 +391,11 @@
 
     setInterval(function () {
       var livePane = document.getElementById('pane-live');
-      if (livePane && livePane.classList.contains('active')) {
-        refreshMatchIdsList();
-      }
+      if (livePane && livePane.classList.contains('active')) refreshMatchIdsList();
     }, 3000);
 
     var sm = document.getElementById('streamModal');
-    if (sm) {
-      sm.addEventListener('click', function (e) {
-        if (e.target.id === 'streamModal') closeModal('streamModal');
-      });
-    }
+    if (sm) sm.addEventListener('click', function (e) { if (e.target.id === 'streamModal') closeModal('streamModal'); });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -437,9 +404,7 @@
     }
 
     setTimeout(function () {
-      if (typeof LiveStreams !== 'undefined') {
-        LiveStreams.renderInto('liveStreamsList');
-      }
+      if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
     }, 800);
 
     console.log('[Cricbuzz] Streaming UI booted');
