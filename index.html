@@ -95,6 +95,17 @@
 
     <div class="section">
       <div class="section-head">
+        <h2>🏏 Cricket Streams (streamed.pk)</h2>
+        <button class="add-stream-btn" onclick="StreamedPK.renderInto('streamedPkList')">↻ Refresh</button>
+      </div>
+      <div class="info-banner">
+        Live cricket streams from streamed.pk. Click any card to watch.
+      </div>
+      <div id="streamedPkList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
         <h2 data-i18n="availableMatches">Available Matches (IDs)</h2>
       </div>
       <div class="info-banner">Use these match IDs when adding a stream.</div>
@@ -202,6 +213,7 @@
 <script src="api.js"></script>
 <script src="i18n.js"></script>
 <script src="livestreams.js"></script>
+<script src="streamedpk.js"></script>
 <script src="app.js"></script>
 
 <script>
@@ -379,6 +391,7 @@
             refreshStreamsList();
             refreshMatchIdsList();
             if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
+            if (typeof StreamedPK !== 'undefined') StreamedPK.renderInto('streamedPkList');
           }, 80);
         }
       });
@@ -405,6 +418,7 @@
 
     setTimeout(function () {
       if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
+      if (typeof StreamedPK !== 'undefined') StreamedPK.renderInto('streamedPkList');
     }, 800);
 
     console.log('[Cricbuzz] Streaming UI booted');
