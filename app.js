@@ -6,7 +6,7 @@
 const TEAMS = {
   IND: { name: 'India',          abbr: 'IND', color: '#0a4cff', flag: '🇮🇳' },
   AUS: { name: 'Australia',      abbr: 'AUS', color: '#ffcc00', flag: '🇦🇺' },
-  ENG: { name: 'England',        abbr: 'ENG', color: '#c8102e', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+ ENG: { name: 'England', abbr: 'ENG', color: '#c8102e', flag: '🏴' },
   PAK: { name: 'Pakistan',       abbr: 'PAK', color: '#01411c', flag: '🇵🇰' },
   SA:  { name: 'South Africa',   abbr: 'SA',  color: '#007749', flag: '🇿🇦' },
   NZ:  { name: 'New Zealand',    abbr: 'NZ',  color: '#000000', flag: '🇳🇿' },
