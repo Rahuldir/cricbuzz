@@ -635,3 +635,87 @@ main { max-width: 1200px; margin: 0 auto; padding: 16px 14px; }
   color: var(--accent);
   letter-spacing: .5px;
 }
+/* ---- BROADCAST MODE ---- */
+body.broadcast-mode {
+  background: #000;
+}
+body.broadcast-mode .topbar,
+body.broadcast-mode .bottom-nav,
+body.broadcast-mode .footer,
+body.broadcast-mode .section-head,
+body.broadcast-mode .info-banner {
+  display: none !important;
+}
+body.broadcast-mode main {
+  padding: 10px;
+  max-width: 100%;
+}
+body.broadcast-mode .featured {
+  min-height: 60vh;
+  padding: 40px;
+}
+body.broadcast-mode .featured-team-name {
+  font-size: 28px;
+}
+body.broadcast-mode .featured-team-score {
+  font-size: 56px;
+}
+body.broadcast-mode .featured-status {
+  font-size: 18px;
+}
+body.broadcast-mode .featured-badge {
+  font-size: 14px;
+  padding: 6px 14px;
+}
+body.broadcast-mode .match-card {
+  min-width: 320px;
+  padding: 24px;
+}
+body.broadcast-mode .mc-team-name,
+body.broadcast-mode .mc-team-score {
+  font-size: 20px;
+}
+body.broadcast-mode #broadcastBtn {
+  display: flex !important;
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 9999;
+  background: rgba(239,68,68,.9);
+  color: #fff;
+}
+body.broadcast-mode .section {
+  background: rgba(10,14,26,.9);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* ---- SCORECARD PAGE ---- */
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.kv {
+  background: var(--card-2);
+  padding: 12px 14px;
+  border-radius: 10px;
+}
+.kv-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.kv-value {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* Search placeholder translation */
+[data-i18n-placeholder]::placeholder {
+  opacity: .7;
+}
