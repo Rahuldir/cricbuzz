@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cricbuzz Web - Live Cricket Scores</title>
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- ============================================================
-     TOP HEADER
-     ============================================================ -->
 <header class="topbar">
   <div class="topbar-inner">
     <a href="#" class="logo">
@@ -20,151 +20,129 @@
     </a>
 
     <div class="search-wrap">
-      <input type="text" id="searchInput" class="search" placeholder="Search players, matches, series...">
+      <input type="text" id="searchInput" class="search" data-i18n-placeholder="searchPlaceholder" placeholder="Search players, matches, series...">
       <span class="search-ico">?</span>
     </div>
 
     <div class="topbar-actions">
+      <button class="icon-btn" id="langBtn" title="Language" onclick="cycleLanguage()">EN</button>
+      <button class="icon-btn" id="broadcastBtn" title="Broadcast Mode" onclick="toggleBroadcast()">TV</button>
       <button class="icon-btn" id="themeBtn" title="Toggle theme">Dark</button>
-      <button class="icon-btn" id="langBtn" title="Language">EN</button>
     </div>
   </div>
 
   <nav class="tabs" id="mainTabs">
-    <button class="tab active" data-tab="matches">Matches</button>
-    <button class="tab" data-tab="live">Live TV</button>
-    <button class="tab" data-tab="series">Series</button>
-    <button class="tab" data-tab="teams">Teams</button>
-    <button class="tab" data-tab="rankings">Rankings</button>
-    <button class="tab" data-tab="news">News</button>
+    <button class="tab active" data-tab="matches" data-i18n="matches">Matches</button>
+    <button class="tab" data-tab="live" data-i18n="liveTV">Live TV</button>
+    <button class="tab" data-tab="series" data-i18n="series">Series</button>
+    <button class="tab" data-tab="teams" data-i18n="teams">Teams</button>
+    <button class="tab" data-tab="rankings" data-i18n="rankings">Rankings</button>
+    <button class="tab" data-tab="news" data-i18n="news">News</button>
   </nav>
 </header>
 
-<!-- ============================================================
-     MAIN CONTENT
-     ============================================================ -->
 <main id="app">
 
-  <!-- ============ MATCHES TAB ============ -->
   <section class="pane active" id="pane-matches">
-
     <div class="featured" id="featuredMatch"></div>
 
     <div class="section">
       <div class="section-head">
-        <h2>Live Now</h2>
-        <a href="#" class="see-all">See all</a>
+        <h2 data-i18n="liveNow">Live Now</h2>
+        <a href="#" class="see-all" data-i18n="seeAll">See all</a>
       </div>
       <div class="cards-scroll" id="liveMatches"></div>
     </div>
 
     <div class="section">
       <div class="section-head">
-        <h2>Upcoming</h2>
-        <a href="#" class="see-all">See all</a>
+        <h2 data-i18n="upcoming">Upcoming</h2>
+        <a href="#" class="see-all" data-i18n="seeAll">See all</a>
       </div>
       <div class="match-list" id="upcomingMatches"></div>
     </div>
 
     <div class="section">
       <div class="section-head">
-        <h2>Recent Results</h2>
-        <a href="#" class="see-all">See all</a>
+        <h2 data-i18n="recentResults">Recent Results</h2>
+        <a href="#" class="see-all" data-i18n="seeAll">See all</a>
       </div>
       <div class="match-list" id="recentMatches"></div>
     </div>
-
   </section>
 
-  <!-- ============ LIVE TV TAB ============ -->
   <section class="pane" id="pane-live">
-
     <div class="section">
       <div class="section-head">
-        <h2>Live TV</h2>
-        <button class="add-stream-btn" onclick="openAddStream()">+ Add Stream</button>
+        <h2 data-i18n="liveTV">Live TV</h2>
+        <button class="add-stream-btn" onclick="openAddStream()" data-i18n="addStream">+ Add Stream</button>
       </div>
-
       <div class="info-banner">
-        Add your own streaming links. Click a match to watch. Links are saved in your browser.
+        Add your own streaming links. Click a match to watch. Links saved in your browser.
       </div>
-
       <div id="streamList"></div>
     </div>
 
     <div class="section">
       <div class="section-head">
-        <h2>Available Matches (IDs)</h2>
+        <h2 data-i18n="availableMatches">Available Matches (IDs)</h2>
       </div>
-      <div class="info-banner">
-        Use these match IDs when adding a stream.
-      </div>
+      <div class="info-banner">Use these match IDs when adding a stream.</div>
       <div class="panel" id="matchIdsList"></div>
     </div>
-
   </section>
 
-  <!-- ============ SERIES TAB ============ -->
   <section class="pane" id="pane-series">
     <div class="section">
-      <div class="section-head"><h2>Ongoing Series</h2></div>
+      <div class="section-head"><h2 data-i18n="ongoingSeries">Ongoing Series</h2></div>
       <div class="match-list" id="ongoingSeries"></div>
     </div>
     <div class="section">
-      <div class="section-head"><h2>Upcoming Series</h2></div>
+      <div class="section-head"><h2 data-i18n="upcomingSeries">Upcoming Series</h2></div>
       <div class="match-list" id="upcomingSeries"></div>
     </div>
   </section>
 
-  <!-- ============ TEAMS TAB ============ -->
   <section class="pane" id="pane-teams">
     <div class="section">
-      <div class="section-head"><h2>International Teams</h2></div>
+      <div class="section-head"><h2 data-i18n="internationalTeams">International Teams</h2></div>
       <div class="team-grid" id="teamsGrid"></div>
     </div>
   </section>
 
-  <!-- ============ RANKINGS TAB ============ -->
   <section class="pane" id="pane-rankings">
     <div class="section">
       <div class="rank-tabs">
-        <button class="rank-tab active" data-rank="batting">Batting</button>
-        <button class="rank-tab" data-rank="bowling">Bowling</button>
-        <button class="rank-tab" data-rank="allround">All-rounder</button>
-        <button class="rank-tab" data-rank="teams">Teams</button>
+        <button class="rank-tab active" data-rank="batting" data-i18n="batting">Batting</button>
+        <button class="rank-tab" data-rank="bowling" data-i18n="bowling">Bowling</button>
+        <button class="rank-tab" data-rank="allround" data-i18n="allround">All-rounder</button>
+        <button class="rank-tab" data-rank="teams" data-i18n="teams">Teams</button>
       </div>
       <div class="panel" id="rankingsTable"></div>
     </div>
   </section>
 
-  <!-- ============ NEWS TAB ============ -->
   <section class="pane" id="pane-news">
     <div class="section">
-      <div class="section-head"><h2>Top Stories</h2></div>
+      <div class="section-head"><h2 data-i18n="topStories">Top Stories</h2></div>
       <div class="news-list" id="newsList"></div>
     </div>
   </section>
 
 </main>
 
-<!-- ============================================================
-     BOTTOM NAV (mobile)
-     ============================================================ -->
 <nav class="bottom-nav">
-  <button class="bnav active" data-tab="matches"><span>M</span>Matches</button>
-  <button class="bnav" data-tab="live"><span>L</span>Live TV</button>
-  <button class="bnav" data-tab="series"><span>S</span>Series</button>
-  <button class="bnav" data-tab="teams"><span>T</span>Teams</button>
-  <button class="bnav" data-tab="rankings"><span>R</span>Ranks</button>
+  <button class="bnav active" data-tab="matches"><span>M</span><span data-i18n="matches">Matches</span></button>
+  <button class="bnav" data-tab="live"><span>L</span><span data-i18n="liveTV">Live TV</span></button>
+  <button class="bnav" data-tab="series"><span>S</span><span data-i18n="series">Series</span></button>
+  <button class="bnav" data-tab="teams"><span>T</span><span data-i18n="teams">Teams</span></button>
+  <button class="bnav" data-tab="rankings"><span>R</span><span data-i18n="rankings">Ranks</span></button>
 </nav>
 
 <footer class="footer">
   <div>Cricbuzz Web - Built with care - <a href="https://github.com/Rahuldir/cricbuzz">GitHub</a></div>
 </footer>
 
-<!-- ============================================================
-     MATCH DETAIL MODAL
-     ============================================================ -->
 <div class="modal" id="matchModal">
   <div class="modal-inner">
     <button class="modal-close" id="modalClose">X</button>
@@ -172,9 +150,6 @@
   </div>
 </div>
 
-<!-- ============================================================
-     ADD STREAM MODAL
-     ============================================================ -->
 <div class="modal" id="streamModal">
   <div class="modal-inner">
     <button class="modal-close" onclick="closeModal('streamModal')">X</button>
@@ -183,27 +158,26 @@
 
     <div class="form-group">
       <label>Match ID</label>
-      <input type="text" id="streamMatchId" class="form-control" placeholder="e.g. mock-m1">
+      <input type="text" id="streamMatchId" class="form-control" placeholder="e.g. match-12345">
       <div class="form-hint">Copy from "Available Matches" list below.</div>
     </div>
 
     <div class="form-group">
       <label>Platform Name</label>
-      <input type="text" id="streamPlatform" class="form-control" placeholder="e.g. Star Sports, Hotstar, Sky">
+      <input type="text" id="streamPlatform" class="form-control" placeholder="e.g. Star Sports, Hotstar">
     </div>
 
     <div class="form-group">
       <label>Stream URL</label>
       <input type="url" id="streamUrl" class="form-control" placeholder="https://...">
-      <div class="form-hint">Direct video link or embed URL (YouTube, Dailymotion, etc.)</div>
+      <div class="form-hint">Direct video link or embed URL.</div>
     </div>
 
     <div class="form-group">
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" id="streamEmbed" style="width:auto;">
-        <span>Play in embedded player (iframe) inside the app</span>
+        <span>Play in embedded player inside the app</span>
       </label>
-      <div class="form-hint">Uncheck to open in a new tab instead.</div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:20px;">
@@ -213,41 +187,28 @@
   </div>
 </div>
 
-<!-- ============================================================
-     SCRIPTS
-     ============================================================ -->
 <script src="api.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 
-<!-- ============================================================
-     STREAMING UI CONTROLLER (inline - keeps app.js untouched)
-     ============================================================ -->
+<!-- Streaming UI Controller -->
 <script>
 (function () {
   'use strict';
-
   var STORAGE_KEY = 'cricbuzz_streams_v1';
 
-  /* ---- Load streams from localStorage ---- */
   function loadStreams() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      var arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
+      return raw ? JSON.parse(raw) : [];
     } catch (e) { return []; }
   }
-
   function saveStreams(arr) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-    } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch (e) {}
   }
 
-  /* ---- Expose the streams to app.js ---- */
   window.__cricbuzzStreams = loadStreams();
 
-  /* ---- Refresh the streams list on the Live tab ---- */
   window.refreshStreamsList = function () {
     var streams = window.__cricbuzzStreams || [];
     var el = document.getElementById('streamList');
@@ -263,7 +224,6 @@
       return;
     }
 
-    /* Group by matchId */
     var byMatch = {};
     streams.forEach(function (s, idx) {
       if (!byMatch[s.matchId]) byMatch[s.matchId] = [];
@@ -276,7 +236,6 @@
     Object.keys(byMatch).forEach(function (mid) {
       var m = matches.find(function (x) { return x.id === mid; });
       var group = byMatch[mid];
-
       var title = mid;
       var subtitle = '';
       if (m) {
@@ -287,7 +246,6 @@
           subtitle = m.series || '';
         }
       }
-
       var isLive = m && m.status === 'live';
 
       html += '<div class="stream-card">';
@@ -298,7 +256,6 @@
       html += '</div>';
       if (isLive) html += '<span class="live-pill">LIVE</span>';
       html += '</div>';
-
       html += '<div class="stream-buttons">';
       group.forEach(function (g) {
         html += '<div class="stream-btn-row">';
@@ -308,36 +265,29 @@
         html += '<button class="stream-del" onclick="deleteStream(' + g.idx + ')" title="Remove">X</button>';
         html += '</div>';
       });
-      html += '</div>';
-      html += '</div>';
+      html += '</div></div>';
     });
 
     el.innerHTML = html;
   };
 
-  /* ---- Render list of match IDs available ---- */
   window.refreshMatchIdsList = function () {
     var el = document.getElementById('matchIdsList');
     if (!el) return;
     var matches = window.MATCHES || [];
-
     if (matches.length === 0) {
-      el.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px;">No matches loaded yet. Wait a moment...</div>';
+      el.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12px;">Loading matches...</div>';
       return;
     }
-
     var html = '<table class="id-table"><thead><tr><th>ID</th><th>Match</th><th></th></tr></thead><tbody>';
     matches.slice(0, 20).forEach(function (m) {
       var A = window.TEAMS && window.TEAMS[m.teamA.code];
       var B = window.TEAMS && window.TEAMS[m.teamB.code];
       var label = (A ? A.abbr : m.teamA.code) + ' vs ' + (B ? B.abbr : m.teamB.code);
-
       var statusClass = m.status === 'live' ? 'live' : (m.status === 'result' ? 'result' : 'upcoming');
-      var statusText = m.status.toUpperCase();
-
       html += '<tr>';
       html += '<td><code class="id-code">' + m.id + '</code></td>';
-      html += '<td><span class="id-match">' + label + '</span> <span class="id-status ' + statusClass + '">' + statusText + '</span></td>';
+      html += '<td><span class="id-match">' + label + '</span> <span class="id-status ' + statusClass + '">' + m.status.toUpperCase() + '</span></td>';
       html += '<td><button class="id-copy" onclick="copyId(\'' + m.id + '\')">Copy</button></td>';
       html += '</tr>';
     });
@@ -345,19 +295,12 @@
     el.innerHTML = html;
   };
 
-  /* ---- Copy match ID to clipboard ---- */
   window.copyId = function (id) {
-    try {
-      navigator.clipboard.writeText(id).then(function () {
-        console.log('[Streams] Copied:', id);
-      });
-    } catch (e) {}
-    /* Also pre-fill the add-stream form if it's open */
+    try { navigator.clipboard.writeText(id); } catch (e) {}
     var input = document.getElementById('streamMatchId');
     if (input) input.value = id;
   };
 
-  /* ---- Open add stream modal ---- */
   window.openAddStream = function () {
     document.getElementById('streamMatchId').value = '';
     document.getElementById('streamPlatform').value = '';
@@ -366,13 +309,11 @@
     document.getElementById('streamModal').classList.add('open');
   };
 
-  /* ---- Close any modal ---- */
   window.closeModal = function (id) {
     var m = document.getElementById(id);
     if (m) m.classList.remove('open');
   };
 
-  /* ---- Save a stream ---- */
   window.saveStream = function () {
     var matchId = (document.getElementById('streamMatchId').value || '').trim();
     var platform = (document.getElementById('streamPlatform').value || '').trim();
@@ -388,13 +329,10 @@
     streams.push({ matchId: matchId, platform: platform, url: url, embed: embed });
     saveStreams(streams);
     window.__cricbuzzStreams = streams;
-
     closeModal('streamModal');
     refreshStreamsList();
-    console.log('[Streams] Added:', platform, 'for', matchId);
   };
 
-  /* ---- Delete a stream ---- */
   window.deleteStream = function (idx) {
     if (!confirm('Remove this stream?')) return;
     var streams = loadStreams();
@@ -404,7 +342,6 @@
     refreshStreamsList();
   };
 
-  /* ---- Play a stream by index ---- */
   window.playStreamByIndex = function (idx) {
     var streams = window.__cricbuzzStreams || [];
     var s = streams[idx];
@@ -417,48 +354,62 @@
         '<div class="stream-frame-wrap">' +
         '<iframe src="' + s.url + '" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;">If the stream does not load, some platforms block embedding. Try opening in a new tab.</div>';
+        '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;">If stream does not load, some platforms block embedding. Try opening in a new tab.</div>';
       document.getElementById('matchModal').classList.add('open');
     } else {
       window.open(s.url, '_blank', 'noopener,noreferrer');
     }
   };
 
-  /* ---- Hook into the tab switch so streams refresh when Live TV opens ---- */
+  /* Broadcast mode */
+  window.toggleBroadcast = function () {
+    document.body.classList.toggle('broadcast-mode');
+    var btn = document.getElementById('broadcastBtn');
+    if (btn) btn.classList.toggle('on', document.body.classList.contains('broadcast-mode'));
+  };
+
+  /* Language cycling */
+  window.cycleLanguage = function () {
+    var langs = I18N.languages;
+    var cur = I18N.getLang();
+    var idx = langs.indexOf(cur);
+    var next = langs[(idx + 1) % langs.length];
+    I18N.setLang(next);
+    var btn = document.getElementById('langBtn');
+    if (btn) btn.textContent = next.toUpperCase();
+  };
+
   document.addEventListener('DOMContentLoaded', function () {
-    /* Watch for tab clicks */
+    /* Update lang button initial state */
+    var btn = document.getElementById('langBtn');
+    if (btn) btn.textContent = I18N.getLang().toUpperCase();
+
     document.querySelectorAll('.tab, .bnav').forEach(function (el) {
       el.addEventListener('click', function () {
         if (el.dataset.tab === 'live') {
-          setTimeout(function () {
-            refreshStreamsList();
-            refreshMatchIdsList();
-          }, 60);
+          setTimeout(function () { refreshStreamsList(); refreshMatchIdsList(); }, 60);
         }
       });
     });
-
-    /* Initial render (in case user reloads on Live tab) */
-    setTimeout(function () {
-      refreshStreamsList();
-      refreshMatchIdsList();
-    }, 500);
-
-    /* Refresh match IDs periodically as API loads */
+    setTimeout(function () { refreshStreamsList(); refreshMatchIdsList(); }, 500);
     setInterval(function () {
       var livePane = document.getElementById('pane-live');
-      if (livePane && livePane.classList.contains('active')) {
-        refreshMatchIdsList();
-      }
+      if (livePane && livePane.classList.contains('active')) refreshMatchIdsList();
     }, 3000);
 
-    /* Close stream modal on backdrop click */
-    var sm = document.getElementById('streamModal');
-    if (sm) {
-      sm.addEventListener('click', function (e) {
-        if (e.target.id === 'streamModal') closeModal('streamModal');
+    /* Register service worker */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(function (reg) {
+        console.log('[PWA] SW registered', reg.scope);
+      }).catch(function (err) {
+        console.warn('[PWA] SW registration failed:', err);
       });
     }
+  });
+
+  /* Re-render on language change */
+  window.addEventListener('cb:lang-change', function () {
+    if (typeof window.refreshAll === 'function') window.refreshAll();
   });
 
 })();
