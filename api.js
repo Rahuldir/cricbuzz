@@ -1,8 +1,6 @@
 /* ============================================================
    CRICBUZZ WEB - BigBalls Sports API (Cricket Only)
-   Endpoint: https://api.bigballsdata.com/v1/matches
-   Auth: Bearer token in header
-   Filter: sport=cricket
+   Matches actual BigBalls response schema
    ============================================================ */
 
 const BigBallsAPI = (function () {
@@ -11,16 +9,10 @@ const BigBallsAPI = (function () {
   /* ==========================================================
      ⚙️ CONFIG
      ========================================================== */
-  const API_KEY = 'bbs_live_00000QiC3quffRrdRw0nO2SZQKjsXt7q3TtJt42ez3S0nAGr';
+  const API_KEY = 'bbs_live_00000vagmD6JXzLp8sWuI4JT2Bg3UGg1CThmiOAhOUwbJxFw';
   const BASE_URL = 'https://api.bigballsdata.com';
   const MATCHES_PATH = '/v1/matches';
 
-  /* ⚠️ Cricket-only by default. Add 'league' to narrow further.
-     Examples:
-       { sport: 'cricket', league: 't20i' }
-       { sport: 'cricket', league: 'ipl' }
-       { sport: 'cricket', league: 'odi' }
-       { sport: 'cricket', league: 'test' }            */
   const DEFAULT_PARAMS = {
     sport: 'cricket',
     limit: 60
@@ -30,13 +22,12 @@ const BigBallsAPI = (function () {
   let cache = { data: null, time: 0 };
 
   /* ==========================================================
-     TEAM NAME → SHORT CODE
+     TEAM NAME → SHORT CODE (only used when API doesn't provide one)
      ========================================================== */
   function toCode(name) {
     if (!name) return '???';
     const n = String(name).toLowerCase();
 
-    /* International */
     if (n.indexOf('india')     >= 0 && n.indexOf('women') < 0) return 'IND';
     if (n.indexOf('australia') >= 0) return 'AUS';
     if (n.indexOf('england')   >= 0) return 'ENG';
@@ -53,8 +44,16 @@ const BigBallsAPI = (function () {
     if (n.indexOf('netherlands')  >= 0) return 'NED';
     if (n.indexOf('nepal')        >= 0) return 'NEP';
     if (n.indexOf('oman')         >= 0) return 'OMA';
-    if (n.indexOf('uae')          >= 0) return 'UAE';
+    if (n.indexOf('united arab') >= 0 || n === 'uae') return 'UAE';
     if (n.indexOf('namibia')      >= 0) return 'NAM';
+    if (n.indexOf('cayman')       >= 0) return 'CAY';
+    if (n.indexOf('bermuda')      >= 0) return 'BER';
+    if (n.indexOf('canada')       >= 0) return 'CAN';
+    if (n.indexOf('usa')          >= 0 || n.indexOf('united states') >= 0) return 'USA';
+    if (n.indexOf('hong kong')    >= 0) return 'HK';
+    if (n.indexOf('papua')        >= 0) return 'PNG';
+    if (n.indexOf('kenya')        >= 0) return 'KEN';
+    if (n.indexOf('uganda')       >= 0) return 'UGA';
 
     /* IPL */
     if (n.indexOf('mumbai')    >= 0) return 'MI';
@@ -68,17 +67,6 @@ const BigBallsAPI = (function () {
     if (n.indexOf('gujarat')   >= 0) return 'GT';
     if (n.indexOf('lucknow')   >= 0) return 'LSG';
 
-    /* BBL / other leagues */
-    if (n.indexOf('sydney sixers')   >= 0) return 'SIX';
-    if (n.indexOf('sydney thunder')  >= 0) return 'THU';
-    if (n.indexOf('melbourne stars') >= 0) return 'STA';
-    if (n.indexOf('melbourne renegades') >= 0) return 'REN';
-    if (n.indexOf('perth scorchers') >= 0) return 'SCO';
-    if (n.indexOf('brisbane heat')   >= 0) return 'HEA';
-    if (n.indexOf('adelaide strikers') >= 0) return 'STR';
-    if (n.indexOf('hobart hurricanes') >= 0) return 'HUR';
-
-    /* Fallback */
     return String(name).substring(0, 3).toUpperCase();
   }
 
@@ -94,13 +82,14 @@ const BigBallsAPI = (function () {
     return undefined;
   }
 
+  /* Parse a score value — can be a number or string like "287/4 (42.3)" */
   function parseScore(s) {
     if (s === null || s === undefined) return { runs: 0, wkts: 0, overs: '' };
 
     if (typeof s === 'number') return { runs: s, wkts: 0, overs: '' };
 
     if (typeof s === 'string') {
-      const m = s.match(/(\d+)\s*\/\s*(\d+)\s*(?:\(?\s*([\d.]+)\s*\)?)?/);
+      const m = s.match(/(\d+)\s*(?:\/\s*(\d+))?\s*(?:\(?\s*([\d.]+)\s*\)?)?/);
       if (m) {
         return {
           runs:  parseInt(m[1]) || 0,
@@ -108,8 +97,6 @@ const BigBallsAPI = (function () {
           overs: m[3] || ''
         };
       }
-      const n = parseInt(s);
-      return { runs: isNaN(n) ? 0 : n, wkts: 0, overs: '' };
     }
 
     if (typeof s === 'object') {
@@ -123,141 +110,135 @@ const BigBallsAPI = (function () {
     return { runs: 0, wkts: 0, overs: '' };
   }
 
+  /* Detect cricket format from league name */
+  function detectFormat(league) {
+    if (!league) return 'CRICKET';
+    const l = String(league).toUpperCase();
+    if (l.indexOf('T20I') >= 0 || l.indexOf('T20 INTERNATIONAL') >= 0) return 'T20I';
+    if (l.indexOf('T20') >= 0) return 'T20';
+    if (l.indexOf('ODI') >= 0 || l.indexOf('ONE DAY') >= 0) return 'ODI';
+    if (l.indexOf('TEST') >= 0) return 'TEST';
+    if (l.indexOf('IPL') >= 0) return 'IPL';
+    if (l.indexOf('BBL') >= 0) return 'BBL';
+    if (l.indexOf('PSL') >= 0) return 'PSL';
+    return 'CRICKET';
+  }
+
   /* ==========================================================
      CONVERT BigBalls match → internal format
+     Handles the actual schema from BigBalls API
      ========================================================== */
   function convertMatch(raw) {
     if (!raw) return null;
 
-    /* ---- Skip non-cricket just in case ---- */
-    const sportField = String(
-      pick(raw, ['sport', 'sportName', 'game']) || ''
-    ).toLowerCase();
-    if (sportField && sportField !== 'cricket') return null;
+    /* Skip non-cricket matches */
+    const sport = String(raw.sport || '').toLowerCase();
+    if (sport && sport !== 'cricket') return null;
 
-    /* ---- Extract teams ---- */
-    let team1 = null, team2 = null;
+    /* ---- Teams are `home` and `away` ---- */
+    const homeTeam = raw.home || {};
+    const awayTeam = raw.away || {};
 
-    if (Array.isArray(raw.teams) && raw.teams.length >= 2) {
-      team1 = raw.teams[0]; team2 = raw.teams[1];
-    } else if (Array.isArray(raw.teamInfo) && raw.teamInfo.length >= 2) {
-      team1 = raw.teamInfo[0]; team2 = raw.teamInfo[1];
-    } else if (raw.homeTeam && raw.awayTeam) {
-      team1 = raw.homeTeam; team2 = raw.awayTeam;
-    } else if (raw.home && raw.away) {
-      team1 = raw.home; team2 = raw.away;
-    } else if (Array.isArray(raw.participants) && raw.participants.length >= 2) {
-      team1 = raw.participants[0]; team2 = raw.participants[1];
-    } else if (Array.isArray(raw.competitors) && raw.competitors.length >= 2) {
-      team1 = raw.competitors[0]; team2 = raw.competitors[1];
-    }
-
-    if (typeof team1 === 'string') team1 = { name: team1 };
-    if (typeof team2 === 'string') team2 = { name: team2 };
-    team1 = team1 || {};
-    team2 = team2 || {};
-
-    const name1 = pick(team1, ['name', 'teamName', 'fullName', 'title', 'displayName']) || '';
-    const name2 = pick(team2, ['name', 'teamName', 'fullName', 'title', 'displayName']) || '';
-
-    const short1 = pick(team1, ['shortName', 'shortname', 'abbr', 'abbreviation', 'code']);
-    const short2 = pick(team2, ['shortName', 'shortname', 'abbr', 'abbreviation', 'code']);
+    const name1 = homeTeam.name || '';
+    const name2 = awayTeam.name || '';
+    const short1 = homeTeam.short_name || '';
+    const short2 = awayTeam.short_name || '';
 
     const codeA = short1 ? String(short1).toUpperCase() : toCode(name1);
     const codeB = short2 ? String(short2).toUpperCase() : toCode(name2);
 
-    /* ---- Extract scores ---- */
-    let scoreA = null, scoreB = null;
+    /* ---- Score: raw.score = { home: N, away: N } ---- */
+    const scoreObj = raw.score || {};
+    let homeScore = scoreObj.home;
+    let awayScore = scoreObj.away;
 
-    const scoreArr = pick(raw, ['score', 'scores', 'innings']);
-    if (Array.isArray(scoreArr)) {
-      const idA = pick(team1, ['id', 'teamId', '_id']);
-      const idB = pick(team2, ['id', 'teamId', '_id']);
+    /* If score is a string like "287/4", parse it */
+    let sA = parseScore(homeScore);
+    let sB = parseScore(awayScore);
 
-      scoreArr.forEach(function (s, idx) {
-        const sid = pick(s, ['teamId', 'id', 'team']);
-        const sname = String(pick(s, ['teamName', 'inning', 'name']) || '').toLowerCase();
+    /* Try to enrich from linescore if present */
+    const linescore = raw.linescore;
+    if (linescore) {
+      /* linescore might have detailed innings info */
+      /* Try common field names */
+      const linescoreArr = Array.isArray(linescore) ? linescore : [linescore];
+      linescoreArr.forEach(function (ls) {
+        if (!ls) return;
+        const lsTeamId = pick(ls, ['teamId', 'team_id', 'team', 'id']);
+        const lsSide = pick(ls, ['side', 'position', 'teamType']);
+        const lsRuns = pick(ls, ['runs', 'r', 'score', 'total']);
+        const lsWkts = pick(ls, ['wickets', 'w', 'wkts']);
+        const lsOvers = pick(ls, ['overs', 'o', 'over']);
 
-        if (idA && sid && String(sid) === String(idA)) { scoreA = s; return; }
-        if (idB && sid && String(sid) === String(idB)) { scoreB = s; return; }
-
-        if (sname && name1 && sname.indexOf(name1.toLowerCase()) >= 0) { scoreA = s; return; }
-        if (sname && name2 && sname.indexOf(name2.toLowerCase()) >= 0) { scoreB = s; return; }
-
-        if (idx === 0 && !scoreA) scoreA = s;
-        else if (idx === 1 && !scoreB) scoreB = s;
+        if (lsRuns !== undefined) {
+          /* Match by team id or side */
+          if (lsTeamId && homeTeam.id && String(lsTeamId) === String(homeTeam.id)) {
+            sA = { runs: lsRuns, wkts: lsWkts || 0, overs: String(lsOvers || '') };
+          } else if (lsTeamId && awayTeam.id && String(lsTeamId) === String(awayTeam.id)) {
+            sB = { runs: lsRuns, wkts: lsWkts || 0, overs: String(lsOvers || '') };
+          } else if (lsSide === 'home') {
+            sA = { runs: lsRuns, wkts: lsWkts || 0, overs: String(lsOvers || '') };
+          } else if (lsSide === 'away') {
+            sB = { runs: lsRuns, wkts: lsWkts || 0, overs: String(lsOvers || '') };
+          }
+        }
       });
     }
 
-    if (!scoreA) scoreA = pick(team1, ['score', 'runs', 'total', 'runsScored']);
-    if (!scoreB) scoreB = pick(team2, ['score', 'runs', 'total', 'runsScored']);
-    if (!scoreA) scoreA = pick(raw, ['team1Score', 'homeScore', 'scoreA']);
-    if (!scoreB) scoreB = pick(raw, ['team2Score', 'awayScore', 'scoreB']);
-
-    const sA = parseScore(scoreA);
-    const sB = parseScore(scoreB);
-
     /* ---- Status ---- */
-    const statusText = String(
-      pick(raw, ['status', 'matchStatus', 'state', 'statusText', 'description']) || 'Match yet to begin'
-    );
-    const statusRaw = statusText.toLowerCase();
-
+    const rawStatus = String(raw.status || '').toLowerCase();
     let status = 'upcoming';
-    if (statusRaw.indexOf('live') >= 0 ||
-        statusRaw.indexOf('progress') >= 0 ||
-        statusRaw.indexOf('innings break') >= 0 ||
-        statusRaw.indexOf('rain delay') >= 0 ||
-        statusRaw.indexOf('drinks') >= 0 ||
-        statusRaw.indexOf('tea') >= 0 ||
-        statusRaw.indexOf('lunch') >= 0 ||
-        statusRaw.indexOf('stumps') >= 0) {
+    let statusText = 'Upcoming';
+
+    if (rawStatus === 'live' || rawStatus === 'in_play' || rawStatus === 'inprogress' || rawStatus === 'progress') {
       status = 'live';
-    } else if (statusRaw.indexOf('finished') >= 0 ||
-               statusRaw.indexOf('complete') >= 0 ||
-               statusRaw.indexOf('result') >= 0 ||
-               statusRaw.indexOf('abandon') >= 0 ||
-               statusRaw.indexOf('won') >= 0 ||
-               statusRaw.indexOf('draw') >= 0 ||
-               statusRaw.indexOf('tied') >= 0 ||
-               statusRaw.indexOf('no result') >= 0) {
+      statusText = 'Live';
+    } else if (rawStatus === 'completed' || rawStatus === 'finished' || rawStatus === 'ended' ||
+               rawStatus === 'final' || rawStatus === 'ft' || rawStatus === 'result') {
       status = 'result';
+      statusText = 'Completed';
+    } else if (rawStatus === 'cancelled' || rawStatus === 'cancelled' || rawStatus === 'postponed' ||
+               rawStatus === 'abandoned' || rawStatus === 'suspended') {
+      status = 'result';
+      statusText = raw.status.charAt(0).toUpperCase() + raw.status.substring(1);
     } else {
-      const ended   = pick(raw, ['matchEnded', 'ended', 'isFinished', 'finished', 'isComplete']);
-      const started = pick(raw, ['matchStarted', 'started', 'isLive', 'live', 'inProgress']);
-      if (ended === true) status = 'result';
-      else if (started === true) status = 'live';
+      status = 'upcoming';
+      statusText = 'Upcoming';
     }
 
+    /* ---- League / series ---- */
+    const series = raw.league || 'Cricket Match';
+
     /* ---- Format ---- */
-    const fmtRaw = pick(raw, ['matchType', 'format', 'type', 'gameType']) || 'T20';
-    const fmt = String(fmtRaw).toUpperCase();
-
-    /* ---- Series ---- */
-    const series = pick(raw, ['series', 'seriesName', 'tournament', 'competition', 'league', 'leagueName']) ||
-                   pick(raw, ['name', 'title']) ||
-                   'Cricket Match';
-
-    /* ---- Venue ---- */
-    const venue = pick(raw, ['venue', 'stadium', 'location', 'ground', 'place']) || '';
+    const format = detectFormat(series);
 
     /* ---- Start time ---- */
-    const startTime = pick(raw, ['startTime', 'dateTimeGMT', 'dateTime', 'date', 'startDate', 'startsAt']) || '';
-
-    /* ---- Result string ---- */
-    const result = status === 'result' ? statusText : '';
+    const startTime = raw.kickoff_utc || '';
 
     return {
-      id: String(pick(raw, ['id', '_id', 'matchId', 'eventId', 'fixtureId']) || ''),
+      id: String(raw.id || ''),
       status: status,
       series: series,
-      venue: venue,
-      format: fmt,
-      teamA: { code: codeA, runs: sA.runs, wkts: sA.wkts, overs: sA.overs },
-      teamB: { code: codeB, runs: sB.runs, wkts: sB.wkts, overs: sB.overs },
+      venue: '',  /* Not in BigBalls response */
+      format: format,
+      teamA: {
+        code: codeA,
+        name: name1,
+        runs: sA.runs,
+        wkts: sA.wkts,
+        overs: sA.overs
+      },
+      teamB: {
+        code: codeB,
+        name: name2,
+        runs: sB.runs,
+        wkts: sB.wkts,
+        overs: sB.overs
+      },
       statusText: statusText,
-      result: result,
+      result: status === 'result' ? statusText : '',
       startsIn: status === 'upcoming' ? formatTime(startTime) : '',
+      kickoff: startTime,
       raw: raw
     };
   }
@@ -268,7 +249,7 @@ const BigBallsAPI = (function () {
       const d = new Date(iso);
       const diff = d - Date.now();
       if (isNaN(diff)) return 'TBD';
-      if (diff < 0) return 'Starting soon';
+      if (diff < 0) return 'Started';
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       if (h > 24) return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
@@ -280,7 +261,7 @@ const BigBallsAPI = (function () {
   }
 
   /* ==========================================================
-     FETCH MATCHES (cricket only)
+     FETCH MATCHES
      ========================================================== */
   function fetchMatches(customParams) {
     return new Promise(function (resolve, reject) {
@@ -296,9 +277,8 @@ const BigBallsAPI = (function () {
         return;
       }
 
-      /* Merge params. sport=cricket is always enforced. */
       const params = Object.assign({}, DEFAULT_PARAMS, customParams || {});
-      params.sport = 'cricket'; /* never let it be overwritten */
+      params.sport = 'cricket';
 
       const qs = new URLSearchParams();
       Object.keys(params).forEach(function (k) {
@@ -329,24 +309,20 @@ const BigBallsAPI = (function () {
       .then(function (json) {
         console.log('[BigBalls] Response keys:', Object.keys(json || {}));
 
-        /* Try several possible array locations */
         let arr = null;
         if (Array.isArray(json))              arr = json;
         else if (Array.isArray(json.data))    arr = json.data;
         else if (Array.isArray(json.matches)) arr = json.matches;
-        else if (Array.isArray(json.results)) arr = json.results;
         else if (json && json.data && Array.isArray(json.data.matches)) arr = json.data.matches;
 
         if (!arr) {
-          console.warn('[BigBalls] No array found. Full response shape:');
-          console.warn(JSON.stringify(json).substring(0, 800));
-          reject(new Error('Could not find matches array in response'));
+          console.warn('[BigBalls] No array found:', json);
+          reject(new Error('Could not find matches array'));
           return;
         }
 
         console.log('[BigBalls] Sample raw match:', arr[0]);
 
-        /* Convert. Only cricket matches pass through. */
         const converted = arr
           .map(convertMatch)
           .filter(function (m) { return m && m.id; });
@@ -365,13 +341,10 @@ const BigBallsAPI = (function () {
   }
 
   /* ==========================================================
-     TEST — run BigBallsAPI.test() from console
+     TEST
      ========================================================== */
   function test() {
-    console.log('=== BigBalls API Test (cricket only) ===');
-    console.log('Key:', API_KEY.substring(0, 16) + '...');
-    console.log('URL:', BASE_URL + MATCHES_PATH);
-
+    console.log('=== BigBalls API Test ===');
     cache.data = null;
     cache.time = 0;
 
@@ -381,8 +354,8 @@ const BigBallsAPI = (function () {
         console.table(matches.slice(0, 10).map(function (m) {
           return {
             status: m.status,
-            A: m.teamA.code + ' ' + m.teamA.runs + '/' + m.teamA.wkts,
-            B: m.teamB.code + ' ' + m.teamB.runs + '/' + m.teamB.wkts,
+            A: m.teamA.code + ' ' + (m.teamA.overs ? m.teamA.runs + '/' + m.teamA.wkts : '-'),
+            B: m.teamB.code + ' ' + (m.teamB.overs ? m.teamB.runs + '/' + m.teamB.wkts : '-'),
             format: m.format,
             series: m.series.substring(0, 30)
           };
@@ -402,13 +375,11 @@ const BigBallsAPI = (function () {
     test: test,
     hasApiKey: function () { return !!API_KEY; },
     clearCache: function () { cache = { data: null, time: 0 }; },
-    /* Set a specific league (t20i, odi, test, ipl, etc.) */
     setLeague: function (league) {
       if (league) DEFAULT_PARAMS.league = league;
       else delete DEFAULT_PARAMS.league;
       cache = { data: null, time: 0 };
     },
-    /* Set custom limit */
     setLimit: function (n) {
       DEFAULT_PARAMS.limit = n;
       cache = { data: null, time: 0 };
