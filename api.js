@@ -22,7 +22,7 @@ const BigBallsAPI = (function () {
   let cache = { data: null, time: 0 };
 
   /* ==========================================================
-     TEAM NAME → SHORT CODE (only used when API doesn't provide one)
+     TEAM NAME → SHORT CODE
      ========================================================== */
   function toCode(name) {
     if (!name) return '???';
@@ -47,7 +47,7 @@ const BigBallsAPI = (function () {
     if (n.indexOf('united arab') >= 0 || n === 'uae') return 'UAE';
     if (n.indexOf('namibia')      >= 0) return 'NAM';
     if (n.indexOf('cayman')       >= 0) return 'CAY';
-    if (n.indexOf('bermuda')      >= 0) return 'BER';
+    if (n.indexOf('bermuda')      >= 0) return 'BMUDA';
     if (n.indexOf('canada')       >= 0) return 'CAN';
     if (n.indexOf('usa')          >= 0 || n.indexOf('united states') >= 0) return 'USA';
     if (n.indexOf('hong kong')    >= 0) return 'HK';
@@ -82,7 +82,6 @@ const BigBallsAPI = (function () {
     return undefined;
   }
 
-  /* Parse a score value — can be a number or string like "287/4 (42.3)" */
   function parseScore(s) {
     if (s === null || s === undefined) return { runs: 0, wkts: 0, overs: '' };
 
@@ -110,7 +109,6 @@ const BigBallsAPI = (function () {
     return { runs: 0, wkts: 0, overs: '' };
   }
 
-  /* Detect cricket format from league name */
   function detectFormat(league) {
     if (!league) return 'CRICKET';
     const l = String(league).toUpperCase();
@@ -126,16 +124,14 @@ const BigBallsAPI = (function () {
 
   /* ==========================================================
      CONVERT BigBalls match → internal format
-     Handles the actual schema from BigBalls API
      ========================================================== */
   function convertMatch(raw) {
     if (!raw) return null;
 
-    /* Skip non-cricket matches */
     const sport = String(raw.sport || '').toLowerCase();
     if (sport && sport !== 'cricket') return null;
 
-    /* ---- Teams are `home` and `away` ---- */
+    /* Teams */
     const homeTeam = raw.home || {};
     const awayTeam = raw.away || {};
 
@@ -147,20 +143,13 @@ const BigBallsAPI = (function () {
     const codeA = short1 ? String(short1).toUpperCase() : toCode(name1);
     const codeB = short2 ? String(short2).toUpperCase() : toCode(name2);
 
-    /* ---- Score: raw.score = { home: N, away: N } ---- */
+    /* Score */
     const scoreObj = raw.score || {};
-    let homeScore = scoreObj.home;
-    let awayScore = scoreObj.away;
+    let sA = parseScore(scoreObj.home);
+    let sB = parseScore(scoreObj.away);
 
-    /* If score is a string like "287/4", parse it */
-    let sA = parseScore(homeScore);
-    let sB = parseScore(awayScore);
-
-    /* Try to enrich from linescore if present */
     const linescore = raw.linescore;
     if (linescore) {
-      /* linescore might have detailed innings info */
-      /* Try common field names */
       const linescoreArr = Array.isArray(linescore) ? linescore : [linescore];
       linescoreArr.forEach(function (ls) {
         if (!ls) return;
@@ -171,7 +160,6 @@ const BigBallsAPI = (function () {
         const lsOvers = pick(ls, ['overs', 'o', 'over']);
 
         if (lsRuns !== undefined) {
-          /* Match by team id or side */
           if (lsTeamId && homeTeam.id && String(lsTeamId) === String(homeTeam.id)) {
             sA = { runs: lsRuns, wkts: lsWkts || 0, overs: String(lsOvers || '') };
           } else if (lsTeamId && awayTeam.id && String(lsTeamId) === String(awayTeam.id)) {
@@ -185,7 +173,7 @@ const BigBallsAPI = (function () {
       });
     }
 
-    /* ---- Status ---- */
+    /* ---- Status (FIXED) ---- */
     const rawStatus = String(raw.status || '').toLowerCase();
     let status = 'upcoming';
     let statusText = 'Upcoming';
@@ -197,29 +185,35 @@ const BigBallsAPI = (function () {
                rawStatus === 'final' || rawStatus === 'ft' || rawStatus === 'result') {
       status = 'result';
       statusText = 'Completed';
-    } else if (rawStatus === 'cancelled' || rawStatus === 'cancelled' || rawStatus === 'postponed' ||
+    } else if (rawStatus === 'cancelled' || rawStatus === 'postponed' ||
                rawStatus === 'abandoned' || rawStatus === 'suspended') {
       status = 'result';
-      statusText = raw.status.charAt(0).toUpperCase() + raw.status.substring(1);
-    } else {
-      status = 'upcoming';
-      statusText = 'Upcoming';
+      statusText = rawStatus.charAt(0).toUpperCase() + rawStatus.substring(1);
     }
 
-    /* ---- League / series ---- */
+    /* Auto-detect if status is upcoming but kickoff time has passed */
+    if (status === 'upcoming' && raw.kickoff_utc) {
+      const kickoffTime = new Date(raw.kickoff_utc).getTime();
+      const now = Date.now();
+      if (now > kickoffTime + 2 * 3600 * 1000) {
+        status = 'result';
+        statusText = 'Completed';
+      } else if (now > kickoffTime) {
+        status = 'live';
+        statusText = 'Live';
+      }
+    }
+
+    /* Series / format */
     const series = raw.league || 'Cricket Match';
-
-    /* ---- Format ---- */
     const format = detectFormat(series);
-
-    /* ---- Start time ---- */
     const startTime = raw.kickoff_utc || '';
 
     return {
       id: String(raw.id || ''),
       status: status,
       series: series,
-      venue: '',  /* Not in BigBalls response */
+      venue: '',
       format: format,
       teamA: {
         code: codeA,
