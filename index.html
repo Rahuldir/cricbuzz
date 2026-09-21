@@ -81,6 +81,16 @@
         Add your own streaming links. Click a match to watch. Links saved in your browser.
       </div>
       <div id="streamList"></div>
+          <div class="section">
+      <div class="section-head">
+        <h2>🏏 Live Streams (strmd.link)</h2>
+        <button class="add-stream-btn" onclick="LiveStreams.renderInto('liveStreamsList')">↻ Refresh</button>
+      </div>
+      <div class="info-banner">
+        Auto-updated playlist from strmd.link. Click any card to play in your browser.
+      </div>
+      <div id="liveStreamsList"></div>
+    </div>
     </div>
 
     <div class="section">
@@ -189,7 +199,9 @@
 
 <script src="api.js"></script>
 <script src="i18n.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="app.js"></script>
+  <script src="livestreams.js"></script>
 
 <!-- Streaming UI Controller -->
 <script>
@@ -386,8 +398,12 @@
 
     document.querySelectorAll('.tab, .bnav').forEach(function (el) {
       el.addEventListener('click', function () {
-        if (el.dataset.tab === 'live') {
-          setTimeout(function () { refreshStreamsList(); refreshMatchIdsList(); }, 60);
+                if (el.dataset.tab === 'live') {
+          setTimeout(function () {
+            refreshStreamsList();
+            refreshMatchIdsList();
+            if (typeof LiveStreams !== 'undefined') LiveStreams.renderInto('liveStreamsList');
+          }, 60);
         }
       });
     });
