@@ -1,9 +1,9 @@
 /* ============================================================
-   CRICBUZZ WEB - Mock Data + App Logic
-   ASCII-safe build. No hidden Unicode. No emoji flags.
+   CRICBUZZ WEB - Mock Data + App Logic + Real API + Streaming
+   ASCII-safe build. No hidden Unicode.
    ============================================================ */
 
-/* ---- MOCK DATA -------------------------------------------- */
+/* ---- MOCK DATA (fallback when API unavailable) ------------- */
 const TEAMS = {
   IND: { name: 'India',                 abbr: 'IND', color: '#0a4cff', bg: '#0a4cff' },
   AUS: { name: 'Australia',             abbr: 'AUS', color: '#ffcc00', bg: '#ffcc00' },
@@ -18,45 +18,39 @@ const TEAMS = {
   MI:  { name: 'Mumbai Indians',        abbr: 'MI',  color: '#004ba0', bg: '#004ba0' },
   CSK: { name: 'Chennai Super Kings',   abbr: 'CSK', color: '#f9cd05', bg: '#f9cd05' },
   RCB: { name: 'Royal Challengers',     abbr: 'RCB', color: '#d11a2a', bg: '#d11a2a' },
-  KKR: { name: 'Kolkata Knight Riders', abbr: 'KKR', color: '#3a225d', bg: '#3a225d' }
+  KKR: { name: 'Kolkata Knight Riders', abbr: 'KKR', color: '#3a225d', bg: '#3a225d' },
+  DC:  { name: 'Delhi Capitals',        abbr: 'DC',  color: '#17479e', bg: '#17479e' },
+  SRH: { name: 'Sunrisers Hyderabad',   abbr: 'SRH', color: '#f26522', bg: '#f26522' },
+  RR:  { name: 'Rajasthan Royals',      abbr: 'RR',  color: '#ea1a7f', bg: '#ea1a7f' },
+  PBKS:{ name: 'Punjab Kings',          abbr: 'PBKS',color: '#d71920', bg: '#d71920' },
+  GT:  { name: 'Gujarat Titans',        abbr: 'GT',  color: '#1b2133', bg: '#1b2133' },
+  LSG: { name: 'Lucknow Super Giants',  abbr: 'LSG', color: '#0057e2', bg: '#0057e2' }
 };
 
-const MATCHES = [
+/* ---- MOCK MATCHES (used if API fails) ---------------------- */
+const MOCK_MATCHES = [
   {
-    id: 'm1',
+    id: 'mock-m1',
     status: 'live',
     series: 'World Cup 2026 - Super 8',
     venue: 'Wankhede Stadium, Mumbai',
     format: 'ODI',
     teamA: { code: 'IND', runs: 287, wkts: 4, overs: '42.3' },
     teamB: { code: 'AUS', runs: 0,   wkts: 0, overs: '' },
-    statusText: 'India need 42 runs from 45 balls',
-    lastBall: '4'
+    statusText: 'India need 42 runs from 45 balls'
   },
   {
-    id: 'm2',
+    id: 'mock-m2',
     status: 'live',
     series: 'IPL 2026 - Match 42',
     venue: 'M. Chinnaswamy Stadium, Bengaluru',
     format: 'T20',
     teamA: { code: 'RCB', runs: 178, wkts: 6, overs: '20' },
     teamB: { code: 'CSK', runs: 124, wkts: 4, overs: '14.2' },
-    statusText: 'CSK need 55 runs from 34 balls',
-    lastBall: '6'
+    statusText: 'CSK need 55 runs from 34 balls'
   },
   {
-    id: 'm3',
-    status: 'live',
-    series: 'T20 World Cup - Group B',
-    venue: 'Lords, London',
-    format: 'T20',
-    teamA: { code: 'ENG', runs: 156, wkts: 3, overs: '16.4' },
-    teamB: { code: 'PAK', runs: 155, wkts: 8, overs: '20' },
-    statusText: 'England need 0 runs to win',
-    lastBall: '1'
-  },
-  {
-    id: 'm4',
+    id: 'mock-m3',
     status: 'upcoming',
     series: 'Border-Gavaskar Trophy',
     venue: 'MCG, Melbourne',
@@ -66,27 +60,7 @@ const MATCHES = [
     startsIn: '2h 15m'
   },
   {
-    id: 'm5',
-    status: 'upcoming',
-    series: 'Tri-Series Final',
-    venue: 'Newlands, Cape Town',
-    format: 'ODI',
-    teamA: { code: 'SA' },
-    teamB: { code: 'NZ' },
-    startsIn: 'Tomorrow - 6:30 PM'
-  },
-  {
-    id: 'm6',
-    status: 'upcoming',
-    series: 'Asia Cup',
-    venue: 'R. Premadasa, Colombo',
-    format: 'T20',
-    teamA: { code: 'SL' },
-    teamB: { code: 'BAN' },
-    startsIn: 'Sat - 2:00 PM'
-  },
-  {
-    id: 'm7',
+    id: 'mock-m4',
     status: 'result',
     series: 'World Cup 2026 - Super 8',
     venue: 'Eden Gardens, Kolkata',
@@ -94,67 +68,49 @@ const MATCHES = [
     teamA: { code: 'WI', runs: 245, wkts: 9, overs: '50' },
     teamB: { code: 'NZ', runs: 246, wkts: 5, overs: '47.2' },
     result: 'New Zealand won by 5 wickets'
-  },
-  {
-    id: 'm8',
-    status: 'result',
-    series: 'IPL 2026 - Match 41',
-    venue: 'Chepauk, Chennai',
-    format: 'T20',
-    teamA: { code: 'MI', runs: 189, wkts: 4, overs: '20' },
-    teamB: { code: 'KKR', runs: 172, wkts: 8, overs: '20' },
-    result: 'Mumbai Indians won by 17 runs'
   }
 ];
 
-const SERIES = [
-  { name: 'ICC World Cup 2026', host: 'India', matches: 48, ongoing: true, teams: ['IND','AUS','ENG','PAK','SA','NZ'] },
-  { name: 'Indian Premier League 2026', host: 'India', matches: 74, ongoing: true, teams: ['MI','CSK','RCB','KKR'] },
-  { name: 'Border-Gavaskar Trophy', host: 'Australia', matches: 5, ongoing: false, teams: ['AUS','IND'] },
-  { name: 'T20 World Cup 2026', host: 'England', matches: 45, ongoing: true, teams: ['ENG','PAK','SA','NZ'] },
-  { name: 'Asia Cup 2026', host: 'Sri Lanka', matches: 15, ongoing: false, teams: ['SL','BAN','PAK','IND','AFG'] }
+/* ============================================================
+   LIVE STREAMING CONFIG
+   Add your streaming links here. Each entry:
+     matchId    - id of the match (from API or mock)
+     platform   - display name
+     url        - stream URL (direct video or embed URL)
+     embed      - true = iframe in modal, false = open in new tab
+   ============================================================ */
+const STREAMS = [
+  /* EXAMPLE — replace with your real links */
+  {
+    matchId: 'mock-m1',
+    platform: 'Star Sports / Hotstar',
+    url: 'https://www.hotstar.com/sports/cricket',
+    embed: false
+  },
+  {
+    matchId: 'mock-m1',
+    platform: 'Sky Sports Cricket',
+    url: 'https://www.skysports.com/cricket',
+    embed: false
+  },
+  {
+    matchId: 'mock-m2',
+    platform: 'JioCinema',
+    url: 'https://www.jiocinema.com/sports',
+    embed: false
+  },
+  {
+    matchId: 'mock-m3',
+    platform: 'SonyLIV',
+    url: 'https://www.sonyliv.com/sports',
+    embed: false
+  }
 ];
 
-const RANKINGS = {
-  batting: [
-    { pos: 1, name: 'Babar Azam',      team: 'PAK', rating: 892 },
-    { pos: 2, name: 'Virat Kohli',     team: 'IND', rating: 875 },
-    { pos: 3, name: 'Steve Smith',     team: 'AUS', rating: 863 },
-    { pos: 4, name: 'Joe Root',        team: 'ENG', rating: 845 },
-    { pos: 5, name: 'Kane Williamson', team: 'NZ',  rating: 831 }
-  ],
-  bowling: [
-    { pos: 1, name: 'Jasprit Bumrah', team: 'IND', rating: 905 },
-    { pos: 2, name: 'Shaheen Afridi', team: 'PAK', rating: 872 },
-    { pos: 3, name: 'Pat Cummins',    team: 'AUS', rating: 858 },
-    { pos: 4, name: 'Trent Boult',    team: 'NZ',  rating: 840 },
-    { pos: 5, name: 'Kagiso Rabada',  team: 'SA',  rating: 828 }
-  ],
-  allround: [
-    { pos: 1, name: 'Shakib Al Hasan',  team: 'BAN', rating: 410 },
-    { pos: 2, name: 'Ravindra Jadeja',  team: 'IND', rating: 395 },
-    { pos: 3, name: 'Ben Stokes',       team: 'ENG', rating: 380 },
-    { pos: 4, name: 'Marcus Stoinis',   team: 'AUS', rating: 362 },
-    { pos: 5, name: 'Mitchell Santner', team: 'NZ',  rating: 348 }
-  ],
-  teams: [
-    { pos: 1, name: 'India',        team: 'IND', rating: 121 },
-    { pos: 2, name: 'Australia',    team: 'AUS', rating: 118 },
-    { pos: 3, name: 'England',      team: 'ENG', rating: 112 },
-    { pos: 4, name: 'Pakistan',     team: 'PAK', rating: 108 },
-    { pos: 5, name: 'South Africa', team: 'SA',  rating: 105 }
-  ]
-};
+/* ---- RUNTIME STATE ---------------------------------------- */
+let MATCHES = [];       /* filled by API or mock */
+let usingLiveApi = false;
 
-const NEWS = [
-  { tag: 'WC', title: 'India storm into semifinals with dominant win over Australia', meta: '2 hours ago - World Cup', excerpt: 'Kohlis masterclass and Bumrahs four-wicket haul seal a memorable victory at Wankhede.' },
-  { tag: 'REC', title: 'Bumrah becomes fastest Indian to 300 ODI wickets', meta: '5 hours ago - Records', excerpt: 'The pace spearhead reached the milestone in just his 189th match.' },
-  { tag: 'IPL', title: 'IPL 2026: RCB clinch thriller against CSK in last over', meta: '1 day ago - IPL', excerpt: 'A last-ball six from Maxwell sealed one of the best chases of the season.' },
-  { tag: 'INJ', title: 'Shaheen Afridi ruled out of Asia Cup with knee injury', meta: '1 day ago - Injury', excerpt: 'Pakistan will miss their premier fast bowler for the upcoming tournament.' },
-  { tag: 'ICC', title: 'Sachin Tendulkar inducted into ICC Hall of Fame', meta: '2 days ago - ICC', excerpt: 'The Little Master joins an elite list of cricketing legends.' }
-];
-
-/* ---- HELPERS ---------------------------------------------- */
 const $  = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -162,7 +118,6 @@ function team(code) {
   return TEAMS[code] || { name: code, abbr: code, color: '#444444', bg: '#444444' };
 }
 
-/* Badge HTML - colored letter mark instead of emoji flag */
 function badge(code, size) {
   const t = team(code);
   const fs = size === 'sm' ? '10px' : '11px';
@@ -182,10 +137,20 @@ function isLight(hex) {
   return (r * 0.299 + g * 0.587 + b * 0.114) > 180;
 }
 
-/* ---- RENDER: FEATURED MATCH ------------------------------- */
+/* ---- Get streams for a match ------------------------------ */
+function getStreamsFor(matchId) {
+  return STREAMS.filter(function (s) { return s.matchId === matchId; });
+}
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+
+/* ---- FEATURED MATCH --------------------------------------- */
 function renderFeatured() {
-  const m = MATCHES.find(x => x.status === 'live');
+  const m = MATCHES.find(function (x) { return x.status === 'live'; });
   const el = $('#featuredMatch');
+  if (!el) return;
   if (!m) {
     el.innerHTML = '<div style="color:var(--muted);padding:20px;">No live match right now</div>';
     return;
@@ -222,20 +187,30 @@ function renderFeatured() {
   el.onclick = function () { openMatch(m.id); };
 }
 
-/* ---- RENDER: LIVE STRIP ----------------------------------- */
+/* ---- LIVE MATCHES ----------------------------------------- */
 function renderLive() {
-  const live = MATCHES.filter(m => m.status === 'live');
+  const live = MATCHES.filter(function (m) { return m.status === 'live'; });
   const el = $('#liveMatches');
+  if (!el) return;
+
+  if (live.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No live matches</div>';
+    return;
+  }
+
   el.innerHTML = live.map(function (m) {
     const A = team(m.teamA.code);
     const B = team(m.teamB.code);
     const aScore = m.teamA.runs + '/' + m.teamA.wkts;
     const bScore = m.teamB.overs ? (m.teamB.runs + '/' + m.teamB.wkts) : '-';
-    const seriesShort = m.series.split(' - ')[0];
+    const streams = getStreamsFor(m.id);
+    const watchBtn = streams.length > 0
+      ? '<div class="match-card-watch">WATCH LIVE</div>'
+      : '';
 
     return '<div class="match-card" onclick="openMatch(\'' + m.id + '\')">'
       + '<div class="match-card-live">LIVE</div>'
-      + '<div class="match-card-info">' + m.format + ' - ' + seriesShort + '</div>'
+      + '<div class="match-card-info">' + m.format + ' - ' + (m.series || '').substring(0, 30) + '</div>'
       + '<div class="match-card-team">'
         + badge(m.teamA.code, 'sm')
         + '<span class="mc-team-name">' + A.abbr + '</span>'
@@ -247,46 +222,49 @@ function renderLive() {
         + '<span class="mc-team-score">' + bScore + '</span>'
       + '</div>'
       + '<div class="match-card-status">' + m.statusText + '</div>'
+      + watchBtn
     + '</div>';
   }).join('');
 }
 
-/* ---- RENDER: UPCOMING ------------------------------------- */
+/* ---- UPCOMING --------------------------------------------- */
 function renderUpcoming() {
-  const up = MATCHES.filter(m => m.status === 'upcoming');
+  const up = MATCHES.filter(function (m) { return m.status === 'upcoming'; });
   const el = $('#upcomingMatches');
+  if (!el) return;
+  if (up.length === 0) { el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No upcoming matches</div>'; return; }
+
   el.innerHTML = up.map(function (m) {
     const A = team(m.teamA.code);
     const B = team(m.teamB.code);
     return '<div class="match-row" onclick="openMatch(\'' + m.id + '\')">'
       + '<div class="match-row-head">'
         + '<span class="match-row-series">' + m.series + '</span>'
-        + '<span class="match-row-status">' + m.startsIn + '</span>'
+        + '<span class="match-row-status">' + (m.startsIn || 'TBD') + '</span>'
       + '</div>'
       + '<div class="match-row-teams">'
-        + '<div class="mr-team">'
-          + '<div class="mr-team-left">' + badge(m.teamA.code) + '<span class="mr-team-name">' + A.name + '</span></div>'
-        + '</div>'
-        + '<div class="mr-team">'
-          + '<div class="mr-team-left">' + badge(m.teamB.code) + '<span class="mr-team-name">' + B.name + '</span></div>'
-        + '</div>'
+        + '<div class="mr-team"><div class="mr-team-left">' + badge(m.teamA.code) + '<span class="mr-team-name">' + A.name + '</span></div></div>'
+        + '<div class="mr-team"><div class="mr-team-left">' + badge(m.teamB.code) + '<span class="mr-team-name">' + B.name + '</span></div></div>'
       + '</div>'
     + '</div>';
   }).join('');
 }
 
-/* ---- RENDER: RECENT RESULTS ------------------------------- */
+/* ---- RECENT RESULTS --------------------------------------- */
 function renderRecent() {
-  const res = MATCHES.filter(m => m.status === 'result');
+  const res = MATCHES.filter(function (m) { return m.status === 'result'; });
   const el = $('#recentMatches');
+  if (!el) return;
+  if (res.length === 0) { el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">No results yet</div>'; return; }
+
   el.innerHTML = res.map(function (m) {
     const A = team(m.teamA.code);
     const B = team(m.teamB.code);
-    const bWon = m.result.indexOf(B.name) >= 0;
+    const bWon = (m.result || m.statusText || '').toLowerCase().indexOf(B.name.toLowerCase()) >= 0;
     const aClass = bWon ? 'loss' : 'win';
     const bClass = bWon ? 'win' : 'loss';
     const aScore = m.teamA.runs + '/' + m.teamA.wkts;
-    const bScore = m.teamB.runs + '/' + m.teamB.wkts;
+    const bScore = m.teamB.overs ? (m.teamB.runs + '/' + m.teamB.wkts) : '-';
 
     return '<div class="match-row" onclick="openMatch(\'' + m.id + '\')">'
       + '<div class="match-row-head">'
@@ -303,15 +281,85 @@ function renderRecent() {
           + '<span class="mr-team-score ' + bClass + '">' + bScore + '</span>'
         + '</div>'
       + '</div>'
-      + '<div class="match-row-result">' + m.result + '</div>'
+      + '<div class="match-row-result">' + (m.result || m.statusText) + '</div>'
     + '</div>';
   }).join('');
 }
 
-/* ---- RENDER: SERIES --------------------------------------- */
+/* ---- LIVE STREAMING TAB ----------------------------------- */
+function renderStreamingTab() {
+  const el = $('#streamList');
+  if (!el) return;
+
+  /* Group streams by match */
+  const byMatch = {};
+  STREAMS.forEach(function (s) {
+    if (!byMatch[s.matchId]) byMatch[s.matchId] = [];
+    byMatch[s.matchId].push(s);
+  });
+
+  const matchIds = Object.keys(byMatch);
+  if (matchIds.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No streams configured yet.<br>Add links to the STREAMS array in app.js</div>';
+    return;
+  }
+
+  el.innerHTML = matchIds.map(function (mid) {
+    const m = MATCHES.find(function (x) { return x.id === mid; });
+    if (!m) return '';
+    const A = team(m.teamA.code);
+    const B = team(m.teamB.code);
+    const streams = byMatch[mid];
+
+    const streamButtons = streams.map(function (s, i) {
+      return '<button class="stream-btn" onclick="playStream(\'' + mid + '\',' + i + ')">'
+        + '&#9654; ' + s.platform
+        + '</button>';
+    }).join('');
+
+    return '<div class="stream-card">'
+      + '<div class="stream-match-head">'
+        + badge(m.teamA.code)
+        + '<div class="stream-match-title">'
+          + '<div style="font-weight:800;font-size:13px;">' + A.abbr + ' vs ' + B.abbr + '</div>'
+          + '<div style="font-size:11px;color:var(--muted);">' + m.series + '</div>'
+        + '</div>'
+        + (m.status === 'live' ? '<span class="live-pill">LIVE</span>' : '')
+      + '</div>'
+      + '<div class="stream-buttons">' + streamButtons + '</div>'
+    + '</div>';
+  }).join('');
+}
+
+/* ---- PLAY STREAM ------------------------------------------ */
+function playStream(matchId, streamIdx) {
+  const streams = getStreamsFor(matchId);
+  const s = streams[streamIdx];
+  if (!s) return;
+
+  if (s.embed) {
+    /* Show in modal iframe */
+    $('#modalBody').innerHTML =
+      '<div style="font-size:14px;font-weight:800;margin-bottom:12px;">' + s.platform + '</div>'
+      + '<div class="stream-frame-wrap">'
+        + '<iframe src="' + s.url + '" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>'
+      + '</div>';
+    $('#matchModal').classList.add('open');
+  } else {
+    /* Open in new tab */
+    window.open(s.url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+/* ---- SERIES / TEAMS / RANKINGS / NEWS (unchanged) -------- */
 function renderSeries() {
-  const ongoing = SERIES.filter(s => s.ongoing);
-  const upcoming = SERIES.filter(s => !s.ongoing);
+  const SERIES = [
+    { name: 'ICC World Cup 2026', host: 'India', matches: 48, ongoing: true, teams: ['IND','AUS','ENG','PAK','SA','NZ'] },
+    { name: 'Indian Premier League 2026', host: 'India', matches: 74, ongoing: true, teams: ['MI','CSK','RCB','KKR'] },
+    { name: 'Border-Gavaskar Trophy', host: 'Australia', matches: 5, ongoing: false, teams: ['AUS','IND'] },
+    { name: 'T20 World Cup 2026', host: 'England', matches: 45, ongoing: true, teams: ['ENG','PAK','SA','NZ'] },
+    { name: 'Asia Cup 2026', host: 'Sri Lanka', matches: 15, ongoing: false, teams: ['SL','BAN','PAK','IND','AFG'] }
+  ];
 
   function renderList(list) {
     return list.map(function (s) {
@@ -330,13 +378,13 @@ function renderSeries() {
     }).join('');
   }
 
-  $('#ongoingSeries').innerHTML = renderList(ongoing);
-  $('#upcomingSeries').innerHTML = renderList(upcoming);
+  const o = $('#ongoingSeries'); if (o) o.innerHTML = renderList(SERIES.filter(function (s) { return s.ongoing; }));
+  const u = $('#upcomingSeries'); if (u) u.innerHTML = renderList(SERIES.filter(function (s) { return !s.ongoing; }));
 }
 
-/* ---- RENDER: TEAMS ---------------------------------------- */
 function renderTeams() {
   const el = $('#teamsGrid');
+  if (!el) return;
   el.innerHTML = Object.keys(TEAMS).map(function (code) {
     const t = TEAMS[code];
     return '<div class="team-tile">'
@@ -347,38 +395,66 @@ function renderTeams() {
   }).join('');
 }
 
-/* ---- RENDER: RANKINGS ------------------------------------- */
 function renderRankings(cat) {
+  const RANKINGS = {
+    batting: [
+      { pos: 1, name: 'Babar Azam',      team: 'PAK', rating: 892 },
+      { pos: 2, name: 'Virat Kohli',     team: 'IND', rating: 875 },
+      { pos: 3, name: 'Steve Smith',     team: 'AUS', rating: 863 },
+      { pos: 4, name: 'Joe Root',        team: 'ENG', rating: 845 },
+      { pos: 5, name: 'Kane Williamson', team: 'NZ',  rating: 831 }
+    ],
+    bowling: [
+      { pos: 1, name: 'Jasprit Bumrah', team: 'IND', rating: 905 },
+      { pos: 2, name: 'Shaheen Afridi', team: 'PAK', rating: 872 },
+      { pos: 3, name: 'Pat Cummins',    team: 'AUS', rating: 858 },
+      { pos: 4, name: 'Trent Boult',    team: 'NZ',  rating: 840 },
+      { pos: 5, name: 'Kagiso Rabada',  team: 'SA',  rating: 828 }
+    ],
+    allround: [
+      { pos: 1, name: 'Shakib Al Hasan',  team: 'BAN', rating: 410 },
+      { pos: 2, name: 'Ravindra Jadeja',  team: 'IND', rating: 395 },
+      { pos: 3, name: 'Ben Stokes',       team: 'ENG', rating: 380 },
+      { pos: 4, name: 'Marcus Stoinis',   team: 'AUS', rating: 362 },
+      { pos: 5, name: 'Mitchell Santner', team: 'NZ',  rating: 348 }
+    ],
+    teams: [
+      { pos: 1, name: 'India',        team: 'IND', rating: 121 },
+      { pos: 2, name: 'Australia',    team: 'AUS', rating: 118 },
+      { pos: 3, name: 'England',      team: 'ENG', rating: 112 },
+      { pos: 4, name: 'Pakistan',     team: 'PAK', rating: 108 },
+      { pos: 5, name: 'South Africa', team: 'SA',  rating: 105 }
+    ]
+  };
+
   const rows = RANKINGS[cat] || [];
   const isTeam = cat === 'teams';
-  const metric = (cat === 'batting' || cat === 'bowling' || cat === 'allround') ? 'Rating' : 'Points';
+  const metric = isTeam ? 'Points' : 'Rating';
 
-  let html = '<table class="rank-table">'
-    + '<thead><tr>'
-      + '<th>#</th>'
-      + '<th>' + (isTeam ? 'Team' : 'Player') + '</th>'
-      + '<th style="text-align:right;">' + metric + '</th>'
-    + '</tr></thead>'
-    + '<tbody>';
-
+  let html = '<table class="rank-table"><thead><tr><th>#</th><th>' + (isTeam ? 'Team' : 'Player') + '</th><th style="text-align:right;">' + metric + '</th></tr></thead><tbody>';
   rows.forEach(function (r) {
     html += '<tr>'
       + '<td class="pos">' + r.pos + '</td>'
-      + '<td class="name">'
-        + badge(r.team, 'sm')
-        + '<span>' + r.name + '</span>'
-      + '</td>'
+      + '<td class="name">' + badge(r.team, 'sm') + '<span>' + r.name + '</span></td>'
       + '<td class="stat">' + r.rating + '</td>'
     + '</tr>';
   });
-
   html += '</tbody></table>';
-  $('#rankingsTable').innerHTML = html;
+  const el = $('#rankingsTable');
+  if (el) el.innerHTML = html;
 }
 
-/* ---- RENDER: NEWS ----------------------------------------- */
 function renderNews() {
-  $('#newsList').innerHTML = NEWS.map(function (n) {
+  const NEWS = [
+    { tag: 'WC',  title: 'India storm into semifinals with dominant win over Australia', meta: '2 hours ago - World Cup', excerpt: 'Kohlis masterclass and Bumrahs four-wicket haul seal a memorable victory at Wankhede.' },
+    { tag: 'REC', title: 'Bumrah becomes fastest Indian to 300 ODI wickets', meta: '5 hours ago - Records', excerpt: 'The pace spearhead reached the milestone in just his 189th match.' },
+    { tag: 'IPL', title: 'IPL 2026: RCB clinch thriller against CSK in last over', meta: '1 day ago - IPL', excerpt: 'A last-ball six from Maxwell sealed one of the best chases of the season.' },
+    { tag: 'INJ', title: 'Shaheen Afridi ruled out of Asia Cup with knee injury', meta: '1 day ago - Injury', excerpt: 'Pakistan will miss their premier fast bowler for the upcoming tournament.' },
+    { tag: 'ICC', title: 'Sachin Tendulkar inducted into ICC Hall of Fame', meta: '2 days ago - ICC', excerpt: 'The Little Master joins an elite list of cricketing legends.' }
+  ];
+  const el = $('#newsList');
+  if (!el) return;
+  el.innerHTML = NEWS.map(function (n) {
     return '<div class="news-item">'
       + '<div class="news-thumb">' + n.tag + '</div>'
       + '<div class="news-body">'
@@ -390,9 +466,9 @@ function renderNews() {
   }).join('');
 }
 
-/* ---- MATCH MODAL ------------------------------------------ */
+/* ---- MATCH MODAL (with streaming buttons) ----------------- */
 function openMatch(id) {
-  const m = MATCHES.find(x => x.id === id);
+  const m = MATCHES.find(function (x) { return x.id === id; });
   if (!m) return;
   const A = team(m.teamA.code);
   const B = team(m.teamB.code);
@@ -405,15 +481,27 @@ function openMatch(id) {
   if (m.status === 'live') {
     statusHtml = '<div style="color:var(--orange);font-weight:800;font-size:13px;margin-bottom:16px;">LIVE - ' + m.statusText + '</div>';
   } else if (m.status === 'result') {
-    statusHtml = '<div style="color:var(--accent);font-weight:800;font-size:13px;margin-bottom:16px;">RESULT - ' + m.result + '</div>';
-  } else if (m.status === 'upcoming') {
-    statusHtml = '<div style="color:var(--cyan);font-weight:800;font-size:13px;margin-bottom:16px;">Starts in ' + m.startsIn + '</div>';
+    statusHtml = '<div style="color:var(--accent);font-weight:800;font-size:13px;margin-bottom:16px;">RESULT - ' + (m.result || m.statusText) + '</div>';
+  } else {
+    statusHtml = '<div style="color:var(--cyan);font-weight:800;font-size:13px;margin-bottom:16px;">Starts in ' + (m.startsIn || 'TBD') + '</div>';
+  }
+
+  /* Streaming buttons */
+  const streams = getStreamsFor(m.id);
+  let streamHtml = '';
+  if (streams.length > 0) {
+    streamHtml = '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">'
+      + '<div style="font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">Watch Live On</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px;">'
+      + streams.map(function (s, i) {
+          return '<button class="stream-btn" onclick="playStream(\'' + m.id + '\',' + i + ')">&#9654; ' + s.platform + '</button>';
+        }).join('')
+      + '</div></div>';
   }
 
   $('#modalBody').innerHTML =
     '<div style="font-size:11px;font-weight:900;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">' + m.series + '</div>'
     + '<div style="font-size:13px;color:var(--muted);font-weight:700;margin-bottom:20px;">' + m.venue + ' - ' + m.format + '</div>'
-
     + '<div style="background:var(--card-2);border-radius:12px;padding:18px;margin-bottom:16px;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">'
         + '<div style="display:flex;align-items:center;gap:10px;">' + badge(m.teamA.code) + '<span style="font-size:15px;font-weight:800;">' + A.name + '</span></div>'
@@ -424,23 +512,11 @@ function openMatch(id) {
         + '<span style="font-size:18px;font-weight:900;">' + scoreStr(m.teamB) + '</span>'
       + '</div>'
     + '</div>'
-
     + statusHtml
-
-    + '<div style="font-size:11px;color:var(--muted);font-weight:700;text-align:center;padding-top:14px;border-top:1px solid var(--border);">'
-      + 'Full scorecard coming soon - Live commentary - Ball-by-ball updates'
-    + '</div>';
+    + streamHtml;
 
   $('#matchModal').classList.add('open');
 }
-
-/* ---- MODAL CLOSE ------------------------------------------ */
-document.addEventListener('DOMContentLoaded', function () {
-  const closeBtn = document.getElementById('modalClose');
-  const modal = document.getElementById('matchModal');
-  if (closeBtn) closeBtn.onclick = function () { modal.classList.remove('open'); };
-  if (modal) modal.onclick = function (e) { if (e.target.id === 'matchModal') modal.classList.remove('open'); };
-});
 
 /* ---- TAB SWITCHING ---------------------------------------- */
 function switchTab(name) {
@@ -452,12 +528,57 @@ function switchTab(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-/* ---- BIND TAB EVENTS -------------------------------------- */
+/* ---- LOAD MATCHES (API or fallback) ----------------------- */
+function loadMatches() {
+  /* Show loading state */
+  const el = $('#liveMatches');
+  if (el) el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">Loading live matches...</div>';
+
+  if (typeof CricAPI !== 'undefined' && CricAPI.hasApiKey()) {
+    CricAPI.fetchMatches()
+      .then(function (matches) {
+        if (matches.length === 0) throw new Error('API returned 0 matches');
+        MATCHES = matches;
+        usingLiveApi = true;
+        console.log('[Cricbuzz] Loaded', matches.length, 'real matches from CricAPI');
+        refreshAll();
+      })
+      .catch(function (err) {
+        console.warn('[Cricbuzz] API failed, using mock data:', err.message);
+        MATCHES = MOCK_MATCHES.slice();
+        usingLiveApi = false;
+        refreshAll();
+      });
+  } else {
+    console.info('[Cricbuzz] No API key set - using mock data');
+    MATCHES = MOCK_MATCHES.slice();
+    usingLiveApi = false;
+    refreshAll();
+  }
+}
+
+function refreshAll() {
+  renderFeatured();
+  renderLive();
+  renderUpcoming();
+  renderRecent();
+  renderStreamingTab();
+}
+
+/* ---- BOOT ------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', function () {
+  /* Modal close */
+  const closeBtn = document.getElementById('modalClose');
+  const modal = document.getElementById('matchModal');
+  if (closeBtn) closeBtn.onclick = function () { modal.classList.remove('open'); };
+  if (modal) modal.onclick = function (e) { if (e.target.id === 'matchModal') modal.classList.remove('open'); };
+
+  /* Tabs */
   $$('.tab, .bnav').forEach(function (el) {
     el.onclick = function () { switchTab(el.dataset.tab); };
   });
 
+  /* Rankings sub-tabs */
   $$('.rank-tab').forEach(function (el) {
     el.onclick = function () {
       $$('.rank-tab').forEach(function (t) { t.classList.remove('active'); });
@@ -465,15 +586,12 @@ document.addEventListener('DOMContentLoaded', function () {
       renderRankings(el.dataset.rank);
     };
   });
-});
 
-/* ---- THEME TOGGLE ----------------------------------------- */
-document.addEventListener('DOMContentLoaded', function () {
+  /* Theme */
   const themeBtn = document.getElementById('themeBtn');
   const savedTheme = localStorage.getItem('cb_theme') || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
   if (themeBtn) themeBtn.textContent = savedTheme === 'dark' ? 'Dark' : 'Light';
-
   if (themeBtn) {
     themeBtn.onclick = function () {
       const cur = document.documentElement.getAttribute('data-theme');
@@ -483,35 +601,25 @@ document.addEventListener('DOMContentLoaded', function () {
       themeBtn.textContent = next === 'dark' ? 'Dark' : 'Light';
     };
   }
-});
 
-/* ---- SEARCH ----------------------------------------------- */
-document.addEventListener('DOMContentLoaded', function () {
-  const searchInput = document.getElementById('searchInput');
-  if (!searchInput) return;
-  searchInput.addEventListener('input', function (e) {
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) return;
-    const hits = MATCHES.filter(function (m) {
-      return m.series.toLowerCase().indexOf(q) >= 0
-        || m.teamA.code.toLowerCase().indexOf(q) >= 0
-        || m.teamB.code.toLowerCase().indexOf(q) >= 0
-        || team(m.teamA.code).name.toLowerCase().indexOf(q) >= 0
-        || team(m.teamB.code).name.toLowerCase().indexOf(q) >= 0;
-    });
-    console.log('[Search]', q, '-', hits.length, 'matches');
-  });
-});
-
-/* ---- BOOT ------------------------------------------------- */
-document.addEventListener('DOMContentLoaded', function () {
-  renderFeatured();
-  renderLive();
-  renderUpcoming();
-  renderRecent();
+  /* Static sections */
   renderSeries();
   renderTeams();
   renderRankings('batting');
   renderNews();
+
+  /* Live matches (API or mock) */
+  loadMatches();
+
+  /* Auto-refresh every 90 seconds */
+  setInterval(function () {
+    if (usingLiveApi) {
+      CricAPI.fetchMatches().then(function (m) {
+        MATCHES = m;
+        refreshAll();
+      }).catch(function () {});
+    }
+  }, 90000);
+
   console.log('[Cricbuzz] App booted successfully');
 });
