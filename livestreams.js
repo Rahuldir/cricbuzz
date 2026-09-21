@@ -1,7 +1,5 @@
 /* ============================================================
    CRICBUZZ WEB - Live Streams from strmd.link m3u playlist
-   Reads: https://raw.githubusercontent.com/Rahuldir/livetv.m3u/main/livematches.m3u
-   Plays: .m3u8 HLS streams via hls.js
    ============================================================ */
 
 const LiveStreams = (function () {
@@ -14,9 +12,6 @@ const LiveStreams = (function () {
   let lastFetch = 0;
   let hlsInstance = null;
 
-  /* ==========================================================
-     PARSE M3U PLAYLIST
-     ========================================================== */
   function parseM3U(text) {
     const lines = text.split(/\r?\n/);
     const result = [];
@@ -49,7 +44,6 @@ const LiveStreams = (function () {
         continue;
       } else if (current) {
         current.url = line;
-        /* Validate URL */
         if (line.indexOf('http') === 0) {
           result.push(current);
         }
@@ -60,9 +54,6 @@ const LiveStreams = (function () {
     return result;
   }
 
-  /* ==========================================================
-     FETCH PLAYLIST
-     ========================================================== */
   function fetchStreams(force) {
     if (!force && allStreams.length > 0 && (Date.now() - lastFetch) < CACHE_MS) {
       return Promise.resolve(allStreams);
@@ -87,9 +78,6 @@ const LiveStreams = (function () {
       });
   }
 
-  /* ==========================================================
-     RENDER LIST
-     ========================================================== */
   function renderInto(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -107,7 +95,6 @@ const LiveStreams = (function () {
         return;
       }
 
-      /* Group by category */
       const groups = {};
       streams.forEach(function (s) {
         const g = s.group || 'Other';
@@ -115,7 +102,6 @@ const LiveStreams = (function () {
         groups[g].push(s);
       });
 
-      /* Cricket first, then everything else */
       const groupNames = Object.keys(groups).sort(function (a, b) {
         const aIsCricket = /cricket/i.test(a);
         const bIsCricket = /cricket/i.test(b);
@@ -125,7 +111,6 @@ const LiveStreams = (function () {
       });
 
       let html = '';
-      let globalIdx = 0;
 
       groupNames.forEach(function (gName) {
         const list = groups[gName];
@@ -173,16 +158,12 @@ const LiveStreams = (function () {
     });
   }
 
-  /* ==========================================================
-     PLAY STREAM — HLS.js for .m3u8, native for others
-     ========================================================== */
   function play(idx) {
     const s = allStreams[idx];
     if (!s) return;
 
     console.log('[LiveStreams] Playing:', s.name, s.url);
 
-    /* Ensure modal exists */
     let modal = document.getElementById('playerModal');
     if (!modal) {
       modal = document.createElement('div');
@@ -213,7 +194,6 @@ const LiveStreams = (function () {
 
     const video = document.getElementById('playerVideo');
 
-    /* Destroy previous hls instance */
     if (hlsInstance) {
       try { hlsInstance.destroy(); } catch (e) {}
       hlsInstance = null;
@@ -222,14 +202,11 @@ const LiveStreams = (function () {
     video.removeAttribute('src');
     video.load();
 
-    /* Show modal first */
     modal.classList.add('open');
 
-    /* Choose player strategy */
     const isM3U8 = /\.m3u8(\?|$)/i.test(s.url);
 
     if (isM3U8) {
-      /* Use hls.js */
       if (window.Hls && window.Hls.isSupported()) {
         hlsInstance = new window.Hls({
           enableWorker: true,
@@ -247,29 +224,26 @@ const LiveStreams = (function () {
         hlsInstance.on(window.Hls.Events.ERROR, function (e, data) {
           if (data.fatal) {
             console.warn('[LiveStreams] HLS error:', data.type, data.details);
-            /* Try recovery */
             if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
               hlsInstance.startLoad();
             } else if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
               hlsInstance.recoverMediaError();
             } else {
               hlsInstance.destroy();
-              showError(video, 'Playback failed — try another stream or open in new tab');
+              showError(video, 'Playback failed - try another stream');
             }
           }
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        /* Native HLS (Safari / iOS) */
         video.src = s.url;
         video.play().catch(function () {});
       } else {
         showError(video, 'HLS not supported in this browser');
       }
     } else {
-      /* Direct MP4 or other format */
       video.src = s.url;
       video.play().catch(function () {
-        showError(video, 'Autoplay blocked — click play to start');
+        showError(video, 'Autoplay blocked - click play to start');
       });
     }
   }
@@ -302,14 +276,10 @@ const LiveStreams = (function () {
       hlsInstance = null;
     }
 
-    /* Remove any error overlay */
     const err = document.querySelector('.player-error');
     if (err) err.remove();
   }
 
-  /* ==========================================================
-     PUBLIC API
-     ========================================================== */
   return {
     fetchStreams: fetchStreams,
     renderInto: renderInto,
