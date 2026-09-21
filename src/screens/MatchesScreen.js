@@ -82,9 +82,13 @@ export default function MatchesScreen({ onBack }) {
 
       {/* 1. Header Bar Matching Screenshots 2 & 3 */}
       <View style={styles.topHeaderBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={28} color="#000000" />
-        </TouchableOpacity>
+        {onBack ? (
+          <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={28} color="#000000" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
+        )}
 
         <Text style={styles.headerTitle}>Live Score</Text>
 

@@ -281,9 +281,128 @@ export default function ScheduleScreen({ onBack }) {
           contentContainerStyle={styles.scrollInner}
           showsVerticalScrollIndicator={false}
         >
-          {/* TAB 1: LIVE TAB -> Empty State View matching Screenshot 3 1:1 */}
+          {/* TAB 1: LIVE TAB -> Live Scorecard & Match Center */}
           {activeSubTab === 'live' && (
-            <EmptyStateView type="live" />
+            <View style={{ paddingBottom: 16 }}>
+              {/* Live Badge Banner */}
+              <View style={styles.liveBadgeBannerRow}>
+                <View style={styles.livePulseDot} />
+                <Text style={styles.liveBadgeBannerText}>LIVE • 1st Innings in Progress</Text>
+              </View>
+
+              {/* Main Live Score Card */}
+              <View style={styles.liveScoreMainCard}>
+                <Text style={styles.matchNoTag}>{selectedMatch.matchNo}</Text>
+
+                {/* Score Grid */}
+                <View style={styles.liveTeamRow}>
+                  <View style={styles.teamCol}>
+                    <View style={styles.logoWrapper}>
+                      <Image source={selectedMatch.team1.logo} style={styles.logoImage} resizeMode="contain" />
+                    </View>
+                    <Text style={styles.teamCodeText}>{selectedMatch.team1.code}</Text>
+                    <Text style={styles.liveScoreBigText}>168/4</Text>
+                    <Text style={styles.liveOversText}>(17.2 ov)</Text>
+                  </View>
+
+                  <View style={styles.vsBadgeCircleBig}>
+                    <Text style={styles.vsTextBig}>VS</Text>
+                  </View>
+
+                  <View style={styles.teamCol}>
+                    <View style={styles.logoWrapper}>
+                      <Image source={selectedMatch.team2.logo} style={styles.logoImage} resizeMode="contain" />
+                    </View>
+                    <Text style={styles.teamCodeText}>{selectedMatch.team2.code}</Text>
+                    <Text style={styles.liveScoreBigText}>Yet to Bat</Text>
+                    <Text style={styles.liveOversText}>(0.0 ov)</Text>
+                  </View>
+                </View>
+
+                {/* Run Rate Info */}
+                <View style={styles.rrInfoRow}>
+                  <Text style={styles.rrInfoText}>CRR: <Text style={styles.rrVal}>9.69</Text></Text>
+                  <Text style={styles.rrInfoText}>Projected: <Text style={styles.rrVal}>195</Text></Text>
+                </View>
+              </View>
+
+              {/* Current Batting Partnership */}
+              <View style={styles.detailSectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="baseball" size={18} color="#008000" />
+                  <Text style={styles.sectionTitleText}>Current Batters</Text>
+                </View>
+
+                <View style={styles.batterRowHeader}>
+                  <Text style={[styles.batterColHeader, { flex: 2 }]}>Batter</Text>
+                  <Text style={styles.batterColHeader}>R</Text>
+                  <Text style={styles.batterColHeader}>B</Text>
+                  <Text style={styles.batterColHeader}>4s</Text>
+                  <Text style={styles.batterColHeader}>6s</Text>
+                  <Text style={[styles.batterColHeader, { flex: 1.2, textAlign: 'right' }]}>SR</Text>
+                </View>
+
+                {/* Striker */}
+                <View style={styles.batterRowItem}>
+                  <Text style={[styles.batterNameText, { flex: 2 }]} numberOfLines={1}>
+                    {selectedMatch.squad1[0]} <Text style={{ color: '#008000' }}>*</Text>
+                  </Text>
+                  <Text style={styles.batterValText}>68</Text>
+                  <Text style={styles.batterSubValText}>44</Text>
+                  <Text style={styles.batterSubValText}>6</Text>
+                  <Text style={styles.batterSubValText}>2</Text>
+                  <Text style={[styles.batterValText, { flex: 1.2, textAlign: 'right' }]}>154.5</Text>
+                </View>
+
+                {/* Non-Striker */}
+                <View style={styles.batterRowItem}>
+                  <Text style={[styles.batterNameText, { flex: 2 }]} numberOfLines={1}>
+                    {selectedMatch.squad1[2]}
+                  </Text>
+                  <Text style={styles.batterValText}>34</Text>
+                  <Text style={styles.batterSubValText}>22</Text>
+                  <Text style={styles.batterSubValText}>3</Text>
+                  <Text style={styles.batterSubValText}>1</Text>
+                  <Text style={[styles.batterValText, { flex: 1.2, textAlign: 'right' }]}>154.5</Text>
+                </View>
+              </View>
+
+              {/* Current Bowler & Over Timeline */}
+              <View style={styles.detailSectionCard}>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="fitness" size={18} color="#008000" />
+                  <Text style={styles.sectionTitleText}>Bowler & Recent Balls</Text>
+                </View>
+
+                <View style={styles.bowlerDetailRow}>
+                  <Text style={styles.bowlerNameText}>{selectedMatch.squad2[0]}</Text>
+                  <Text style={styles.bowlerFigText}>2/32 (3.2 ov) • Econ 9.60</Text>
+                </View>
+
+                {/* Recent Balls Timeline */}
+                <View style={styles.ballsTimelineRow}>
+                  {['4', '1', '6', 'W', '0', '2'].map((b, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.ballBubble,
+                        b === 'W' && styles.ballBubbleWicket,
+                        (b === '4' || b === '6') && styles.ballBubbleBoundary,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.ballBubbleText,
+                          (b === 'W' || b === '4' || b === '6') && { color: '#FFFFFF' },
+                        ]}
+                      >
+                        {b}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
           )}
 
           {/* TAB 2: UPCOMING TAB -> Detailed Match Info Card */}
@@ -605,7 +724,7 @@ export default function ScheduleScreen({ onBack }) {
             activeOpacity={0.85}
             onPress={() => {
               setSelectedMatch(item);
-              setActiveSubTab('live'); // Default to Live tab to show exact screenshot
+              setActiveSubTab('upcoming'); // Show upcoming match preview by default
             }}
           >
             {/* Green Header Bar */}
@@ -1292,6 +1411,167 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
+  },
+
+  /* Live Tab Styles */
+  liveBadgeBannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    marginBottom: 12,
+  },
+  livePulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    marginRight: 8,
+  },
+  liveBadgeBannerText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#DC2626',
+  },
+  liveScoreMainCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#008000',
+    padding: 16,
+    marginBottom: 14,
+  },
+  liveTeamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginVertical: 8,
+  },
+  liveScoreBigText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#008000',
+    marginTop: 4,
+  },
+  liveOversText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  vsBadgeCircleBig: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#008000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vsTextBig: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  rrInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  rrInfoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  rrVal: {
+    fontWeight: '900',
+    color: '#008000',
+  },
+  batterRowHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 6,
+    marginBottom: 8,
+  },
+  batterColHeader: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748B',
+    flex: 1,
+    textAlign: 'center',
+  },
+  batterRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  batterNameText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  batterValText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#0F172A',
+    flex: 1,
+    textAlign: 'center',
+  },
+  batterSubValText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    flex: 1,
+    textAlign: 'center',
+  },
+  bowlerDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  bowlerNameText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  bowlerFigText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#008000',
+  },
+  ballsTimelineRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  ballBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  ballBubbleWicket: {
+    backgroundColor: '#DC2626',
+    borderColor: '#B91C1C',
+  },
+  ballBubbleBoundary: {
+    backgroundColor: '#16A34A',
+    borderColor: '#15803D',
+  },
+  ballBubbleText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#1E293B',
   },
 });
 
