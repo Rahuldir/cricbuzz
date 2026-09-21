@@ -534,8 +534,8 @@ function loadMatches() {
   const el = $('#liveMatches');
   if (el) el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">Loading live matches...</div>';
 
-  if (typeof CricAPI !== 'undefined' && CricAPI.hasApiKey()) {
-    CricAPI.fetchMatches()
+if (typeof BigBallsAPI !== 'undefined' && BigBallsAPI.hasApiKey()) {
+    BigBallsAPI.fetchMatches()
       .then(function (matches) {
         if (matches.length === 0) throw new Error('API returned 0 matches');
         MATCHES = matches;
