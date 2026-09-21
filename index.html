@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0e1a">
+<title>Cricbuzz Web — Live Cricket Scores</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOP HEADER
+     ══════════════════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="logo">
+      <span class="logo-mark">🏏</span>
+      <span class="logo-text">cric<em>buzz</em></span>
+    </a>
+
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search" placeholder="Search players, matches, series…">
+      <span class="search-ico">🔍</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+      <button class="icon-btn" id="langBtn" title="Language">EN</button>
+    </div>
+  </div>
+
+  <nav class="tabs" id="mainTabs">
+    <button class="tab active" data-tab="matches">Matches</button>
+    <button class="tab" data-tab="series">Series</button>
+    <button class="tab" data-tab="teams">Teams</button>
+    <button class="tab" data-tab="rankings">Rankings</button>
+    <button class="tab" data-tab="news">News</button>
+  </nav>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     MATCHES TAB
+     ══════════════════════════════════════════════════════════ -->
+<main id="app">
+
+  <section class="pane active" id="pane-matches">
+
+    <!-- Featured live match -->
+    <div class="featured" id="featuredMatch"></div>
+
+    <!-- Live now strip -->
+    <div class="section">
+      <div class="section-head">
+        <h2>🔴 Live Now</h2>
+        <a href="#" class="see-all">See all →</a>
+      </div>
+      <div class="cards-scroll" id="liveMatches"></div>
+    </div>
+
+    <!-- Upcoming -->
+    <div class="section">
+      <div class="section-head">
+        <h2>📅 Upcoming</h2>
+        <a href="#" class="see-all">See all →</a>
+      </div>
+      <div class="match-list" id="upcomingMatches"></div>
+    </div>
+
+    <!-- Recent results -->
+    <div class="section">
+      <div class="section-head">
+        <h2>✅ Recent Results</h2>
+        <a href="#" class="see-all">See all →</a>
+      </div>
+      <div class="match-list" id="recentMatches"></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SERIES TAB
+       ══════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-series">
+    <div class="section">
+      <div class="section-head"><h2>Ongoing Series</h2></div>
+      <div class="match-list" id="ongoingSeries"></div>
+    </div>
+    <div class="section">
+      <div class="section-head"><h2>Upcoming Series</h2></div>
+      <div class="match-list" id="upcomingSeries"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TEAMS TAB
+       ══════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-teams">
+    <div class="section">
+      <div class="section-head"><h2>International Teams</h2></div>
+      <div class="team-grid" id="teamsGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       RANKINGS TAB
+       ══════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-rankings">
+    <div class="section">
+      <div class="rank-tabs">
+        <button class="rank-tab active" data-rank="batting">🏏 Batting</button>
+        <button class="rank-tab" data-rank="bowling">⚾ Bowling</button>
+        <button class="rank-tab" data-rank="allround">🌟 All-rounder</button>
+        <button class="rank-tab" data-rank="teams">🏆 Teams</button>
+      </div>
+      <div class="panel" id="rankingsTable"></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       NEWS TAB
+       ══════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-news">
+    <div class="section">
+      <div class="section-head"><h2>Top Stories</h2></div>
+      <div class="news-list" id="newsList"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════════
+     BOTTOM NAV (mobile)
+     ══════════════════════════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <button class="bnav active" data-tab="matches"><span>🏏</span>Matches</button>
+  <button class="bnav" data-tab="series"><span>📅</span>Series</button>
+  <button class="bnav" data-tab="teams"><span>👥</span>Teams</button>
+  <button class="bnav" data-tab="rankings"><span>📊</span>Rankings</button>
+  <button class="bnav" data-tab="news"><span>📰</span>News</button>
+</nav>
+
+<footer class="footer">
+  <div>Cricbuzz Web · Built with ❤️ · <a href="https://github.com/Rahuldir/cricbuzz-web">GitHub</a></div>
+</footer>
+
+<!-- Match detail modal -->
+<div class="modal" id="matchModal">
+  <div class="modal-inner">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
