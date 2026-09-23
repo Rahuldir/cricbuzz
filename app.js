@@ -375,16 +375,66 @@ function switchTab(name) {
 
   // Lazy-load CricketData widgets when tab is opened
   if (name === 'widgets') {
-    if (typeof window.initCricketDataWidgets === 'function') {
-      window.initCricketDataWidgets();
-    }
+    WidgetLoader.initWidgets();
   }
 }
+
+/* ============================================================
+   DYNAMIC WIDGET LOADER
+   ============================================================ */
+const WidgetLoader = (function() {
+  const loaded = {};
+
+  function loadScript(src, containerId, widgetId) {
+    if (loaded[widgetId]) return;
+    loaded[widgetId] = true;
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">Loading widget...</div>';
+
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    
+    script.onload = () => {
+      console.log(`[WidgetLoader] Loaded ${widgetId}`);
+      // Wait for the widget to render, then apply custom theme
+      setTimeout(() => {
+        applyWidgetTheme(widgetId);
+      }, 800);
+    };
+
+    script.onerror = () => {
+      container.innerHTML = '<div style="color:var(--red);text-align:center;padding:20px;">Failed to load widget</div>';
+    };
+
+    document.body.appendChild(script);
+  }
+
+  function applyWidgetTheme(widgetId) {
+    // Add a class to the widget's root element to trigger CSS overrides
+    const widgetRoot = document.getElementById(widgetId);
+    if (widgetRoot) {
+      widgetRoot.classList.add('cricbuzz-integrated-widget');
+    }
+  }
+
+  function initWidgets() {
+    loadScript('https://cdorgapi.b-cdn.net/widgets/score.js', 'widget-score-container', 'cricapi_widget_score');
+    loadScript('https://cdorgapi.b-cdn.net/widgets/vmatchlist.js', 'widget-vmatchlist-container', 'cricapi_widget_vmatchlist');
+    loadScript('https://cdorgapi.b-cdn.net/widgets/matchlist.js', 'widget-matchlist-container', 'cricapi_widget_matchlist');
+  }
+
+  return { initWidgets };
+})();
 
 function loadMatches() {
   const el = $('#liveMatches');
   if (el) el.innerHTML = '<div style="color:var(--muted);padding:14px;font-size:13px;">Loading matches...</div>';
 
+  // Try BigBalls API first
   if (typeof BigBallsAPI !== 'undefined' && BigBallsAPI.hasApiKey()) {
     BigBallsAPI.fetchMatches()
       .then(function (matches) {
@@ -392,15 +442,34 @@ function loadMatches() {
         MATCHES = matches;
         usingLiveApi = true;
         window.MATCHES = MATCHES;
-        console.log('[Cricbuzz] Loaded ' + matches.length + ' matches');
         refreshAll();
       })
       .catch(function (err) {
-        console.warn('[Cricbuzz] API failed, using mock data:', err.message);
-        MATCHES = MOCK_MATCHES.slice();
-        usingLiveApi = false;
-        window.MATCHES = MATCHES;
-        refreshAll();
+        console.warn('[Cricbuzz] BigBalls failed, trying CricketData:', err.message);
+        // Fallback to CricketData API
+        if (typeof CricketDataAPI !== 'undefined') {
+          CricketDataAPI.fetchMatches().then(function (matches) {
+            if (matches.length > 0) {
+              MATCHES = matches;
+              usingLiveApi = true;
+              window.MATCHES = MATCHES;
+              refreshAll();
+            } else {
+              throw new Error('CricketData returned 0 matches');
+            }
+          }).catch(function (err2) {
+            console.warn('[Cricbuzz] CricketData failed, using mock data:', err2.message);
+            MATCHES = MOCK_MATCHES.slice();
+            usingLiveApi = false;
+            window.MATCHES = MATCHES;
+            refreshAll();
+          });
+        } else {
+          MATCHES = MOCK_MATCHES.slice();
+          usingLiveApi = false;
+          window.MATCHES = MATCHES;
+          refreshAll();
+        }
       });
   } else {
     MATCHES = MOCK_MATCHES.slice();
