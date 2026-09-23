@@ -1,6 +1,6 @@
 /* ============================================================
    CRICBUZZ WEB - BigBalls Sports API (Cricket Only)
-   Matches actual BigBalls response schema
+   + CricketData.org API Integrations
    ============================================================ */
 
 const BigBallsAPI = (function () {
@@ -380,4 +380,38 @@ const BigBallsAPI = (function () {
     }
   };
 
+})();
+
+/* ============================================================
+   CRICKETDATA.ORG API CONFIGURATION (Reference)
+   ============================================================
+   If you wish to fetch raw data from CricketData.org instead of
+   using their widgets, configure your API key below and use the
+   fetchFromCricketData function.
+*/
+const CricketDataAPI = (function() {
+  'use strict';
+
+  const BASE_URL = 'https://api.cricapi.com/v1';
+  const API_KEY = 'YOUR_CRICKETDATA_API_KEY_HERE'; // Replace with your key from cricketdata.org
+
+  async function fetchMatches() {
+    if (API_KEY === 'YOUR_CRICKETDATA_API_KEY_HERE') {
+      console.warn('[CricketData] API key not set. Please get a free key from cricketdata.org');
+      return [];
+    }
+    try {
+      const res = await fetch(`${BASE_URL}/currentMatches?apikey=${API_KEY}&offset=0`);
+      const data = await res.json();
+      return data.data || [];
+    } catch (e) {
+      console.error('[CricketData] Fetch error:', e);
+      return [];
+    }
+  }
+
+  return {
+    fetchMatches: fetchMatches,
+    hasApiKey: () => API_KEY !== 'YOUR_CRICKETDATA_API_KEY_HERE'
+  };
 })();
