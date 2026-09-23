@@ -372,6 +372,13 @@ function switchTab(name) {
   const pane = $('#pane-' + name);
   if (pane) pane.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Lazy-load CricketData widgets when tab is opened
+  if (name === 'widgets') {
+    if (typeof window.initCricketDataWidgets === 'function') {
+      window.initCricketDataWidgets();
+    }
+  }
 }
 
 function loadMatches() {
