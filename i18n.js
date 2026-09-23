@@ -29,7 +29,8 @@ const I18N = (function () {
       sr: 'SR', eco: 'Eco', wkts: 'Wkts', maidens: 'Mdns',
       venue: 'Venue', startsIn: 'Starts in',
       backToMatches: 'Back to Matches',
-      broadcastMode: 'Broadcast', exitBroadcast: 'Exit Broadcast'
+      broadcastMode: 'Broadcast', exitBroadcast: 'Exit Broadcast',
+      widgets: 'Widgets'
     },
     hi: {
       searchPlaceholder: 'खिलाड़ी, मैच, सीरीज़ खोजें...',
@@ -54,7 +55,8 @@ const I18N = (function () {
       sr: 'स्ट्राइक रेट', eco: 'इकॉनमी', wkts: 'विकेट', maidens: 'मेडन',
       venue: 'स्थान', startsIn: 'शुरू होगा',
       backToMatches: 'मैच पर वापस',
-      broadcastMode: 'ब्रॉडकास्ट', exitBroadcast: 'ब्रॉडकास्ट बंद करें'
+      broadcastMode: 'ब्रॉडकास्ट', exitBroadcast: 'ब्रॉडकास्ट बंद करें',
+      widgets: 'विजेट्स'
     }
   };
 
