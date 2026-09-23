@@ -383,35 +383,80 @@ const BigBallsAPI = (function () {
 })();
 
 /* ============================================================
-   CRICKETDATA.ORG API CONFIGURATION (Reference)
-   ============================================================
-   If you wish to fetch raw data from CricketData.org instead of
-   using their widgets, configure your API key below and use the
-   fetchFromCricketData function.
-*/
-const CricketDataAPI = (function() {
+   CRICKETDATA.ORG API - Native Integration
+   ============================================================ */
+const CricketDataAPI = (function () {
   'use strict';
 
+  const API_KEY = 'YOUR_CRICKETDATA_API_KEY'; // Get free key at cricketdata.org
   const BASE_URL = 'https://api.cricapi.com/v1';
-  const API_KEY = 'YOUR_CRICKETDATA_API_KEY_HERE'; // Replace with your key from cricketdata.org
+
+  function toCode(name) {
+    if (!name) return '???';
+    const n = String(name).toLowerCase();
+    if (n.indexOf('india') >= 0) return 'IND';
+    if (n.indexOf('australia') >= 0) return 'AUS';
+    if (n.indexOf('england') >= 0) return 'ENG';
+    if (n.indexOf('pakistan') >= 0) return 'PAK';
+    if (n.indexOf('south africa') >= 0) return 'SA';
+    if (n.indexOf('new zealand') >= 0) return 'NZ';
+    if (n.indexOf('west indies') >= 0) return 'WI';
+    if (n.indexOf('sri lanka') >= 0) return 'SL';
+    if (n.indexOf('bangladesh') >= 0) return 'BAN';
+    if (n.indexOf('afghanistan') >= 0) return 'AFG';
+    return name.substring(0, 3).toUpperCase();
+  }
 
   async function fetchMatches() {
-    if (API_KEY === 'YOUR_CRICKETDATA_API_KEY_HERE') {
-      console.warn('[CricketData] API key not set. Please get a free key from cricketdata.org');
+    if (API_KEY === 'YOUR_CRICKETDATA_API_KEY') {
+      console.warn('[CricketData] No API key set. Using mock data.');
       return [];
     }
+
     try {
       const res = await fetch(`${BASE_URL}/currentMatches?apikey=${API_KEY}&offset=0`);
-      const data = await res.json();
-      return data.data || [];
-    } catch (e) {
-      console.error('[CricketData] Fetch error:', e);
+      const json = await res.json();
+      if (json.status !== 'success') throw new Error('API failed');
+
+      return json.data.map(m => {
+        const teamA = m.teams[0] || 'Team A';
+        const teamB = m.teams[1] || 'Team B';
+        const isLive = m.matchStarted && !m.matchEnded;
+        const isResult = m.matchEnded;
+
+        // Extract scores
+        const scoreA = m.score.find(s => s.inning.includes(teamA)) || { r: 0, w: 0, o: 0 };
+        const scoreB = m.score.find(s => s.inning.includes(teamB)) || { r: 0, w: 0, o: 0 };
+
+        return {
+          id: m.id,
+          status: isLive ? 'live' : (isResult ? 'result' : 'upcoming'),
+          series: m.name,
+          venue: m.venue || 'TBD',
+          format: m.matchType.toUpperCase(),
+          teamA: {
+            code: toCode(teamA),
+            name: teamA,
+            runs: scoreA.r || 0,
+            wkts: scoreA.w || 0,
+            overs: scoreA.o ? String(scoreA.o) : ''
+          },
+          teamB: {
+            code: toCode(teamB),
+            name: teamB,
+            runs: scoreB.r || 0,
+            wkts: scoreB.w || 0,
+            overs: scoreB.o ? String(scoreB.o) : ''
+          },
+          statusText: m.status || 'Upcoming',
+          result: isResult ? (m.status || 'Match completed') : ''
+        };
+      });
+    } catch (err) {
+      console.error('[CricketData] Fetch error:', err);
       return [];
     }
   }
 
-  return {
-    fetchMatches: fetchMatches,
-    hasApiKey: () => API_KEY !== 'YOUR_CRICKETDATA_API_KEY_HERE'
-  };
+  return { fetchMatches };
 })();
