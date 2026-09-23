@@ -1125,28 +1125,67 @@ body.broadcast-mode .section {
 
 [data-i18n-placeholder]::placeholder { opacity: .7; }
 
-/* ---- CricketData Widgets Integration ---- */
-.widget-container {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 20px;
-  overflow-x: auto;
+/* ============================================================
+   CRICKETDATA WIDGET THEME OVERRIDES
+   Forces widgets to match the Cricbuzz dark theme
+   ============================================================ */
+.cricbuzz-integrated-widget {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  color: var(--text) !important;
+  font-family: inherit !important;
 }
-.widget-container h3 {
-  margin: 0 0 12px 0;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--accent);
+
+.cricbuzz-integrated-widget * {
+  font-family: inherit !important;
+  color: var(--text) !important;
 }
-.widget-wrapper {
-  display: inline-block;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+
+/* Widget Headers & Tabs */
+.cricbuzz-integrated-widget .tab,
+.cricbuzz-integrated-widget .tab button {
+  background: var(--card-2) !important;
+  border-color: var(--border) !important;
 }
-.widget-wrapper iframe {
-  border: none;
+
+.cricbuzz-integrated-widget .tab button.active {
+  background: var(--accent) !important;
+  color: #0a0e1a !important;
+}
+
+/* Widget Rows & Borders */
+.cricbuzz-integrated-widget HR,
+.cricbuzz-integrated-widget tr,
+.cricbuzz-integrated-widget td {
+  border-color: var(--border) !important;
+}
+
+/* Widget Backgrounds */
+.cricbuzz-integrated-widget .slab > *,
+.cricbuzz-integrated-widget .slideholder,
+.cricbuzz-integrated-widget .tabcontent {
+  background: var(--card) !important;
+}
+
+/* Widget Buttons */
+.cricbuzz-integrated-widget a[href*="Full Scorecard"],
+.cricbuzz-integrated-widget a[href*="widgets"] {
+  background: var(--accent) !important;
+  color: #0a0e1a !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-weight: 900 !important;
+}
+
+/* Hide the default white background images */
+.cricbuzz-integrated-widget .slab > * {
+  background-image: none !important;
+}
+
+/* Fix text colors for scores */
+.cricbuzz-integrated-widget td[nowrap] {
+  color: var(--accent) !important;
+  font-weight: 900 !important;
 }
