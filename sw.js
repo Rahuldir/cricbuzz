@@ -2,7 +2,7 @@
    CRICBUZZ WEB - Service Worker
    ============================================================ */
 
-const CACHE_NAME = 'cricbuzz-v1';
+const CACHE_NAME = 'cricbuzz-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -12,9 +12,13 @@ const STATIC_ASSETS = [
   '/api.js',
   '/i18n.js',
   '/livestreams.js',
+  '/streamedpk.js',
   '/scorecard.html',
   '/scorecard.js',
-  '/manifest.json'
+  '/manifest.json',
+  'https://cdorgapi.b-cdn.net/widgets/score.js',
+  'https://cdorgapi.b-cdn.net/widgets/vmatchlist.js',
+  'https://cdorgapi.b-cdn.net/widgets/matchlist.js'
 ];
 
 self.addEventListener('install', function (e) {
@@ -52,6 +56,16 @@ self.addEventListener('fetch', function (e) {
   if (url.hostname.indexOf('bigballs') >= 0 ||
       url.hostname.indexOf('api.') >= 0 ||
       url.pathname.indexOf('/api') === 0) {
+    return;
+  }
+
+  // Allow CricketData widget scripts to load normally
+  if (url.hostname.indexOf('cdorgapi.b-cdn.net') >= 0) {
+    e.respondWith(
+      caches.match(e.request).then(function(cached) {
+        return cached || fetch(e.request);
+      })
+    );
     return;
   }
 
