@@ -1124,3 +1124,29 @@ body.broadcast-mode .section {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
 [data-i18n-placeholder]::placeholder { opacity: .7; }
+
+/* ---- CricketData Widgets Integration ---- */
+.widget-container {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.widget-container h3 {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.widget-wrapper {
+  display: inline-block;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.widget-wrapper iframe {
+  border: none;
+}
